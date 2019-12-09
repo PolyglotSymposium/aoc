@@ -1,0 +1,7 @@
+list
+  at ./y2019d1.txt
+  separated by '\n'
+
+solution
+  for (x > 0) (x / 3 - 2)
+    | sum
