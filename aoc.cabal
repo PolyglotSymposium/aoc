@@ -16,11 +16,17 @@ tested-with:         GHC == 8.4.4
 library
   hs-source-dirs:      src
   exposed-modules:     Aoc
-                     , ListParser 
-                     , Parser 
+                     , Builtins 
                      , ListAst 
+                     , ListParser 
+                     , ListProblem 
+                     , ListType 
+                     , Parser 
+                     , Type 
+                     , Value 
 
   build-depends:       base ^>= 4.11.1.0
+                     , containers
                      , megaparsec
                      , text
                      

@@ -5,6 +5,7 @@ module ListParser
        ( list
        , listInput
        , integer
+       , Parser
        ) where
 
 import Text.Megaparsec

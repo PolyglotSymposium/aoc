@@ -1,6 +1,5 @@
 module Aoc
-       ( parse
-       , parseErrorPretty
+       ( runListProblem
        ) where
 
-import Parser (parse, parseErrorPretty)
+import ListProblem (runListProblem)
