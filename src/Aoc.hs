@@ -1,8 +1,5 @@
 module Aoc
-       ( someFunc
+       ( parse
        ) where
 
-import ListParser
-
-someFunc :: IO ()
-someFunc = putStrLn ("someFunc" :: String)
+import Parser (parse)

@@ -12,6 +12,7 @@ import qualified Text.Megaparsec.Char.Lexer as L
 import qualified ListAst as List
 import Data.Text
 import Data.Void
+import Control.Monad (void)
 
 type Parser = Parsec Void Text
 
@@ -21,12 +22,12 @@ ws = L.space
   (L.skipLineComment "//")
   (L.skipBlockComment "/*" "*/")
 
+lexeme :: Parser a -> Parser a
 lexeme = L.lexeme ws
 
 list :: Parser List.Problem
 list = do
-  ws
-  lexeme $ string "list"
+  lexeme $ ws *> string "list"
   lexeme $ string "at"
   file <- lexeme $ takeWhile1P (Just "path character") (\c -> not (c `elem` [' ', '\t', '\n', '\r']))
   lexeme $ string "separated"
@@ -46,7 +47,7 @@ code :: Parser List.Solution
 code = lexeme $ makeExprParser solutionTerm [[pipe]]
 
 pipe :: Operator Parser List.Solution
-pipe = InfixL (List.Pipe <$ char '|')
+pipe = InfixL (List.Pipe <$ lstr "|")
 
 solutionTerm :: Parser List.Solution
 solutionTerm =
@@ -58,16 +59,19 @@ for = lexeme (string "for") *> (List.For <$> lambda <*> lambda <*> optional lamb
 lambda :: Parser List.Lambda
 lambda = lexeme $ List.Body <$> value
 
+lstr :: Text -> Parser Text
+lstr = lexeme . string
+
 value :: Parser List.Value
 value = lexeme $ makeExprParser valueTerm [
-    [InfixL (List.Gt <$ char '<')]
-  , [InfixL (List.Divide <$ char '/')]
-  , [InfixL (List.Subtract <$ char '-')]
+    [InfixL (List.Gt <$ lstr ">")]
+  , [InfixL (List.Divide <$ lstr "/")]
+  , [InfixL (List.Subtract <$ lstr "-")]
   ]
 
 valueTerm :: Parser List.Value
 valueTerm =
-  lexeme (List.Identifier <$> ident <|> List.Inte <$> L.decimal)
+  lexeme (between (char '(') (char ')') value <|> List.Identifier <$> ident <|> List.Inte <$> L.decimal)
 
 floatingLambda :: Parser List.Solution
 floatingLambda = lexeme $ List.FloatingLambda <$> lambda

@@ -16,7 +16,9 @@ tested-with:         GHC == 8.4.4
 library
   hs-source-dirs:      src
   exposed-modules:     Aoc
-                       
+                     , ListParser 
+                     , Parser 
+                     , ListAst 
 
   build-depends:       base ^>= 4.11.1.0
                      , megaparsec
@@ -41,7 +43,7 @@ executable aoc
 
   build-depends:       base ^>= 4.11.1.0
                      , aoc
-                     
+                     , text
 
   ghc-options:         -Wall
                        -threaded
@@ -65,6 +67,8 @@ test-suite aoc-test
 
   build-depends:       base ^>= 4.11.1.0
                      , aoc
+                     , hspec
+                     , QuickCheck
                      
 
   ghc-options:         -Wall
