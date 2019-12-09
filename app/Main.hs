@@ -10,5 +10,7 @@ main = do
   case arg of
     [inputFile] -> do
       text <- readFile inputFile
-      print $ Aoc.parse "" $ pack text
+      case Aoc.parse inputFile $ pack text of
+        Right ast -> print ast
+        Left err -> putStrLn $ Aoc.parseErrorPretty err
     _       -> print "One argument (file name) expected"

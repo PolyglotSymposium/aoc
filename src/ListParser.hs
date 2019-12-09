@@ -3,6 +3,8 @@
 
 module ListParser
        ( list
+       , listInput
+       , integer
        ) where
 
 import Text.Megaparsec
@@ -10,6 +12,7 @@ import Text.Megaparsec.Char
 import Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Char.Lexer as L
 import qualified ListAst as List
+import qualified Value as V
 import Data.Text
 import Data.Void
 import Control.Monad (void)
@@ -24,6 +27,12 @@ ws = L.space
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme ws
+
+listInput :: Text -> Parser V.Value -> Parser [V.Value]
+listInput sep pValue = ws *> sepBy pValue (string sep) <* ws <* eof
+
+integer :: Parser V.Value
+integer = V.I <$> L.signed ws L.decimal
 
 list :: Parser List.Problem
 list = do
