@@ -21,11 +21,16 @@ runListProblem source = do
   case runParser Parse.list source $ pack text of
     Left err -> putStrLn $ parseErrorPretty err
     Right ast ->
-      case ListType.inferInputType $ Ast.solution ast of
-        Left err -> print err
-        Right inputType ->
-          case getInputParser inputType of
-            Nothing -> putStrLn $ "Inferred input to have type " ++ show inputType ++ " (only list of integers are supported)"
-            Just parseInput -> do
-              print inputType
-              print ast
+      let
+        validations = do
+          _ <- ListType.ensureOneFreeOrIdentInEachStep $ Ast.solution ast
+          ListType.inferInputType $ Ast.solution ast
+      in
+        case validations of
+          Left err -> print err
+          Right inputType ->
+            case getInputParser inputType of
+              Nothing -> putStrLn $ "Inferred input to have type " ++ show inputType ++ " (only list of integers are supported)"
+              Just parseInput -> do
+                print inputType
+                print ast
