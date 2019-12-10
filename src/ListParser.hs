@@ -17,6 +17,7 @@ import qualified Value as V
 import Data.Text
 import Data.Void
 import Control.Monad (void)
+import Data.Maybe (fromMaybe)
 
 type Parser = Parsec Void Text
 
@@ -64,7 +65,12 @@ solutionTerm =
   lexeme (for <|> floatingLambda)
 
 for :: Parser List.Solution
-for = lexeme (string "for") *> (List.For <$> lambda <*> lambda <*> optional lambda)
+for = do
+  _       <- lexeme (string "for")
+  cond    <- lambda
+  gen     <- lambda
+  reduce  <- optional lambda
+  pure $ List.For cond gen $ fromMaybe gen reduce
 
 lambda :: Parser List.Lambda
 lambda = lexeme $ List.Body <$> value

@@ -24,13 +24,16 @@ runListProblem source = do
       let
         validations = do
           _ <- ListType.ensureOneFreeOrIdentInEachStep $ Ast.solution ast
-          ListType.inferInputType $ Ast.solution ast
+          it <- ListType.inferInputType $ Ast.solution ast
+          ot <- ListType.inferOutputType $ Ast.solution ast
+          pure $ (it, ot)
       in
         case validations of
           Left err -> print err
-          Right inputType ->
-            case getInputParser inputType of
-              Nothing -> putStrLn $ "Inferred input to have type " ++ show inputType ++ " (only list of integers are supported)"
+          Right (inputElementType, outputType) ->
+            case getInputParser inputElementType of
+              Nothing -> putStrLn $ "Inferred input to have element type " ++ show inputElementType ++ " (only list of integers are supported)"
               Just parseInput -> do
-                print inputType
+                print $ Type.List inputElementType
+                print outputType
                 print ast

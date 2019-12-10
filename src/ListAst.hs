@@ -16,12 +16,12 @@ data Problem =
 
 data Solution
   = Pipe Solution Solution
-  | For Lambda Lambda (Maybe Lambda)
+  | For Lambda Lambda Lambda
   | FloatingLambda Lambda
   deriving Show
 
 newtype Lambda
-  = Body Value
+  = Body { body::Value }
   deriving Show
 
 data Value
