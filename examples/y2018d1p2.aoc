@@ -3,6 +3,5 @@ list
   separated by '\n'
 
 solution
-  sum
-    | steps
+  sum*
     | first_repeat

@@ -83,7 +83,7 @@ typeOfFreeVariable v =
     Ast.Inte _           -> Nothing
     Ast.Identifier name ->
       case identType name of
-        Nothing -> pure Type.Variable
+        Nothing -> pure $ Type.Var 'a'
         Just _ -> Nothing
 
   where

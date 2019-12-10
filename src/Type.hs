@@ -7,6 +7,6 @@ data Type
   | Boolean
   | List Type
   | Arrow Type Type
-  | Variable
+  | Var Char
   deriving (Show, Eq)
 

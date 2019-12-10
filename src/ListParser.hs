@@ -87,4 +87,4 @@ floatingLambda :: Parser List.Solution
 floatingLambda = lexeme $ List.FloatingLambda <$> lambda
 
 ident :: Parser Text
-ident = lexeme $ takeWhile1P (Just "identifier") (\c -> c `elem` ('_':['a'..'z'] ++ ['A'..'Z']))
+ident = lexeme $ takeWhile1P (Just "identifier") (\c -> c `elem` ("_*" ++ ['a'..'z'] ++ ['A'..'Z']))
