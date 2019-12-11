@@ -21,7 +21,9 @@ runListProblem :: String -> IO ()
 runListProblem source = do
   text <- readFile source
   case runParser Parse.list source $ pack text of
-    Left err -> putStrLn $ parseErrorPretty err
+    Left err -> do
+      putStrLn "Error parsing aoc code file:"
+      putStrLn $ parseErrorPretty err
     Right ast ->
       let
         inputPath = Path.takeDirectory source Path.</> (unpack (Ast.at ast))
@@ -41,7 +43,9 @@ runListProblem source = do
               Just parseInput -> do
                 inputText <- readFile inputPath
                 case runParser (Parse.listInput (Ast.separator ast) parseInput) inputPath $ strip $ pack inputText of
-                  Left err -> putStrLn $ parseErrorPretty err
+                  Left err -> do
+                    putStrLn "Error parsing input file:"
+                    putStrLn $ parseErrorPretty err
                   Right input -> do
                     print input
 --                print $ Type.List inputElementType
