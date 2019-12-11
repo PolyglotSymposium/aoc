@@ -9,11 +9,13 @@ data Value
   | Vs [Value]
   | True
   | False
-  | Func (Value -> Value)
+  | Fold (Value, Value -> Value -> Maybe Value)
+  | StepsOfFold (Value, Value -> Value -> Maybe Value)
 
 instance Show Value where
   show (I v) = show v
   show (Vs vs) = show $ map show vs
   show True = "true"
   show False = "false"
-  show (Func _) = "<function>"
+  show (Fold _) = "<function/fold>"
+  show (StepsOfFold _) = "<function/fold_steps>"
