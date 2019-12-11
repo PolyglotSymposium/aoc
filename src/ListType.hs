@@ -23,7 +23,7 @@ data TypeError
   | FloatingLambdaaCannotReturn Type.Type
   | IdentifierNotAFunctionOfAList Text Text Type.Type
   | NotAFunction Text Text Type.Type
-  | CouldNotFindExpectedFreeVariableIn Ast.Value
+  | CouldNotInferTypeOfFreeVariableInputIn Ast.Value
   | StepNMustBeIdentiferOrContainSingleFree Int Ast.Value
   --                   resolved expectedType actualType value
   | UnificationFailure Env      Type.Type    Type.Type  Ast.Value
@@ -50,6 +50,10 @@ unifySolution (Ast.FloatingLambda lambda) (Type.List it) = do
   case ot of
     Type.Number                         -> pure $ Type.List Type.Number
     Type.Boolean                        -> pure $ Type.List it
+    Type.Arrow (Type.List (Type.Var a)) (Type.Var b) ->
+      if a == b
+      then pure it
+      else Left $ FloatingLambdaaCannotReturn ot
     Type.Arrow (Type.List finElem) fout ->
       if finElem == it
       then pure $ fout
@@ -164,10 +168,14 @@ inferInputType' (Ast.Identifier name) =
     Nothing -> Left $ IdentifierIsNotDefined name
     Just (Type.Arrow (Type.List i) _) -> pure i
     Just t -> Left $ IdentifierNotAFunctionOfAList "input" name t
-inferInputType' v =
-  case typeOfFreeVariable v of
-    Just t -> pure t
-    Nothing -> Left $ CouldNotFindExpectedFreeVariableIn v
+inferInputType' ast = do
+  case typeOf ast of
+    Left e -> Left e
+    Right ty ->
+      case unify ast ty Nothing of
+        Right (Just t) -> pure t
+        Right Nothing  -> Left $ CouldNotInferTypeOfFreeVariableInputIn ast
+        Left e         -> Left e
 
 inferOutputType :: Ast.Solution -> Result Type.Type
 inferOutputType (Ast.Pipe _ s)                    = inferOutputType s
@@ -181,6 +189,7 @@ inferOutputType' (Ast.Identifier name) =
     Just (Type.Arrow _ output) -> pure output
     Just t -> Left $ NotAFunction "output" name t
 inferOutputType' (Ast.Gt _ _)       = Right $ Type.List Type.Boolean
+inferOutputType' (Ast.And _ _)      = Right $ Type.List Type.Boolean
 inferOutputType' (Ast.Divide _ _)   = Right $ Type.List Type.Number
 inferOutputType' (Ast.Subtract _ _) = Right $ Type.List Type.Number 
 inferOutputType' (Ast.Inte _)       = Left $ NotAFunction "output" "literal" Type.Number

@@ -21,8 +21,19 @@ gt = ListAst.Gt
 
 ident = ListAst.Identifier
 
+lam = ListAst.FloatingLambda . ListAst.Body
+
+a |> b = ListAst.Pipe a b
+
 main :: IO ()
 main = hspec $ do
+  describe "ListType.ensureOneFreeOrIdentInEachStep" $ do
+    it "finds the identifier in a simple &&" $ do
+      ListType.ensureOneFreeOrIdentInEachStep (lam (number &&& ident "x")) `shouldBe` Right ()
+
+    it "finds the identifier some piped together steps" $ do
+      ListType.ensureOneFreeOrIdentInEachStep ((lam (number &&& ident "x")) |> (lam (ident "x" `div'` number))) `shouldBe` Right ()
+
   describe "ListType.unify" $ do
     it "numbers unify with numbers" $ do
       ListType.unify number numTy Nothing `shouldBe` Right Nothing
