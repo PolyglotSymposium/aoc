@@ -10,6 +10,7 @@ import Data.Text
 import qualified Data.Map.Strict as M
 import qualified Type as Type
 import qualified Value as Value
+import qualified Data.Set as S 
 
 identType :: Text -> Maybe Type.Type
 identType ident = fst <$> M.lookup ident identifiers 
@@ -23,13 +24,24 @@ makeFold i f = Value.Fold (Value.I i, \v1 v2 ->
     (Value.I v, Value.I acc) -> Just $ Value.I $ f v acc
     _                        -> Nothing)
 
+firstRepeat :: Value.Value
+firstRepeat = Value.Func $ \v -> Value.Vs <$> go S.empty v
+  where
+    go _ (Value.Vs []) = Just []
+    go seen (Value.Vs (v:vs)) = do
+      ord <- Value.toOrd v
+      let acc = if S.member ord seen then [v] else []
+      rest <- go (S.insert ord seen) (Value.Vs vs)
+      pure $ acc ++ rest
+    go _ _ = Nothing
+
 baseIdentifiers :: [(Text, (Type.Type, Value.Value))]
 baseIdentifiers = 
   [
-    ("sum",          ((Type.List Type.Number)   `Type.Arrow` Type.Number,     makeFold 0 (+)))
-  , ("first_repeat", ((Type.List (Type.Var 'a')) `Type.Arrow` (Type.Var 'a'), Value.True))
-  , ("true",         (Type.Boolean,                                           Value.True))
-  , ("false",        (Type.Boolean,                                           Value.False))
+    ("sum",          ((Type.List Type.Number)   `Type.Arrow` Type.Number,                 makeFold 0 (+)))
+  , ("first_repeat", ((Type.List (Type.Var 'a')) `Type.Arrow` (Type.List (Type.Var 'a')), firstRepeat))
+  , ("true",         (Type.Boolean,                                                       Value.True))
+  , ("false",        (Type.Boolean,                                                       Value.False))
   ]
 
 identifiers :: M.Map Text (Type.Type, Value.Value)

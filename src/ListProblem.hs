@@ -6,12 +6,12 @@ import Data.Text
 import Text.Megaparsec
 import Text.Megaparsec.Error (parseErrorPretty)
 import qualified ListAst as Ast
+import qualified ListEvaluator as Eval
 import qualified ListParser as Parse
 import qualified ListType as ListType
+import qualified System.FilePath as Path
 import qualified Type as Type
 import qualified Value as V
-import qualified System.FilePath as Path
-import Debug.Trace
 
 getInputParser :: Type.Type -> Maybe (Parse.Parser V.Value)
 getInputParser Type.Number = Just Parse.integer
@@ -47,7 +47,9 @@ runListProblem source = do
                     putStrLn "Error parsing input file:"
                     putStrLn $ parseErrorPretty err
                   Right input -> do
-                    print input
+                    case Eval.eval (V.Vs input) (Ast.solution ast) of
+                      Right result -> print result
+                      Left err -> print err
 --                print $ Type.List inputElementType
 --                print outputType
 --                print ast

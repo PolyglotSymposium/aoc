@@ -11,6 +11,7 @@ import qualified Data.Text as Text
 data EvalError
   = UnexpectedError
   | TypeMismatchAtRuntime Text.Text
+  deriving Show
 
 type Result a = Either EvalError a
 
@@ -45,6 +46,11 @@ eval (Value.Vs vs) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
         Just v  -> Right v
     Just (Value.StepsOfFold (initial, step)) ->
       Value.Vs <$> foldSteps step initial vs
+
+    Just (Value.Func f) ->
+      case f (Value.Vs vs) of
+        Nothing -> Left UnexpectedError
+        Just v  -> Right v
 
     Just _ -> Left $ TypeMismatchAtRuntime (Text.pack ("Built-in " ++ Text.unpack name ++ " specified at the top level of list evaluation but it's not a list function" ))
     Nothing -> Right $ Value.Vs vs

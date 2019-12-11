@@ -1,8 +1,10 @@
 module Value
        ( Value(..)
+       , toOrd
        ) where
 
 import Prelude hiding (True, False)
+import Data.List (intersperse)
 
 data Value
   = I Integer
@@ -10,12 +12,31 @@ data Value
   | True
   | False
   | Fold (Value, Value -> Value -> Maybe Value)
+  | Func (Value -> Maybe Value)
   | StepsOfFold (Value, Value -> Value -> Maybe Value)
+
+
+data OrdValue
+  = OrdI Integer
+  | OrdVs [OrdValue]
+  | OrdTrue
+  | OrdFalse
+  deriving (Ord, Eq)
+
+toOrd :: Value -> Maybe OrdValue
+toOrd (I v)           = Just $ OrdI v
+toOrd (Vs vs)         = OrdVs <$> (sequence $ map toOrd vs)
+toOrd True            = Just $ OrdTrue
+toOrd False           = Just $ OrdFalse
+toOrd (Fold _)        = Nothing
+toOrd (Func _)        = Nothing
+toOrd (StepsOfFold _) = Nothing
 
 instance Show Value where
   show (I v) = show v
-  show (Vs vs) = show $ map show vs
+  show (Vs vs) = "[" ++ concat (intersperse "," (map show vs)) ++ "]"
   show True = "true"
   show False = "false"
   show (Fold _) = "<function/fold>"
   show (StepsOfFold _) = "<function/fold_steps>"
+  show (Func _) = "<function>"

@@ -20,7 +20,7 @@ type Env = Maybe Type.Type
 
 data TypeError
   = IdentifierIsNotDefined Text
-  | FloatingLambdaaCannotReturn Type.Type
+  | FloatingLambdaCannotReturn Type.Type
   | IdentifierNotAFunctionOfAList Text Text Type.Type
   | NotAFunction Text Text Type.Type
   | CouldNotInferTypeOfFreeVariableInputIn Ast.Value
@@ -53,12 +53,17 @@ unifySolution (Ast.FloatingLambda lambda) (Type.List it) = do
     Type.Arrow (Type.List (Type.Var a)) (Type.Var b) ->
       if a == b
       then pure it
-      else Left $ FloatingLambdaaCannotReturn ot
+      else Left $ FloatingLambdaCannotReturn ot
+    Type.Arrow (Type.List (Type.Var a)) (Type.List (Type.Var b)) ->
+      if a == b
+      then pure $ Type.List it
+      else Left $ FloatingLambdaCannotReturn ot
     Type.Arrow (Type.List finElem) fout ->
       if finElem == it
-      then pure $ fout
-      else Left $ FloatingLambdaaCannotReturn ot
-    _                                   -> Left $ FloatingLambdaaCannotReturn ot
+      then pure fout
+      else Left $ FloatingLambdaCannotReturn ot
+
+    _ -> Left $ FloatingLambdaCannotReturn ot
 
 unifySolution (Ast.FloatingLambda lambda) t = error ("TODO" ++ show lambda ++ show t)
 
