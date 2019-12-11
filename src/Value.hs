@@ -4,4 +4,4 @@ module Value
 
 data Value
   = I Integer
-  deriving Show
+  deriving (Show, Eq)

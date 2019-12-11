@@ -4,7 +4,8 @@ module ListType
        ( inferInputType
        , inferOutputType
        , ensureOneFreeOrIdentInEachStep
-       , check
+       , unify
+       , TypeError(..)
        ) where
 
 import Builtins (identType)
@@ -13,6 +14,8 @@ import qualified ListAst as Ast
 import qualified Type as Type
 import qualified Data.Set as S
 import Control.Applicative
+
+type Env = Maybe Type.Type
 
 data TypeError
   = IdentifierIsNotDefined Text
@@ -24,68 +27,34 @@ data TypeError
   | SolutionTypeCheckFailed Ast.Solution Type.Type Type.Type 
   | TypeCheckFailed Ast.Value Type.Type Type.Type 
   | NotBinaryFunction Ast.Value
-  deriving Show
+  --                   resolved expectedType actualType value
+  | UnificationFailure Env      Type.Type    Type.Type  Ast.Value
+  deriving (Show, Eq)
 
 type Result a = Either TypeError a
 
-check :: Ast.Solution -> Type.Type -> Result Type.Type
-check (Ast.Pipe s1 s2) (Type.Arrow i o) = do
-  let s1Expected = Type.Arrow i (Type.Var 'a')
-  s1Actual <- check s1 s1Expected
-  case s1Actual of
-    (Type.Arrow s1In s1Out) -> do
-      s2Actual <- check s2 (Type.Arrow s1Out o)
-      case s2Actual of
-        (Type.Arrow _ s2Out) -> pure $ Type.Arrow s1In s2Out
+unify :: Ast.Value -> Type.Type -> Maybe Type.Type -> Result Env
+unify (Ast.Inte _)               Type.Number env = Right env
+unify (Ast.Subtract a b)         Type.Number env = do
+  env' <- unify a Type.Number env
+  unify b Type.Number env'
 
-    _ -> Left $ SolutionTypeCheckFailed s1 s1Actual s1Expected
+unify ast@(Ast.Identifier name) t env =
+  case identType name of
+    Just t' ->
+      if t == t'
+      then Right env
+      else Left $ UnificationFailure env t t' ast
+    Nothing ->
+      case env of
+        Nothing -> Right (Just t)
+        Just t' ->
+          if t == t'
+          then Right (Just t)
+          else Left $ UnificationFailure env t t' ast
 
-check (Ast.For cond gen reduce) (Type.Arrow (Type.List i) (Type.List o)) = do
-  _         <- checkVal (Ast.body cond) (Type.Arrow i Type.Boolean)
-  let genExpected = Type.Arrow i (Type.Var 'a')
-  genActual <- checkVal (Ast.body gen) genExpected
-  case genActual of
-    (Type.Arrow i o) -> pure $ Type.Arrow (Type.List i) (Type.List o)
-    _                -> Left $ TypeCheckFailed (Ast.body gen) genActual genExpected
-
-check (Ast.FloatingLambda lambda) t = checkLambda lambda t
-check s (Type.Var _) = typeOf s
-check s t = do
-  actual <- typeOf s
-  if actual == t
-  then Right actual
-  else Left $ SolutionTypeCheckFailed s actual t
-
-typeOf :: Ast.Solution -> Result Type.Type
-typeOf _ = undefined
-
-args :: Ast.Value -> Result (Ast.Value, Ast.Value)
-args (Ast.Gt a b) = pure (a, b)
-args (Ast.Subtract a b) = pure (a, b)
-args (Ast.Divide a b) = pure (a, b)
-args ast = Left $ NotBinaryFunction ast
-
-checkBin :: Ast.Value -> Type.Type -> Type.Type -> Type.Type -> Result Type.Type
-checkBin ast argType input output = do
-  (a, b) <- args ast
-  _ <- checkVal a argType
-  _ <- checkVal b argType
-  case typeOfFreeVariable ast of
-    Just t | t == input -> Right $ Type.Arrow (Type.List input) (Type.List output)
-    Nothing -> Left $ CouldNotFindExpectedFreeVariableIn ast
-
-checkLambda :: Ast.Lambda -> Type.Type -> Result Type.Type
-checkLambda (Ast.Body ast@(Ast.Gt _ _)) (Type.Arrow (Type.List input) (Type.List output)) = do
-  checkBin ast Type.Number input output
-
-checkLambda (Ast.Body ast@(Ast.Divide a b)) (Type.Arrow (Type.List input) (Type.List output)) = do
-  checkBin ast Type.Number input Type.Number
-
-checkLambda (Ast.Body ast@(Ast.Subtract a b)) (Type.Arrow (Type.List input) (Type.List output)) = do
-  checkBin ast Type.Number input Type.Number
-
-checkVal :: Ast.Value -> Type.Type -> Result Type.Type
-checkVal = undefined
+typeOf :: Ast.Value -> Result Type.Type
+typeOf (Ast.Inte _) = Right Type.Number
 
 ensureOneFreeOrIdentInEachStep :: Ast.Solution -> Result ()
 ensureOneFreeOrIdentInEachStep = go 1 . unpipe
@@ -152,6 +121,7 @@ inferOutputType' (Ast.Divide _ _)   = Right $ Type.List Type.Number
 inferOutputType' (Ast.Subtract _ _) = Right $ Type.List Type.Number 
 inferOutputType' (Ast.Inte _)       = Left $ NotAFunction "output" "literal" Type.Number
 
+-- TODO: Unify should work here once implemented
 typeOfFreeVariable :: Ast.Value -> Maybe Type.Type
 typeOfFreeVariable v =
   case v of
@@ -161,7 +131,7 @@ typeOfFreeVariable v =
     Ast.Inte _           -> Nothing
     Ast.Identifier name ->
       case identType name of
-        Nothing -> pure $ Type.Var 'a'
+        Nothing -> pure $ error "TODO"
         Just _ -> Nothing
 
   where

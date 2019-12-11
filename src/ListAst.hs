@@ -12,17 +12,17 @@ data Problem =
   { at :: Text
   , separator :: Text
   , solution :: Solution
-  } deriving Show
+  } deriving (Show, Eq)
 
 data Solution
   = Pipe Solution Solution
   | For Lambda Lambda Lambda
   | FloatingLambda Lambda
-  deriving Show
+  deriving (Show, Eq)
 
 newtype Lambda
   = Body { body::Value }
-  deriving Show
+  deriving (Show, Eq)
 
 data Value
   = Gt Value Value
@@ -30,4 +30,4 @@ data Value
   | Subtract Value Value
   | Identifier Text
   | Inte Integer
-  deriving Show
+  deriving (Show, Eq)

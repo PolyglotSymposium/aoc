@@ -20,8 +20,11 @@ data ListRelevance
 baseIdentifiers :: [(Text, (Type.Type, ListRelevance, ()))]
 baseIdentifiers = 
   [
-    ("sum",          ((Type.List Type.Number)    `Type.Arrow` Type.Number,    Fold, ()))
+    ("sum",          ((Type.List Type.Number)   `Type.Arrow` Type.Number,     Fold, ()))
   , ("first_repeat", ((Type.List (Type.Var 'a')) `Type.Arrow` (Type.Var 'a'), None, ()))
+  , ("true",         (Type.Boolean,                                           None, ()))
+  , ("false",        (Type.Boolean,                                           None, ()))
+  , ("and",          (Type.Boolean `Type.Arrow` Type.Boolean,                 None, ()))
   ]
 
 identifiers :: M.Map Text (Type.Type, ListRelevance, ())
