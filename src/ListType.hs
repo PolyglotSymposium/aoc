@@ -4,6 +4,7 @@ module ListType
        ( inferInputType
        , inferOutputType
        , ensureOneFreeOrIdentInEachStep
+       , unifySolution
        , unify
        , TypeError(..)
        ) where
@@ -19,31 +20,75 @@ type Env = Maybe Type.Type
 
 data TypeError
   = IdentifierIsNotDefined Text
-  | ExpectedAListButGot Type.Type
+  | FloatingLambdaaCannotReturn Type.Type
   | IdentifierNotAFunctionOfAList Text Text Type.Type
   | NotAFunction Text Text Type.Type
   | CouldNotFindExpectedFreeVariableIn Ast.Value
   | StepNMustBeIdentiferOrContainSingleFree Int Ast.Value
-  | SolutionTypeCheckFailed Ast.Solution Type.Type Type.Type 
-  | TypeCheckFailed Ast.Value Type.Type Type.Type 
-  | NotBinaryFunction Ast.Value
   --                   resolved expectedType actualType value
   | UnificationFailure Env      Type.Type    Type.Type  Ast.Value
   deriving (Show, Eq)
 
 type Result a = Either TypeError a
 
+--               solution        expectedInputType       outputType
+unifySolution :: Ast.Solution -> Type.Type     -> Result Type.Type
+unifySolution (Ast.Pipe s1 s2) it = do
+  ot <- unifySolution s1 it
+  unifySolution s2 (ot)
+
+unifySolution (Ast.For cond gen reduce) it = do
+  condot <- unifyLambda cond it
+  assertTypeIs condot Type.Boolean (UnificationFailure Nothing Type.Boolean condot $ Ast.body cond)
+  genot <- unifyLambda gen it
+  reduceot <- unifyLambda reduce it
+  assertTypeIs genot reduceot (UnificationFailure Nothing genot reduceot $ Ast.body reduce)
+  pure genot
+
+unifySolution (Ast.FloatingLambda lambda) (Type.List it) = do
+  ot <- unifyLambda lambda it
+  case ot of
+    Type.Number                         -> pure $ Type.List Type.Number
+    Type.Boolean                        -> pure $ Type.List it
+    Type.Arrow (Type.List finElem) fout ->
+      if finElem == it
+      then pure $ fout
+      else Left $ FloatingLambdaaCannotReturn ot
+    _                                   -> Left $ FloatingLambdaaCannotReturn ot
+
+unifySolution (Ast.FloatingLambda lambda) t = error ("TODO" ++ show lambda ++ show t)
+
+assertTypeIs :: Type.Type -> Type.Type -> TypeError -> Result ()
+assertTypeIs a b err =
+  if a == b
+  then pure ()
+  else Left err
+
+--             lambda        expectedInputType        outputType
+unifyLambda :: Ast.Lambda -> Type.Type ->      Result Type.Type
+unifyLambda (Ast.Body body) it = do
+  ot <- typeOf body
+  _  <- unify body ot (Just it)
+  pure ot
+
+unifyBinOp :: Ast.Value -> Type.Type -> Ast.Value -> Type.Type -> Env -> Result Env
+unifyBinOp a ta b tb env = do
+  env' <- unify a ta env
+  unify b tb env'
+
 unify :: Ast.Value -> Type.Type -> Maybe Type.Type -> Result Env
 unify (Ast.Inte _) Type.Number env = Right env
-unify (Ast.Subtract a b) Type.Number env = do
-  env' <- unify a Type.Number env
-  unify b Type.Number env'
-unify (Ast.And a b) Type.Boolean env = do
-  env' <- unify a Type.Boolean env
-  unify b Type.Boolean env'
-unify (Ast.Gt a b) Type.Boolean env = do
-  env' <- unify a Type.Number env
-  unify b Type.Number env'
+unify (Ast.Subtract a b) Type.Number env =
+  unifyBinOp a Type.Number b Type.Number env
+
+unify (Ast.And a b) Type.Boolean env =
+  unifyBinOp a Type.Boolean b Type.Boolean env
+
+unify (Ast.Gt a b) Type.Boolean env =
+  unifyBinOp a Type.Number b Type.Number env
+
+unify (Ast.Divide a b) Type.Number env =
+  unifyBinOp a Type.Number b Type.Number env
 
 unify ast@(Ast.Identifier name) t env =
   case identType name of
@@ -59,8 +104,20 @@ unify ast@(Ast.Identifier name) t env =
           then Right (Just t)
           else Left $ UnificationFailure env t' t ast
 
+unify ast t env = do
+  t' <- typeOf ast
+  Left $ UnificationFailure env t t' ast
+
 typeOf :: Ast.Value -> Result Type.Type
-typeOf (Ast.Inte _) = Right Type.Number
+typeOf (Ast.Inte _)          = Right Type.Number
+typeOf (Ast.Gt _ _)          = Right Type.Boolean
+typeOf (Ast.And _ _)         = Right Type.Boolean
+typeOf (Ast.Divide _ _)      = Right Type.Number
+typeOf (Ast.Subtract _ _)    = Right Type.Number
+typeOf (Ast.Identifier name) =
+  case identType name of
+    Nothing -> Left $ IdentifierIsNotDefined name
+    Just t  -> Right t
 
 ensureOneFreeOrIdentInEachStep :: Ast.Solution -> Result ()
 ensureOneFreeOrIdentInEachStep = go 1 . unpipe
@@ -128,24 +185,15 @@ inferOutputType' (Ast.Divide _ _)   = Right $ Type.List Type.Number
 inferOutputType' (Ast.Subtract _ _) = Right $ Type.List Type.Number 
 inferOutputType' (Ast.Inte _)       = Left $ NotAFunction "output" "literal" Type.Number
 
--- TODO: Unify should work here once implemented
 typeOfFreeVariable :: Ast.Value -> Maybe Type.Type
 typeOfFreeVariable v =
   case v of
-    Ast.Gt a b           -> seek2 Type.Number a b
-    Ast.Divide a b       -> seek2 Type.Number a b
-    Ast.Subtract a b     -> seek2 Type.Number a b
     Ast.Inte _           -> Nothing
-    Ast.Identifier name ->
-      case identType name of
-        Nothing -> pure $ error "TODO"
-        Just _ -> Nothing
-
-  where
-    seek2 t a b = seek t a <|> seek t b
-
-    seek t (Ast.Identifier name) =
-      case identType name of
-        Nothing -> pure t
-        Just _ -> Nothing
-    seek _ v' = typeOfFreeVariable v'
+    Ast.Identifier name  -> Nothing
+    ast                  ->
+      case typeOf ast of
+        Left _ -> Nothing
+        Right ty ->
+          case unify ast ty Nothing of
+            Right t -> t
+            Left _  -> Nothing

@@ -25,7 +25,9 @@ runListProblem source = do
         validations = do
           _ <- ListType.ensureOneFreeOrIdentInEachStep $ Ast.solution ast
           it <- ListType.inferInputType $ Ast.solution ast
-          ot <- ListType.inferOutputType $ Ast.solution ast
+          -- TODO, needed?
+          _ <- ListType.inferOutputType $ Ast.solution ast
+          ot <- ListType.unifySolution (Ast.solution ast) (Type.List it)
           pure $ (it, ot)
       in
         case validations of

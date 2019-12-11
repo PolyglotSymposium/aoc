@@ -13,6 +13,7 @@ numTy = Type.Number
 boolTy = Type.Boolean
 
 sub a b = ListAst.Subtract a b
+div' a b = ListAst.Divide a b
 
 a &&& b = ListAst.And a b
 
@@ -25,6 +26,9 @@ main = hspec $ do
   describe "ListType.unify" $ do
     it "numbers unify with numbers" $ do
       ListType.unify number numTy Nothing `shouldBe` Right Nothing
+
+    it "numbers don't unify with bools" $ do
+      ListType.unify number boolTy Nothing `shouldBe` Left (ListType.UnificationFailure Nothing boolTy numTy number)
 
     it "simple free variables can be unified" $ do
       ListType.unify (ident "a") numTy Nothing `shouldBe` Right (Just numTy)
@@ -43,3 +47,11 @@ main = hspec $ do
 
     it "unification flows down the tree and to the right" $ do
       ListType.unify (ident "a" &&& (ident "a" `gt` number)) boolTy Nothing `shouldBe` Left (ListType.UnificationFailure (Just boolTy) boolTy numTy (ident "a"))
+
+    it "silly fat test" $ do
+      ListType.unify ((ident "a" `sub` ident "a") `gt` ident "a") boolTy Nothing `shouldBe` Right (Just numTy)
+
+    it "can unify a left-side variable" $ do
+      ListType.unify ((ident "x" `div'` number) `sub` number) numTy Nothing `shouldBe` Right (Just numTy)
+
+--    
