@@ -26,6 +26,7 @@ newtype Lambda
 
 data Value
   = Gt Value Value
+  | And Value Value
   | Divide Value Value
   | Subtract Value Value
   | Identifier Text

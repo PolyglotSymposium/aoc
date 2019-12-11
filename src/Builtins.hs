@@ -24,7 +24,6 @@ baseIdentifiers =
   , ("first_repeat", ((Type.List (Type.Var 'a')) `Type.Arrow` (Type.Var 'a'), None, ()))
   , ("true",         (Type.Boolean,                                           None, ()))
   , ("false",        (Type.Boolean,                                           None, ()))
-  , ("and",          (Type.Boolean `Type.Arrow` Type.Boolean,                 None, ()))
   ]
 
 identifiers :: M.Map Text (Type.Type, ListRelevance, ())

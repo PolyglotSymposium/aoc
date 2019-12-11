@@ -80,7 +80,8 @@ lstr = lexeme . string
 
 value :: Parser List.Value
 value = lexeme $ makeExprParser valueTerm [
-    [InfixL (List.Gt <$ lstr ">")]
+    [InfixL (List.And <$ lstr "&&")]
+  , [InfixL (List.Gt <$ lstr ">")]
   , [InfixL (List.Divide <$ lstr "/")]
   , [InfixL (List.Subtract <$ lstr "-")]
   ]

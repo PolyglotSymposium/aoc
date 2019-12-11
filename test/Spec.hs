@@ -14,6 +14,10 @@ boolTy = Type.Boolean
 
 sub a b = ListAst.Subtract a b
 
+a &&& b = ListAst.And a b
+
+gt = ListAst.Gt
+
 ident = ListAst.Identifier
 
 main :: IO ()
@@ -26,10 +30,16 @@ main = hspec $ do
       ListType.unify (ident "a") numTy Nothing `shouldBe` Right (Just numTy)
 
     it "mismatches when already unified cause errors" $ do
-      ListType.unify (ident "a") numTy (Just boolTy) `shouldBe` Left (ListType.UnificationFailure (Just boolTy) numTy boolTy (ident "a"))
+      ListType.unify (ident "a") numTy (Just boolTy) `shouldBe` Left (ListType.UnificationFailure (Just boolTy) boolTy numTy (ident "a"))
 
     it "unifications can successfully match operands" $ do
       ListType.unify (ident "a" `sub` ident "a") numTy Nothing `shouldBe` Right (Just numTy)
 
     it "unification works on builtin identifiers" $ do
       ListType.unify (ident "true") boolTy Nothing `shouldBe` Right Nothing
+
+    it "when unification fails on builtins the errors make sense" $ do
+      ListType.unify (ident "true") numTy Nothing `shouldBe` Left (ListType.UnificationFailure Nothing numTy boolTy (ident "true"))
+
+    it "unification flows down the tree and to the right" $ do
+      ListType.unify (ident "a" &&& (ident "a" `gt` number)) boolTy Nothing `shouldBe` Left (ListType.UnificationFailure (Just boolTy) boolTy numTy (ident "a"))

@@ -34,8 +34,14 @@ data TypeError
 type Result a = Either TypeError a
 
 unify :: Ast.Value -> Type.Type -> Maybe Type.Type -> Result Env
-unify (Ast.Inte _)               Type.Number env = Right env
-unify (Ast.Subtract a b)         Type.Number env = do
+unify (Ast.Inte _) Type.Number env = Right env
+unify (Ast.Subtract a b) Type.Number env = do
+  env' <- unify a Type.Number env
+  unify b Type.Number env'
+unify (Ast.And a b) Type.Boolean env = do
+  env' <- unify a Type.Boolean env
+  unify b Type.Boolean env'
+unify (Ast.Gt a b) Type.Boolean env = do
   env' <- unify a Type.Number env
   unify b Type.Number env'
 
@@ -51,7 +57,7 @@ unify ast@(Ast.Identifier name) t env =
         Just t' ->
           if t == t'
           then Right (Just t)
-          else Left $ UnificationFailure env t t' ast
+          else Left $ UnificationFailure env t' t ast
 
 typeOf :: Ast.Value -> Result Type.Type
 typeOf (Ast.Inte _) = Right Type.Number
@@ -80,6 +86,7 @@ ensureOneFreeOrIdentInEachStep = go 1 . unpipe
     frees (Ast.Gt a b)          = S.union (frees a) (frees b)
     frees (Ast.Divide a b)      = S.union (frees a) (frees b)
     frees (Ast.Subtract a b)    = S.union (frees a) (frees b)
+    frees (Ast.And a b)         = S.union (frees a) (frees b)
     frees (Ast.Inte _)          = S.empty
     frees (Ast.Identifier name) =
       case identType name of
