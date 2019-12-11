@@ -18,6 +18,7 @@ library
   exposed-modules:     Aoc
                      , Builtins 
                      , ListAst 
+                     , ListEvaluator 
                      , ListParser 
                      , ListProblem 
                      , ListType 
