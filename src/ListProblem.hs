@@ -10,6 +10,8 @@ import qualified ListParser as Parse
 import qualified ListType as ListType
 import qualified Type as Type
 import qualified Value as V
+import qualified System.FilePath as Path
+import Debug.Trace
 
 getInputParser :: Type.Type -> Maybe (Parse.Parser V.Value)
 getInputParser Type.Number = Just Parse.integer
@@ -22,6 +24,7 @@ runListProblem source = do
     Left err -> putStrLn $ parseErrorPretty err
     Right ast ->
       let
+        inputPath = Path.takeDirectory source Path.</> (unpack (Ast.at ast))
         validations = do
           _ <- ListType.ensureOneFreeOrIdentInEachStep $ Ast.solution ast
           it <- ListType.inferInputType $ Ast.solution ast
@@ -36,6 +39,11 @@ runListProblem source = do
             case getInputParser inputElementType of
               Nothing -> putStrLn $ "Inferred input to have element type " ++ show inputElementType ++ " (only list of integers are supported)"
               Just parseInput -> do
-                print $ Type.List inputElementType
-                print outputType
-                print ast
+                inputText <- readFile inputPath
+                case runParser (Parse.listInput (Ast.separator ast) parseInput) inputPath $ strip $ pack inputText of
+                  Left err -> putStrLn $ parseErrorPretty err
+                  Right input -> do
+                    print input
+--                print $ Type.List inputElementType
+--                print outputType
+--                print ast

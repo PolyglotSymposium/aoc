@@ -18,6 +18,7 @@ import Data.Text
 import Data.Void
 import Control.Monad (void)
 import Data.Maybe (fromMaybe)
+import Debug.Trace
 
 type Parser = Parsec Void Text
 
@@ -31,7 +32,7 @@ lexeme :: Parser a -> Parser a
 lexeme = L.lexeme ws
 
 listInput :: Text -> Parser V.Value -> Parser [V.Value]
-listInput sep pValue = ws *> sepBy pValue (string sep) <* ws <* eof
+listInput sep pValue = ws *> sepBy pValue (string sep) <* eof
 
 integer :: Parser V.Value
 integer = V.I <$> L.signed ws L.decimal

@@ -29,6 +29,7 @@ library
                      , containers
                      , megaparsec
                      , text
+                     , filepath
                      
 
   ghc-options:         -Wall
