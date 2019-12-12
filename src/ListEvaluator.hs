@@ -7,7 +7,6 @@ import qualified ListAst as Ast
 import qualified Value as Value
 import qualified Builtins as Env
 import qualified Data.Text as Text
-import Debug.Trace
 
 data EvalError
   = UnexpectedError Int
@@ -59,13 +58,13 @@ eval (Value.Vs vs) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
   where
     apply step v acc =
       case step v acc of
-        Just v -> Right v
+        Just v' -> Right v'
         Nothing -> Left $ UnexpectedError 3
 
-    foldSteps step acc [] = Right []
-    foldSteps step acc (v:vs) = do
+    foldSteps _ _ [] = Right []
+    foldSteps step acc (v:vs') = do
       result <- apply step v acc
-      results <- foldSteps step result vs
+      results <- foldSteps step result vs'
       pure $ result:results
 
 eval (Value.Vs vs) (Ast.FloatingLambda lambda) = do
@@ -74,7 +73,7 @@ eval (Value.Vs vs) (Ast.FloatingLambda lambda) = do
 
     where
       pick (v, Value.True) = [v]
-      pick (v, Value.False) = []
+      pick (_, Value.False) = []
       pick (_, v) = [v]
 
       applyAndKeepOriginal v = do
@@ -112,13 +111,16 @@ evalValue val (Ast.And a b) =
 
 evalValue _ (Ast.Inte v) = Right $ Value.I v
 
+toBoolean :: Bool -> Value.Value
 toBoolean True = Value.True
 toBoolean False = Value.False
 
+fromBoolean :: Value.Value -> Maybe Bool
 fromBoolean Value.True = Just True
 fromBoolean Value.False = Just False
 fromBoolean _ = Nothing
 
+binNumberOp :: (Maybe Value.Value) -> (Integer -> Integer -> t) -> String -> Ast.Value -> Ast.Value -> (t -> b) -> Result b
 binNumberOp val op opName a b toValue =  do
   a' <- evalValue val a
   b' <- evalValue val b
@@ -126,6 +128,7 @@ binNumberOp val op opName a b toValue =  do
     (Value.I a'', Value.I b'') -> Right $ toValue $ op a'' b''
     _                          -> Left $ TypeMismatchAtRuntime (Text.pack ("When applying `" ++ opName ++ "` got " ++ show (a', b') ++ " but expected numbers"))
 
+binBooleanOp :: (Maybe Value.Value) -> (Bool -> Bool -> t) -> String -> Ast.Value -> Ast.Value -> (t -> b) -> Result b
 binBooleanOp val op opName a b toValue = do
   a' <- evalValue val a
   b' <- evalValue val b

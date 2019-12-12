@@ -7,5 +7,9 @@ main :: IO ()
 main = do
   arg <- Env.getArgs
   case arg of
-    [inputFile] -> Aoc.runListProblem inputFile
+    [inputFile] -> do
+      () <$ Aoc.runListProblem inputFile
+    [inputFile, "--more-info"] -> do
+      out <- Aoc.runListProblem inputFile
+      putStrLn $ "(inputType, outputType, answer, ast) = " ++ show out
     _       -> print "One argument (file name) expected"
