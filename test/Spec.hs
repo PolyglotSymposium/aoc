@@ -4,9 +4,11 @@ module Main (main) where
 import Test.Hspec
 import Test.QuickCheck
 
+import qualified ListProblem
 import qualified ListType
 import qualified Type
 import qualified ListAst
+import qualified Value as V
 
 number = ListAst.Inte 42
 numTy = Type.Number
@@ -33,6 +35,23 @@ shouldBeUnificationFailureOf v _ =
 
 main :: IO ()
 main = hspec $ do
+  describe "ListProblem.runListProblem" $ do
+    it "solves 2018 D1 P1" $ do
+      Just (_, _, V.I result, _) <- ListProblem.runListProblem "./examples/y2018d1p1.aoc"
+      result `shouldBe` 595
+
+    it "solves 2018 D1 P2" $ do
+      Just (_, _, V.I result, _) <- ListProblem.runListProblem "./examples/y2018d1p2.aoc"
+      result `shouldBe` 80598
+
+    it "solves 2019 D1 P1" $ do
+      Just (_, _, V.I result, _) <- ListProblem.runListProblem "./examples/y2019d1p1.aoc"
+      result `shouldBe` 3308377
+
+    it "solves 2019 D1 P2" $ do
+      Just (_, _, V.I result, _) <- ListProblem.runListProblem "./examples/y2019d1p2.aoc"
+      result `shouldBe` 4959709
+
   describe "ListType.ensureOneFreeOrIdentInEachStep" $ do
     it "finds the identifier in a simple &&" $ do
       ListType.ensureOneFreeOrIdentInEachStep (lam (number &&& ident "x")) `shouldBe` Right ()
