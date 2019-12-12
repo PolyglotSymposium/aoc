@@ -27,7 +27,7 @@ data TypeError
   | CouldNotInferTypeOfFreeVariableInputIn Ast.Value
   | StepNMustBeIdentiferOrContainSingleFree Int Ast.Value
   --                   resolved expectedType actualType value
-  | UnificationFailure Env      Type.Type    Type.Type  Ast.Value
+  | UnificationFailure Int Env      Type.Type    Type.Type  Ast.Value
   deriving (Show, Eq)
 
 type Result a = Either TypeError a
@@ -36,15 +36,15 @@ type Result a = Either TypeError a
 unifySolution :: Ast.Solution -> Type.Type     -> Result Type.Type
 unifySolution (Ast.Pipe s1 s2) it = do
   ot <- unifySolution s1 it
-  unifySolution s2 (ot)
+  unifySolution s2 ot
 
-unifySolution (Ast.For cond gen reduce) it = do
+unifySolution (Ast.For cond gen reduce) (Type.List it) = do
   condot <- unifyLambda cond it
-  assertTypeIs condot Type.Boolean (UnificationFailure Nothing Type.Boolean condot $ Ast.body cond)
+  assertTypeIs condot Type.Boolean (UnificationFailure 1 Nothing Type.Boolean condot $ Ast.body cond)
   genot <- unifyLambda gen it
   reduceot <- unifyLambda reduce it
-  assertTypeIs genot reduceot (UnificationFailure Nothing genot reduceot $ Ast.body reduce)
-  pure genot
+  assertTypeIs genot reduceot (UnificationFailure 2 Nothing genot reduceot $ Ast.body reduce)
+  pure $ Type.List genot
 
 unifySolution (Ast.FloatingLambda lambda) (Type.List it) = do
   ot <- unifyLambda lambda it
@@ -109,18 +109,18 @@ unify ast@(Ast.Identifier name) t env =
     Just t' ->
       if t == t'
       then Right env
-      else Left $ UnificationFailure env t t' ast
+      else Left $ UnificationFailure 3 env t t' ast
     Nothing ->
       case env of
         Nothing -> Right (Just t)
         Just t' ->
           if t == t'
           then Right (Just t)
-          else Left $ UnificationFailure env t' t ast
+          else Left $ UnificationFailure 4 env t' t ast
 
 unify ast t env = do
   t' <- typeOf ast
-  Left $ UnificationFailure env t t' ast
+  Left $ UnificationFailure 5 env t t' ast
 
 typeOf :: Ast.Value -> Result Type.Type
 typeOf (Ast.Inte _)          = Right Type.Number

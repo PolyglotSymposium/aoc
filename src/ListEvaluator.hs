@@ -28,12 +28,12 @@ eval (Value.Vs vs) (Ast.For cond gen reduce) = do
   where
     aux :: Value.Value -> Result [Value.Value]
     aux v = do
-      condMet <- applyLambda v cond 
+      result  <- applyLambda v gen
+      reduced <- applyLambda v reduce
+      condMet <- applyLambda reduced cond
       case condMet of
         Value.True -> do
-          result  <- applyLambda v gen
-          reduced <- applyLambda v reduce
-          rest    <- aux reduced
+          rest <- aux reduced
           pure $ result:rest
 
         Value.False -> pure []
@@ -99,7 +99,7 @@ evalValue val (Ast.Identifier name) =
         Just v  -> Right v
 
 evalValue val (Ast.Gt a b) =
-  binNumberOp val (<) "<" a b toBoolean
+  binNumberOp val (>) ">" a b toBoolean
   
 evalValue val (Ast.Divide a b) =
   binNumberOp val div "/" a b Value.I
