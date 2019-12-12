@@ -9,7 +9,6 @@ import Data.List (intersperse)
 data Value
   = I Integer
   | Vs [Value]
-  | RepeatVs [Value]
   | True
   | False
   | Fold (Value, Value -> Value -> Maybe Value)
@@ -20,7 +19,6 @@ data Value
 data OrdValue
   = OrdI Integer
   | OrdVs [OrdValue]
-  | OrdRepeatVs [OrdValue]
   | OrdTrue
   | OrdFalse
   deriving (Ord, Eq)
@@ -28,7 +26,6 @@ data OrdValue
 toOrd :: Value -> Maybe OrdValue
 toOrd (I v)           = Just $ OrdI v
 toOrd (Vs vs)         = OrdVs <$> (sequence $ map toOrd vs)
-toOrd (RepeatVs vs)   = OrdRepeatVs <$> (sequence $ map toOrd vs)
 toOrd True            = Just $ OrdTrue
 toOrd False           = Just $ OrdFalse
 toOrd (Fold _)        = Nothing
@@ -38,7 +35,6 @@ toOrd (StepsOfFold _) = Nothing
 instance Show Value where
   show (I v) = show v
   show (Vs vs) = "[" ++ concat (intersperse "," (map show vs)) ++ "]"
-  show (RepeatVs vs) = "repeated [" ++ concat (intersperse "," (map show vs)) ++ "]"
   show True = "true"
   show False = "false"
   show (Fold _) = "<function/fold>"

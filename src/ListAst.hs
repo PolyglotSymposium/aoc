@@ -12,7 +12,6 @@ data Problem =
   { at :: Text
   , separator :: Text
   , solution :: Solution
-  , repeatsForever :: Bool
   } deriving (Show, Eq)
 
 data Solution

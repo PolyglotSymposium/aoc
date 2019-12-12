@@ -17,7 +17,7 @@ import qualified Value as V
 import Data.Text
 import Data.Void
 import Control.Monad (void)
-import Data.Maybe (fromMaybe, isJust)
+import Data.Maybe (fromMaybe)
 import Debug.Trace
 
 type Parser = Parsec Void Text
@@ -40,7 +40,6 @@ integer = V.I <$> L.signed ws L.decimal
 list :: Parser List.Problem
 list = do
   lexeme $ ws *> string "list"
-  repeatingForever <- optional (lexeme (string "repeating") >> lexeme (string "forever"))
   lexeme $ string "at"
   file <- lexeme $ takeWhile1P (Just "path character") (\c -> not (c `elem` [' ', '\t', '\n', '\r']))
   lexeme $ string "separated"
@@ -51,10 +50,9 @@ list = do
   eof
   pure $
     List.ListProblem {
-    List.at               = file
-    , List.separator      = separator
-    , List.solution       = cde
-    , List.repeatsForever = isJust repeatingForever
+    List.at          = file
+    , List.separator = separator
+    , List.solution  = cde
     }
 
 code :: Parser List.Solution

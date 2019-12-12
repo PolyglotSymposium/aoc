@@ -1,8 +1,16 @@
-list repeating forever
+list
   at ./y2018d1.txt
   separated by '\n'
 
 solution
-  sum*
+  dupe
+    | dupe
+    | dupe
+    | dupe
+    | dupe
+    | dupe
+    | dupe
+    | dupe
+    | sum*
     | repeats
     | first

@@ -38,7 +38,12 @@ repeats = Value.Func $ \v -> Value.Vs <$> go S.empty v
 
 first :: Value.Value
 first = Value.Func $ \case
-                      (Value.Vs (v:vs)) -> Just v
+                      Value.Vs (v:_) -> Just v
+                      _ -> Nothing
+
+dupe :: Value.Value
+dupe = Value.Func $ \case
+                      Value.Vs vs -> Just (Value.Vs (vs ++ vs))
                       _ -> Nothing
 
 baseIdentifiers :: [(Text, (Type.Type, Value.Value))]
@@ -48,7 +53,8 @@ baseIdentifiers =
   , ("repeats", ((Type.List (Type.Var 'a')) `Type.Arrow` (Type.List (Type.Var 'a')), repeats))
   , ("true",    (Type.Boolean,                                                       Value.True))
   , ("false",   (Type.Boolean,                                                       Value.False))
-  , ("first",   ((Type.List (Type.Var 'a') `Type.Arrow` Type.Var 'a'),               first))
+  , ("first",   (Type.List (Type.Var 'a') `Type.Arrow` Type.Var 'a',                 first))
+  , ("dupe",    (Type.List (Type.Var 'a') `Type.Arrow` Type.List (Type.Var 'a'),     dupe))
   ]
 
 identifiers :: M.Map Text (Type.Type, Value.Value)

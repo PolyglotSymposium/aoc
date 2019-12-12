@@ -15,6 +15,7 @@ import qualified ListAst as Ast
 import qualified Type as Type
 import qualified Data.Set as S
 import Control.Applicative
+import Debug.Trace
 
 type Env = Maybe Type.Type
 
@@ -57,6 +58,10 @@ unifySolution (Ast.FloatingLambda lambda) (Type.List it) = do
     Type.Arrow (Type.List (Type.Var a)) (Type.List (Type.Var b)) ->
       if a == b
       then pure $ Type.List it
+      else Left $ FloatingLambdaCannotReturn ot
+    Type.Arrow (Type.List a) (Type.List b) ->
+      if a == b
+      then pure $ Type.List b
       else Left $ FloatingLambdaCannotReturn ot
     Type.Arrow (Type.List finElem) fout ->
       if finElem == it
@@ -163,9 +168,10 @@ ensureOneFreeOrIdentInEachStep = go 1 . unpipe
     unpipe v                = [v]
 
 inferInputType :: Ast.Solution -> Result Type.Type
-inferInputType (Ast.Pipe s _)                    = inferInputType s
-inferInputType (Ast.For _ (Ast.Body l) _)        = inferInputType' l
-inferInputType (Ast.FloatingLambda (Ast.Body l)) = inferInputType' l
+inferInputType s = unifySolution s (Type.List Type.Number)
+--inferInputType (Ast.Pipe s1 _)                   = inferInputType s2
+--inferInputType (Ast.For _ (Ast.Body l) _)        = inferInputType' l
+--inferInputType (Ast.FloatingLambda (Ast.Body l)) = inferInputType' l
 
 inferInputType' :: Ast.Value -> Result Type.Type
 inferInputType' (Ast.Identifier name) =

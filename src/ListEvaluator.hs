@@ -7,9 +7,10 @@ import qualified ListAst as Ast
 import qualified Value as Value
 import qualified Builtins as Env
 import qualified Data.Text as Text
+import Debug.Trace
 
 data EvalError
-  = UnexpectedError
+  = UnexpectedError Int
   | TypeMismatchAtRuntime Text.Text
   deriving Show
 
@@ -42,14 +43,14 @@ eval (Value.Vs vs) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
   case Env.identValue name of
     Just (Value.Fold (initial, step)) ->
       case foldr (\v acc -> acc >>= step v) (Just initial) vs of
-        Nothing -> Left UnexpectedError
+        Nothing -> Left $ UnexpectedError 1
         Just v  -> Right v
     Just (Value.StepsOfFold (initial, step)) ->
       Value.Vs <$> foldSteps step initial vs
 
     Just (Value.Func f) ->
       case f (Value.Vs vs) of
-        Nothing -> Left UnexpectedError
+        Nothing -> Left $ UnexpectedError 2
         Just v  -> Right v
 
     Just _ -> Left $ TypeMismatchAtRuntime (Text.pack ("Built-in " ++ Text.unpack name ++ " specified at the top level of list evaluation but it's not a list function" ))
@@ -59,7 +60,7 @@ eval (Value.Vs vs) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
     apply step v acc =
       case step v acc of
         Just v -> Right v
-        Nothing -> Left UnexpectedError
+        Nothing -> Left $ UnexpectedError 3
 
     foldSteps step acc [] = Right []
     foldSteps step acc (v:vs) = do
@@ -94,7 +95,7 @@ evalValue val (Ast.Identifier name) =
     Just v -> Right v
     Nothing ->
       case val of
-        Nothing -> Left UnexpectedError
+        Nothing -> Left $ UnexpectedError 4
         Just v  -> Right v
 
 evalValue val (Ast.Gt a b) =
