@@ -16,9 +16,7 @@ import qualified ListAst as List
 import qualified Value as V
 import Data.Text
 import Data.Void
-import Control.Monad (void)
 import Data.Maybe (fromMaybe)
-import Debug.Trace
 
 type Parser = Parsec Void Text
 
@@ -39,13 +37,13 @@ integer = V.I <$> L.signed ws L.decimal
 
 list :: Parser List.Problem
 list = do
-  lexeme $ ws *> string "list"
-  lexeme $ string "at"
+  _ <- lexeme $ ws *> string "list"
+  _ <- lexeme $ string "at"
   file <- lexeme $ takeWhile1P (Just "path character") (\c -> not (c `elem` [' ', '\t', '\n', '\r']))
-  lexeme $ string "separated"
-  lexeme $ string "by"
+  _ <- lexeme $ string "separated"
+  _ <- lexeme $ string "by"
   separator <- lexeme $ pack <$> (char '\'' >> manyTill L.charLiteral (char '\''))
-  lexeme $ string "solution"
+  _ <- lexeme $ string "solution"
   cde <- lexeme code
   eof
   pure $
