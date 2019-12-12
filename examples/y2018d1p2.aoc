@@ -1,7 +1,8 @@
-list
+list repeating forever
   at ./y2018d1.txt
   separated by '\n'
 
 solution
   sum*
-    | first_repeat
+    | repeats
+    | first

@@ -3,8 +3,8 @@ list
   separated by '\n'
 
 solution
-  (4 > x)
-    | (y / 4)
-    | (x - 4)
+  4 > x
+    | y / 4
+    | x - 4
     | sum*
-    | first_repeat
+    | first

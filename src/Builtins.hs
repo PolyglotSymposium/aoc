@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Builtins
        ( identifiers
@@ -24,8 +25,8 @@ makeFold i f = Value.Fold (Value.I i, \v1 v2 ->
     (Value.I v, Value.I acc) -> Just $ Value.I $ f v acc
     _                        -> Nothing)
 
-firstRepeat :: Value.Value
-firstRepeat = Value.Func $ \v -> Value.Vs <$> go S.empty v
+repeats :: Value.Value
+repeats = Value.Func $ \v -> Value.Vs <$> go S.empty v
   where
     go _ (Value.Vs []) = Just []
     go seen (Value.Vs (v:vs)) = do
@@ -35,13 +36,19 @@ firstRepeat = Value.Func $ \v -> Value.Vs <$> go S.empty v
       pure $ acc ++ rest
     go _ _ = Nothing
 
+first :: Value.Value
+first = Value.Func $ \case
+                      (Value.Vs (v:vs)) -> Just v
+                      _ -> Nothing
+
 baseIdentifiers :: [(Text, (Type.Type, Value.Value))]
 baseIdentifiers = 
   [
-    ("sum",          ((Type.List Type.Number)   `Type.Arrow` Type.Number,                 makeFold 0 (+)))
-  , ("first_repeat", ((Type.List (Type.Var 'a')) `Type.Arrow` (Type.List (Type.Var 'a')), firstRepeat))
-  , ("true",         (Type.Boolean,                                                       Value.True))
-  , ("false",        (Type.Boolean,                                                       Value.False))
+    ("sum",     ((Type.List Type.Number)   `Type.Arrow` Type.Number,                 makeFold 0 (+)))
+  , ("repeats", ((Type.List (Type.Var 'a')) `Type.Arrow` (Type.List (Type.Var 'a')), repeats))
+  , ("true",    (Type.Boolean,                                                       Value.True))
+  , ("false",   (Type.Boolean,                                                       Value.False))
+  , ("first",   ((Type.List (Type.Var 'a') `Type.Arrow` Type.Var 'a'),               first))
   ]
 
 identifiers :: M.Map Text (Type.Type, Value.Value)

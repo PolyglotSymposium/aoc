@@ -47,7 +47,9 @@ runListProblem source = do
                     putStrLn "Error parsing input file:"
                     putStrLn $ parseErrorPretty err
                   Right input -> do
-                    case Eval.eval (V.Vs input) (Ast.solution ast) of
+                    let replicated = if Ast.repeatsForever ast then V.RepeatVs input else V.Vs input
+
+                    case Eval.eval replicated (Ast.solution ast) of
                       Right result -> print result
                       Left err -> print err
 --                print $ Type.List inputElementType
