@@ -46,20 +46,36 @@ dupe = Value.Func $ \case
                       Value.Vs vs -> Just (Value.Vs (vs ++ vs))
                       _ -> Nothing
 
-baseIdentifiers :: [(Text, (Type.Type, Value.Value))]
+(-->) :: Type.Type -> Type.Type -> Type.Type
+i --> o = Type.Arrow i o 
+
+list :: Type.Type -> Type.Type
+list = Type.List
+
+a :: Type.Type
+a = Type.Var 'a'
+
+num :: Type.Type
+num = Type.Number
+
+bool :: Type.Type
+bool = Type.Boolean
+
+baseIdentifiers :: [(Text, Type.Type, Value.Value)]
 baseIdentifiers = 
   [
-    ("sum",     ((Type.List Type.Number)   `Type.Arrow` Type.Number,                 makeFold 0 (+)))
-  , ("repeats", ((Type.List (Type.Var 'a')) `Type.Arrow` (Type.List (Type.Var 'a')), repeats))
-  , ("true",    (Type.Boolean,                                                       Value.True))
-  , ("false",   (Type.Boolean,                                                       Value.False))
-  , ("first",   (Type.List (Type.Var 'a') `Type.Arrow` Type.Var 'a',                 first))
-  , ("dupe",    (Type.List (Type.Var 'a') `Type.Arrow` Type.List (Type.Var 'a'),     dupe))
+    ("sum",     list num --> num,  makeFold 0 (+))
+  , ("product", list num --> num,  makeFold 1 (*))
+  , ("repeats", list a --> list a, repeats)
+  , ("true",    bool,              Value.True)
+  , ("false",   bool,              Value.False)
+  , ("first",   list a --> a,      first)
+  , ("dupe",    list a --> list a, dupe)
   ]
 
 identifiers :: M.Map Text (Type.Type, Value.Value)
 identifiers = M.fromList $ do
-  o@(name, (t, v)) <- baseIdentifiers
+  (name, t, v) <- baseIdentifiers
   case (t, v) of
-    (Type.Arrow iT oT, Value.Fold step) -> [o, (append name "*", (Type.Arrow iT (Type.List oT), Value.StepsOfFold step))]
-    _    -> [o]
+    (Type.Arrow iT oT, Value.Fold step) -> [(name, (t, v)), (append name "*", (iT --> list oT, Value.StepsOfFold step))]
+    _    -> [(name, (t, v))]

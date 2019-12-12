@@ -14,8 +14,6 @@ import Data.Text
 import qualified ListAst as Ast
 import qualified Type as Type
 import qualified Data.Set as S
-import Control.Applicative
-import Debug.Trace
 
 type Env = Maybe Type.Type
 
@@ -26,7 +24,7 @@ data TypeError
   | NotAFunction Text Text Type.Type
   | CouldNotInferTypeOfFreeVariableInputIn Ast.Value
   | StepNMustBeIdentiferOrContainSingleFree Int Ast.Value
-  --                   resolved expectedType actualType value
+  --                       resolved expectedType actualType value
   | UnificationFailure Int Env      Type.Type    Type.Type  Ast.Value
   deriving (Show, Eq)
 
@@ -70,7 +68,11 @@ unifySolution (Ast.FloatingLambda lambda) (Type.List it) = do
 
     _ -> Left $ FloatingLambdaCannotReturn ot
 
-unifySolution (Ast.FloatingLambda lambda) t = error ("TODO" ++ show lambda ++ show t)
+unifySolution (Ast.FloatingLambda (Ast.Body b)) t = do
+  actual <- typeOf b
+  Left $ UnificationFailure 6 Nothing t actual b
+
+unifySolution _ _ = error "TODO unification error for other cases..."
 
 assertTypeIs :: Type.Type -> Type.Type -> TypeError -> Result ()
 assertTypeIs a b err =
@@ -169,24 +171,6 @@ ensureOneFreeOrIdentInEachStep = go 1 . unpipe
 
 inferInputType :: Ast.Solution -> Result Type.Type
 inferInputType s = unifySolution s (Type.List Type.Number)
---inferInputType (Ast.Pipe s1 _)                   = inferInputType s2
---inferInputType (Ast.For _ (Ast.Body l) _)        = inferInputType' l
---inferInputType (Ast.FloatingLambda (Ast.Body l)) = inferInputType' l
-
-inferInputType' :: Ast.Value -> Result Type.Type
-inferInputType' (Ast.Identifier name) =
-  case identType name of
-    Nothing -> Left $ IdentifierIsNotDefined name
-    Just (Type.Arrow (Type.List i) _) -> pure i
-    Just t -> Left $ IdentifierNotAFunctionOfAList "input" name t
-inferInputType' ast = do
-  case typeOf ast of
-    Left e -> Left e
-    Right ty ->
-      case unify ast ty Nothing of
-        Right (Just t) -> pure t
-        Right Nothing  -> Left $ CouldNotInferTypeOfFreeVariableInputIn ast
-        Left e         -> Left e
 
 inferOutputType :: Ast.Solution -> Result Type.Type
 inferOutputType (Ast.Pipe _ s)                    = inferOutputType s
@@ -204,16 +188,3 @@ inferOutputType' (Ast.And _ _)      = Right $ Type.List Type.Boolean
 inferOutputType' (Ast.Divide _ _)   = Right $ Type.List Type.Number
 inferOutputType' (Ast.Subtract _ _) = Right $ Type.List Type.Number 
 inferOutputType' (Ast.Inte _)       = Left $ NotAFunction "output" "literal" Type.Number
-
-typeOfFreeVariable :: Ast.Value -> Maybe Type.Type
-typeOfFreeVariable v =
-  case v of
-    Ast.Inte _           -> Nothing
-    Ast.Identifier name  -> Nothing
-    ast                  ->
-      case typeOf ast of
-        Left _ -> Nothing
-        Right ty ->
-          case unify ast ty Nothing of
-            Right t -> t
-            Left _  -> Nothing
