@@ -22,7 +22,6 @@ library
                      , ListParser 
                      , ListProblem 
                      , ListType 
-                     , Parser 
                      , Type 
                      , Value 
 
