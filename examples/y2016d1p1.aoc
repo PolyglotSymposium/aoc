@@ -1,4 +1,4 @@
-stroll in 2 dimensions
+turtle in 2 dimensions
   at ./y2016d1.txt
   separated by ', '
   where 'R{N}' means turn right then take {N} steps and
