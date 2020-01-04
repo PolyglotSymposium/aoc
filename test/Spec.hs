@@ -10,6 +10,8 @@ import qualified Type
 import qualified ListAst
 import qualified Value as V
 
+import qualified ConwayProblem
+
 number = ListAst.Inte 42
 numTy = Type.Number
 boolTy = Type.Boolean
@@ -35,6 +37,11 @@ shouldBeUnificationFailureOf v _ =
 
 main :: IO ()
 main = hspec $ do
+  describe "ConwayProblem.runConwayProblem" $ do
+    it "solves 2019 D24 P1" $ do
+      Just (_, _, V.I result, _) <- ConwayProblem.runConwayProblem "./examples/y2019d24p1.aoc"
+      result `shouldBe` 18844281
+
   describe "ListProblem.runListProblem" $ do
     it "solves 2018 D1 P1" $ do
       Just (_, _, V.I result, _) <- ListProblem.runListProblem "./examples/y2018d1p1.aoc"
