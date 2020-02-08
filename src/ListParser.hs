@@ -25,10 +25,10 @@ list :: P.Parser List.Problem
 list = do
   _ <- P.lexeme $ P.ws *> string "list"
   _ <- P.lexeme $ string "at"
-  file <- P.lexeme $ takeWhile1P (Just "path character") (\c -> not (c `elem` [' ', '\t', '\n', '\r']))
+  file <- P.filePath
   _ <- P.lexeme $ string "separated"
   _ <- P.lexeme $ string "by"
-  separator <- P.lexeme $ pack <$> (char '\'' >> manyTill L.charLiteral (char '\''))
+  separator <- P.simpleQuoted
   _ <- P.lexeme $ string "solution"
   cde <- P.lexeme code
   eof

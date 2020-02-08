@@ -8,6 +8,8 @@ module Parser
        , ident
        , lstr
        , lexeme
+       , filePath
+       , simpleQuoted
        ) where
 
 import           Data.Maybe (fromMaybe)
@@ -39,3 +41,9 @@ lstr = lexeme . string
 
 ident :: Parser Text
 ident = lexeme $ takeWhile1P (Just "identifier") (\c -> c `elem` ("_*" ++ ['a'..'z'] ++ ['A'..'Z']))
+
+filePath :: Parser Text
+filePath = lexeme $ takeWhile1P (Just "path character") (\c -> not (c `elem` [' ', '\t', '\n', '\r']))
+
+simpleQuoted :: Parser Text
+simpleQuoted = lexeme $ pack <$> (char '\'' >> manyTill L.charLiteral (char '\''))
