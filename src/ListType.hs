@@ -177,7 +177,7 @@ ensureOneFreeOrIdentInEachStep = go 1 . unpipe
         Just _ -> S.empty
 
     frees (Ast.Application fn arg) =
-      S.union (frees (Ast.Identifier fn)) (frees (Ast.Identifier arg))
+      S.union (frees (Ast.Identifier fn)) (frees arg)
 
     unpipe (Ast.Pipe s1 s2) = unpipe s1 ++ unpipe s2
     unpipe v                = [v]

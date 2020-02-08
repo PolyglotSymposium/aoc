@@ -91,7 +91,7 @@ valueTerm =
          )
 
 application :: Parser Ast.Value
-application = Ast.Application <$> lexeme ident <*> lexeme ident
+application = Ast.Application <$> lexeme ident <*> lexeme value
 
 floatingLambda :: Parser Ast.Solution
 floatingLambda = lexeme $ Ast.FloatingLambda <$> lambda

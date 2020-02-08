@@ -27,5 +27,5 @@ data Value
   | Equals Value Value
   | Identifier Text
   | Inte Integer
-  | Application Text Text
+  | Application Text Value
   deriving (Show, Eq)
