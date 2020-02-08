@@ -17,12 +17,14 @@ library
   hs-source-dirs:      src
   exposed-modules:     Aoc
                      , Builtins 
+                     , ConwayParser
                      , ConwayProblem
                      , ListAst 
                      , ListEvaluator 
                      , ListParser 
                      , ListProblem 
                      , ListType 
+                     , Parser
                      , Type 
                      , Value 
 

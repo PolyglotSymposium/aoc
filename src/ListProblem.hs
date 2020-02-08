@@ -2,14 +2,15 @@ module ListProblem
        ( runListProblem
        ) where
 
-import Data.Text
-import Text.Megaparsec
-import Text.Megaparsec.Error (parseErrorPretty)
+import           Data.Text
 import qualified ListAst as Ast
 import qualified ListEvaluator as Eval
 import qualified ListParser as Parse
 import qualified ListType as ListType
+import qualified Parser as Parse
 import qualified System.FilePath as Path
+import           Text.Megaparsec
+import           Text.Megaparsec.Error (parseErrorPretty)
 import qualified Type as Type
 import qualified Value as V
 

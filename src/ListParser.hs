@@ -4,47 +4,32 @@
 module ListParser
        ( list
        , listInput
-       , integer
-       , Parser
        ) where
 
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Expr
-import qualified Text.Megaparsec.Char.Lexer as L
+import           Data.Maybe (fromMaybe)
+import           Data.Text
+import           Data.Void
 import qualified ListAst as List
+import qualified Parser as P
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
+import qualified Text.Megaparsec.Char.Lexer as L
+import           Text.Megaparsec.Expr
 import qualified Value as V
-import Data.Text
-import Data.Void
-import Data.Maybe (fromMaybe)
 
-type Parser = Parsec Void Text
+listInput :: Text -> P.Parser V.Value -> P.Parser [V.Value]
+listInput sep pValue = P.ws *> sepBy pValue (string sep) <* eof
 
-ws :: Parser ()
-ws = L.space
-  space1
-  (L.skipLineComment "//")
-  (L.skipBlockComment "/*" "*/")
-
-lexeme :: Parser a -> Parser a
-lexeme = L.lexeme ws
-
-listInput :: Text -> Parser V.Value -> Parser [V.Value]
-listInput sep pValue = ws *> sepBy pValue (string sep) <* eof
-
-integer :: Parser V.Value
-integer = V.I <$> L.signed ws L.decimal
-
-list :: Parser List.Problem
+list :: P.Parser List.Problem
 list = do
-  _ <- lexeme $ ws *> string "list"
-  _ <- lexeme $ string "at"
-  file <- lexeme $ takeWhile1P (Just "path character") (\c -> not (c `elem` [' ', '\t', '\n', '\r']))
-  _ <- lexeme $ string "separated"
-  _ <- lexeme $ string "by"
-  separator <- lexeme $ pack <$> (char '\'' >> manyTill L.charLiteral (char '\''))
-  _ <- lexeme $ string "solution"
-  cde <- lexeme code
+  _ <- P.lexeme $ P.ws *> string "list"
+  _ <- P.lexeme $ string "at"
+  file <- P.lexeme $ takeWhile1P (Just "path character") (\c -> not (c `elem` [' ', '\t', '\n', '\r']))
+  _ <- P.lexeme $ string "separated"
+  _ <- P.lexeme $ string "by"
+  separator <- P.lexeme $ pack <$> (char '\'' >> manyTill L.charLiteral (char '\''))
+  _ <- P.lexeme $ string "solution"
+  cde <- P.lexeme code
   eof
   pure $
     List.ListProblem {
@@ -53,44 +38,38 @@ list = do
     , List.solution  = cde
     }
 
-code :: Parser List.Solution
-code = lexeme $ makeExprParser solutionTerm [[pipe]]
+code :: P.Parser List.Solution
+code = P.lexeme $ makeExprParser solutionTerm [[pipe]]
 
-pipe :: Operator Parser List.Solution
-pipe = InfixL (List.Pipe <$ lstr "|")
+pipe :: Operator P.Parser List.Solution
+pipe = InfixL (List.Pipe <$ P.lstr "|")
 
-solutionTerm :: Parser List.Solution
+solutionTerm :: P.Parser List.Solution
 solutionTerm =
-  lexeme (for <|> floatingLambda)
+  P.lexeme (for <|> floatingLambda)
 
-for :: Parser List.Solution
+for :: P.Parser List.Solution
 for = do
-  _       <- lexeme (string "for")
+  _       <- P.lexeme (string "for")
   cond    <- lambda
   gen     <- lambda
   reduce  <- optional lambda
   pure $ List.For cond gen $ fromMaybe gen reduce
 
-lambda :: Parser List.Lambda
-lambda = lexeme $ List.Body <$> value
+lambda :: P.Parser List.Lambda
+lambda = P.lexeme $ List.Body <$> value
 
-lstr :: Text -> Parser Text
-lstr = lexeme . string
-
-value :: Parser List.Value
-value = lexeme $ makeExprParser valueTerm [
-    [InfixL (List.And <$ lstr "&&")]
-  , [InfixL (List.Gt <$ lstr ">")]
-  , [InfixL (List.Divide <$ lstr "/")]
-  , [InfixL (List.Subtract <$ lstr "-")]
+value :: P.Parser List.Value
+value = P.lexeme $ makeExprParser valueTerm [
+    [InfixL (List.And <$ P.lstr "&&")]
+  , [InfixL (List.Gt <$ P.lstr ">")]
+  , [InfixL (List.Divide <$ P.lstr "/")]
+  , [InfixL (List.Subtract <$ P.lstr "-")]
   ]
 
-valueTerm :: Parser List.Value
+valueTerm :: P.Parser List.Value
 valueTerm =
-  lexeme (between (char '(') (char ')') value <|> List.Identifier <$> ident <|> List.Inte <$> L.decimal)
+  P.lexeme (between (char '(') (char ')') value <|> List.Identifier <$> P.ident <|> List.Inte <$> L.decimal)
 
-floatingLambda :: Parser List.Solution
-floatingLambda = lexeme $ List.FloatingLambda <$> lambda
-
-ident :: Parser Text
-ident = lexeme $ takeWhile1P (Just "identifier") (\c -> c `elem` ("_*" ++ ['a'..'z'] ++ ['A'..'Z']))
+floatingLambda :: P.Parser List.Solution
+floatingLambda = P.lexeme $ List.FloatingLambda <$> lambda
