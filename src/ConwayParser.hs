@@ -11,18 +11,24 @@ import           Data.Text
 import qualified Parser as P
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-import qualified Text.Megaparsec.Char.Lexer as L
-import           Text.Megaparsec.Expr
 
 conway :: P.Parser Conway.Problem
 conway = do
-  _ <- P.lexeme $ P.ws *> string "conway"
-  _ <- P.lstr "of"
+  _ <- P.ws *> P.lstr "conway" *> P.lstr "of"
   dim <- dimensions
   statePath <- initialStatePath
   aliases <- cellAliases
   transitions <- cellTransitions (snd <$> aliases)
-  undefined
+  _ <- P.lstr "solution"
+  code <- P.code
+  eof
+  pure $ Conway.ConwayProblem
+    { Conway.initialStateAt=statePath
+    , Conway.dimensions=dim
+    , Conway.cellAliases=aliases
+    , Conway.cellTransitions=transitions
+    , Conway.solution=Conway.Solution code
+    }
 
 alias :: [Conway.CellAlias] -> P.Parser Conway.CellAlias
 alias aliases =  Conway.CellAlias <$> choice (P.lstr . Conway.aliasName <$> aliases)
@@ -63,7 +69,7 @@ cellAliases = do
 
 cellAlias :: P.Parser (Conway.CellIdent, Conway.CellAlias)
 cellAlias = P.lexeme $ do
-  c <- Conway.CellIdent <$> P.lexeme (char '\'' *> asciiChar <* char '\'')
+  character <- Conway.CellIdent <$> P.lexeme (char '\'' *> asciiChar <* char '\'')
   _ <- P.lexeme "means"
-  alias <- Conway.CellAlias <$> P.simpleQuoted
-  pure (c, alias)
+  aliasAs <- Conway.CellAlias <$> P.simpleQuoted
+  pure (character, aliasAs)

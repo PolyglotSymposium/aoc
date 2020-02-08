@@ -2,6 +2,7 @@ module ConwayAst
        ( Problem(..)
        , SolvableConwayDimensions(..)
        , CellTransitions(..)
+       , GenerationDirective(..)
        , CellIdent(..)
        , CellAlias(..)
        , aliasName
