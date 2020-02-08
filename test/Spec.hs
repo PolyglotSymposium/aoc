@@ -97,5 +97,3 @@ main = hspec $ do
 
     it "can unify a left-side variable" $ do
       ListType.unify ((ident "x" `div'` number) `sub` number) numTy Nothing `shouldBe` Right (Just numTy)
-
---    

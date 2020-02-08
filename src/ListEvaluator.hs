@@ -3,7 +3,6 @@ module ListEvaluator
        , eval
        ) where
 
-import qualified ListAst as Ast
 import qualified Ast as Ast
 import qualified Value as Value
 import qualified Builtins as Env
@@ -98,17 +97,32 @@ evalValue val (Ast.Identifier name) =
         Nothing -> Left $ UnexpectedError 4
         Just v  -> Right v
 
+evalValue _ (Ast.Application _ _) =
+  error "TODO: make application work"
+
 evalValue val (Ast.Gt a b) =
   binNumberOp val (>) ">" a b toBoolean
-  
+
 evalValue val (Ast.Divide a b) =
   binNumberOp val div "/" a b Value.I
 
 evalValue val (Ast.Subtract a b) =
   binNumberOp val (-) "-" a b Value.I
 
+evalValue val (Ast.Add a b) =
+  binNumberOp val (+) "+" a b Value.I
+
+evalValue val (Ast.Raised a b) =
+  binNumberOp val (^) "^" a b Value.I
+
 evalValue val (Ast.And a b) =
   binBooleanOp val (&&) "&&" a b toBoolean
+
+evalValue val (Ast.Or a b) =
+  binBooleanOp val (||) "||" a b toBoolean
+
+evalValue val (Ast.Equals a b) =
+  binBooleanOp val (==) "=" a b toBoolean
 
 evalValue _ (Ast.Inte v) = Right $ Value.I v
 

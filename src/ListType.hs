@@ -11,7 +11,6 @@ module ListType
 
 import Builtins (identType)
 import Data.Text
-import qualified ListAst as Ast
 import qualified Ast as Ast
 import qualified Type as Type
 import qualified Data.Set as S
@@ -129,12 +128,18 @@ typeOf :: Ast.Value -> Result Type.Type
 typeOf (Ast.Inte _)          = Right Type.Number
 typeOf (Ast.Gt _ _)          = Right Type.Boolean
 typeOf (Ast.And _ _)         = Right Type.Boolean
+typeOf (Ast.Or _ _)          = Right Type.Boolean
+typeOf (Ast.Equals _ _)      = Right Type.Boolean
 typeOf (Ast.Divide _ _)      = Right Type.Number
 typeOf (Ast.Subtract _ _)    = Right Type.Number
+typeOf (Ast.Raised _ _)      = Right Type.Number
+typeOf (Ast.Add _ _)         = Right Type.Number
 typeOf (Ast.Identifier name) =
   case identType name of
     Nothing -> Left $ IdentifierIsNotDefined name
     Just t  -> Right t
+typeOf (Ast.Application _ _) =
+  error "TODO: Try to get type of application from context"
 
 ensureOneFreeOrIdentInEachStep :: Ast.Solution -> Result ()
 ensureOneFreeOrIdentInEachStep = go 1 . unpipe
@@ -160,12 +165,19 @@ ensureOneFreeOrIdentInEachStep = go 1 . unpipe
     frees (Ast.Gt a b)          = S.union (frees a) (frees b)
     frees (Ast.Divide a b)      = S.union (frees a) (frees b)
     frees (Ast.Subtract a b)    = S.union (frees a) (frees b)
+    frees (Ast.Add a b)         = S.union (frees a) (frees b)
+    frees (Ast.Raised a b)      = S.union (frees a) (frees b)
     frees (Ast.And a b)         = S.union (frees a) (frees b)
+    frees (Ast.Or a b)          = S.union (frees a) (frees b)
+    frees (Ast.Equals a b)      = S.union (frees a) (frees b)
     frees (Ast.Inte _)          = S.empty
     frees (Ast.Identifier name) =
       case identType name of
         Nothing -> S.singleton name
         Just _ -> S.empty
+
+    frees (Ast.Application fn arg) =
+      S.union (frees (Ast.Identifier fn)) (frees (Ast.Identifier arg))
 
     unpipe (Ast.Pipe s1 s2) = unpipe s1 ++ unpipe s2
     unpipe v                = [v]
@@ -184,8 +196,14 @@ inferOutputType' (Ast.Identifier name) =
     Nothing -> Left $ IdentifierIsNotDefined name
     Just (Type.Arrow _ output) -> pure output
     Just t -> Left $ NotAFunction "output" name t
+inferOutputType' (Ast.Application _ _) =
+  error "TODO: Try to get type of application from context"
 inferOutputType' (Ast.Gt _ _)       = Right $ Type.List Type.Boolean
 inferOutputType' (Ast.And _ _)      = Right $ Type.List Type.Boolean
+inferOutputType' (Ast.Or _ _)       = Right $ Type.List Type.Boolean
+inferOutputType' (Ast.Equals _ _)   = Right $ Type.List Type.Boolean
 inferOutputType' (Ast.Divide _ _)   = Right $ Type.List Type.Number
-inferOutputType' (Ast.Subtract _ _) = Right $ Type.List Type.Number 
+inferOutputType' (Ast.Subtract _ _) = Right $ Type.List Type.Number
+inferOutputType' (Ast.Add _ _)      = Right $ Type.List Type.Number
+inferOutputType' (Ast.Raised _ _)   = Right $ Type.List Type.Number
 inferOutputType' (Ast.Inte _)       = Left $ NotAFunction "output" "literal" Type.Number

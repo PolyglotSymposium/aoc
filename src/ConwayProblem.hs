@@ -6,10 +6,7 @@ import Data.Text
 import Text.Megaparsec
 import Text.Megaparsec.Error (parseErrorPretty)
 import qualified ListAst as Ast
-import qualified ListEvaluator as Eval
 import qualified ConwayParser as Parse
-import qualified ListType as ListType
-import qualified System.FilePath as Path
 import qualified Type as Type
 import qualified Value as V
 
