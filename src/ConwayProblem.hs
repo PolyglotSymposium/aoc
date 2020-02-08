@@ -7,7 +7,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Error (parseErrorPretty)
 import qualified ListAst as Ast
 import qualified ListEvaluator as Eval
-import qualified ListParser as Parse
+import qualified ConwayParser as Parse
 import qualified ListType as ListType
 import qualified System.FilePath as Path
 import qualified Type as Type
@@ -18,13 +18,17 @@ import qualified Value as V
 --getInputParser _ = Nothing
 
 runConwayProblem :: String -> IO (Maybe (Type.Type, Type.Type, V.Value, Ast.Problem))
-runConwayProblem source = undefined -- do
---  text <- readFile source
---  case runParser Parse.list source $ pack text of
---    Left err -> do
---      putStrLn "Error parsing aoc code file:"
---      putStrLn $ parseErrorPretty err
---      pure Nothing
+runConwayProblem source = do
+  text <- readFile source
+  putStrLn text
+  case runParser Parse.conway source $ pack text of
+    Left err -> do
+      putStrLn "Error parsing aoc code file:"
+      putStrLn $ parseErrorPretty err
+      pure Nothing
+    Right ast -> do
+      print ast
+      undefined
 --    Right ast ->
 --      let
 --        inputPath = Path.takeDirectory source Path.</> (unpack (Ast.at ast))

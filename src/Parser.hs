@@ -73,15 +73,25 @@ lambda = lexeme $ Ast.Body <$> value
 
 value :: Parser Ast.Value
 value = lexeme $ makeExprParser valueTerm [
-    [InfixL (Ast.And <$ lstr "&&")]
+    [InfixL (Ast.And <$ lstr "&&"), InfixL (Ast.Or <$ lstr "||")]
+  , [InfixL (Ast.Equals <$ lstr "=")]
   , [InfixL (Ast.Gt <$ lstr ">")]
+  , [InfixL (Ast.Raised <$ lstr "^")]
   , [InfixL (Ast.Divide <$ lstr "/")]
+  , [InfixL (Ast.Add <$ lstr "+")]
   , [InfixL (Ast.Subtract <$ lstr "-")]
   ]
 
 valueTerm :: Parser Ast.Value
 valueTerm =
-  lexeme (between (char '(') (char ')') value <|> Ast.Identifier <$> ident <|> Ast.Inte <$> L.decimal)
+  lexeme (between (char '(') (char ')') value
+          <|> try application
+          <|> Ast.Identifier <$> ident
+          <|> Ast.Inte <$> L.decimal
+         )
+
+application :: Parser Ast.Value
+application = Ast.Application <$> lexeme ident <*> lexeme ident
 
 floatingLambda :: Parser Ast.Solution
 floatingLambda = lexeme $ Ast.FloatingLambda <$> lambda

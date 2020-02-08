@@ -19,8 +19,13 @@ newtype Lambda
 data Value
   = Gt Value Value
   | And Value Value
+  | Or Value Value
   | Divide Value Value
+  | Add Value Value
   | Subtract Value Value
+  | Raised Value Value
+  | Equals Value Value
   | Identifier Text
   | Inte Integer
+  | Application Text Text
   deriving (Show, Eq)

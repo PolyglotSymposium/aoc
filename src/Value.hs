@@ -15,7 +15,6 @@ data Value
   | Func (Value -> Maybe Value)
   | StepsOfFold (Value, Value -> Value -> Maybe Value)
 
-
 data OrdValue
   = OrdI Integer
   | OrdVs [OrdValue]
