@@ -10,6 +10,7 @@ import           Data.Maybe (fromMaybe)
 import           Data.Text
 import           Data.Void
 import qualified ListAst as List
+import qualified Ast as List
 import qualified Parser as P
 import           Text.Megaparsec
 import           Text.Megaparsec.Char

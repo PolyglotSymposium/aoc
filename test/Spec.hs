@@ -8,26 +8,27 @@ import qualified ListProblem
 import qualified ListType
 import qualified Type
 import qualified ListAst
+import qualified Ast
 import qualified Value as V
 
 import qualified ConwayProblem
 
-number = ListAst.Inte 42
+number = Ast.Inte 42
 numTy = Type.Number
 boolTy = Type.Boolean
 
-sub a b = ListAst.Subtract a b
-div' a b = ListAst.Divide a b
+sub a b = Ast.Subtract a b
+div' a b = Ast.Divide a b
 
-a &&& b = ListAst.And a b
+a &&& b = Ast.And a b
 
-gt = ListAst.Gt
+gt = Ast.Gt
 
-ident = ListAst.Identifier
+ident = Ast.Identifier
 
-lam = ListAst.FloatingLambda . ListAst.Body
+lam = Ast.FloatingLambda . Ast.Body
 
-a |> b = ListAst.Pipe a b
+a |> b = Ast.Pipe a b
 
 shouldBeUnificationFailureOf (Left (ListType.UnificationFailure _ _ a b _)) (c, d) =
   (a, b) `shouldBe` (c, d)

@@ -4,6 +4,7 @@ module ListEvaluator
        ) where
 
 import qualified ListAst as Ast
+import qualified Ast as Ast
 import qualified Value as Value
 import qualified Builtins as Env
 import qualified Data.Text as Text

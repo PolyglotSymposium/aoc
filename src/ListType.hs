@@ -12,6 +12,7 @@ module ListType
 import Builtins (identType)
 import Data.Text
 import qualified ListAst as Ast
+import qualified Ast as Ast
 import qualified Type as Type
 import qualified Data.Set as S
 

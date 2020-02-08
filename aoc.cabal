@@ -16,7 +16,9 @@ tested-with:         GHC == 8.4.4
 library
   hs-source-dirs:      src
   exposed-modules:     Aoc
+                     , Ast
                      , Builtins 
+                     , ConwayAst
                      , ConwayParser
                      , ConwayProblem
                      , ListAst 
