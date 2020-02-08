@@ -24,16 +24,30 @@ conway = do
   transitions <- cellTransitions (snd <$> aliases)
   undefined
 
+alias :: [Conway.CellAlias] -> P.Parser Conway.CellAlias
+alias aliases =  Conway.CellAlias <$> choice (P.lstr . Conway.aliasName <$> aliases)
+
 cellTransitions :: [Conway.CellAlias] -> P.Parser Conway.CellTransitions
 cellTransitions aliases = do
   _ <- P.lstr "cells" *> P.lstr "transition"
   transitions <- some cellTransition
   _ <- P.lstr "otherwise" *> P.lstr "a" *> P.lstr "cell" *> P.lstr "is"
-  cellDefault <- choice (P.lstr . Conway.aliasName <$> aliases)
-  undefined
+  cellDefault <- alias aliases
+  pure $ Conway.CellTransitions
+    { Conway.cases = transitions,
+      Conway.otherwiseCellIs = cellDefault
+    }
 
-cellTransition :: P.Parser [(Conway.CellAlias, Conway.CellAlias, Conway.Value)]
-cellTransition = undefined
+  where
+    cellTransition :: P.Parser (Conway.CellAlias, Conway.CellAlias, Conway.Value)
+    cellTransition = do
+      _ <- P.lstr "from"
+      previous <- alias aliases
+      _ <- P.lstr "to"
+      next <- alias aliases
+      _ <- P.lstr "if"
+      cond <- P.value
+      pure (previous, next, cond)
 
 dimensions :: P.Parser Conway.SolvableConwayDimensions
 dimensions =

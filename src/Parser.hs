@@ -2,7 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Parser
-       ( Parser(..)
+       ( Parser
        , ws
        , integer
        , ident
@@ -10,12 +10,14 @@ module Parser
        , lexeme
        , filePath
        , simpleQuoted
+       , code
+       , value
        ) where
 
+import qualified Ast
 import           Data.Maybe (fromMaybe)
 import           Data.Text
 import           Data.Void
-import qualified ListAst as List
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -47,3 +49,39 @@ filePath = lexeme $ takeWhile1P (Just "path character") (\c -> not (c `elem` [' 
 
 simpleQuoted :: Parser Text
 simpleQuoted = lexeme $ pack <$> (char '\'' >> manyTill L.charLiteral (char '\''))
+
+code :: Parser Ast.Solution
+code = lexeme $ makeExprParser solutionTerm [[pipe]]
+
+pipe :: Operator Parser Ast.Solution
+pipe = InfixL (Ast.Pipe <$ lstr "|")
+
+solutionTerm :: Parser Ast.Solution
+solutionTerm =
+  lexeme (for <|> floatingLambda)
+
+for :: Parser Ast.Solution
+for = do
+  _       <- lexeme (string "for")
+  cond    <- lambda
+  gen     <- lambda
+  reduce  <- optional lambda
+  pure $ Ast.For cond gen $ fromMaybe gen reduce
+
+lambda :: Parser Ast.Lambda
+lambda = lexeme $ Ast.Body <$> value
+
+value :: Parser Ast.Value
+value = lexeme $ makeExprParser valueTerm [
+    [InfixL (Ast.And <$ lstr "&&")]
+  , [InfixL (Ast.Gt <$ lstr ">")]
+  , [InfixL (Ast.Divide <$ lstr "/")]
+  , [InfixL (Ast.Subtract <$ lstr "-")]
+  ]
+
+valueTerm :: Parser Ast.Value
+valueTerm =
+  lexeme (between (char '(') (char ')') value <|> Ast.Identifier <$> ident <|> Ast.Inte <$> L.decimal)
+
+floatingLambda :: Parser Ast.Solution
+floatingLambda = lexeme $ Ast.FloatingLambda <$> lambda
