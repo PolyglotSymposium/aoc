@@ -6,12 +6,12 @@ import           Data.Text
 import qualified ListAst as Ast
 import qualified ListEvaluator as Eval
 import qualified ListParser as Parse
-import qualified ListType as ListType
+import qualified TypeCheck
 import qualified Parser as Parse
 import qualified System.FilePath as Path
 import           Text.Megaparsec
 import           Text.Megaparsec.Error (parseErrorPretty)
-import qualified Type as Type
+import qualified Type
 import qualified Value as V
 
 getInputParser :: Type.Type -> Maybe (Parse.Parser V.Value)
@@ -28,14 +28,14 @@ runListProblem source = do
       pure Nothing
     Right ast ->
       let
-        inputPath = Path.takeDirectory source Path.</> (unpack (Ast.at ast))
+        inputPath = Path.takeDirectory source Path.</> unpack (Ast.at ast)
         validations = do
-          _ <- ListType.ensureOneFreeOrIdentInEachStep $ Ast.solution ast
-          it <- ListType.inferInputType $ Ast.solution ast
+          _ <- TypeCheck.ensureOneFreeOrIdentInEachStep $ Ast.solution ast
+          it <- TypeCheck.inferInputType $ Ast.solution ast
           -- TODO, needed?
-          _ <- ListType.inferOutputType $ Ast.solution ast
-          ot <- ListType.unifySolution (Ast.solution ast) (Type.List it)
-          pure $ (it, ot)
+          _ <- TypeCheck.inferOutputType $ Ast.solution ast
+          ot <- TypeCheck.unifySolution (Ast.solution ast) (Type.List it)
+          pure (it, ot)
       in
         case validations of
           Left err -> do
@@ -53,7 +53,7 @@ runListProblem source = do
                     putStrLn "Error parsing input file:"
                     putStrLn $ parseErrorPretty err
                     pure Nothing
-                  Right input -> do
+                  Right input ->
                     case Eval.eval (V.Vs input) (Ast.solution ast) of
                       Right result -> do
                         print result

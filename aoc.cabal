@@ -25,9 +25,9 @@ library
                      , ListEvaluator 
                      , ListParser 
                      , ListProblem 
-                     , ListType 
                      , Parser
                      , Type 
+                     , TypeCheck 
                      , Value 
 
   build-depends:       base ^>= 4.11.1.0

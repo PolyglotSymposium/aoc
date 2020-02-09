@@ -2,17 +2,15 @@ module ConwayProblem
        ( runConwayProblem
        ) where
 
-import Data.Text
-import Text.Megaparsec
-import Text.Megaparsec.Error (parseErrorPretty)
-import qualified ListAst as Ast
+import qualified ConwayAst as Ast
 import qualified ConwayParser as Parse
-import qualified Type as Type
+import           Data.Text
+import qualified System.FilePath as Path
+import           Text.Megaparsec
+import           Text.Megaparsec.Error (parseErrorPretty)
+import qualified Type
+import qualified TypeCheck
 import qualified Value as V
-
---getInputParser :: Type.Type -> Maybe (Parse.Parser V.Value)
---getInputParser Type.Number = Just Parse.integer
---getInputParser _ = Nothing
 
 runConwayProblem :: String -> IO (Maybe (Type.Type, Type.Type, V.Value, Ast.Problem))
 runConwayProblem source = do
@@ -23,17 +21,22 @@ runConwayProblem source = do
       putStrLn "Error parsing aoc code file:"
       putStrLn $ parseErrorPretty err
       pure Nothing
-    Right ast -> do
-      print ast
-      undefined
---    Right ast ->
---      let
---        inputPath = Path.takeDirectory source Path.</> (unpack (Ast.at ast))
+    Right ast ->
+      let
+        inputPath = Path.takeDirectory source Path.</> unpack (Ast.initialStateAt ast)
+        validations =
+          case Ast.solution ast of
+            Ast.Solution solution -> do
+              TypeCheck.ensureOneFreeOrIdentInEachStep solution
+              it <- TypeCheck.inferInputType solution
+              pure ()
+            _ ->
+              pure ()
+      in
+        do
+          print ast
+          undefined
 --        validations = do
---          _ <- ListType.ensureOneFreeOrIdentInEachStep $ Ast.solution ast
---          it <- ListType.inferInputType $ Ast.solution ast
---          -- TODO, needed?
---          _ <- ListType.inferOutputType $ Ast.solution ast
 --          ot <- ListType.unifySolution (Ast.solution ast) (Type.List it)
 --          pure $ (it, ot)
 --      in

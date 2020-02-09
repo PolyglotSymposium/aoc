@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module ListType
+module TypeCheck
        ( inferInputType
        , inferOutputType
        , ensureOneFreeOrIdentInEachStep
@@ -11,8 +11,8 @@ module ListType
 
 import Builtins (identType)
 import Data.Text
-import qualified Ast as Ast
-import qualified Type as Type
+import qualified Ast
+import qualified Type
 import qualified Data.Set as S
 
 type Env = Maybe Type.Type
@@ -145,10 +145,10 @@ ensureOneFreeOrIdentInEachStep :: Ast.Solution -> Result ()
 ensureOneFreeOrIdentInEachStep = go 1 . unpipe
   where
 
-    go n ((Ast.For (Ast.Body l1) (Ast.Body l2) (Ast.Body l3)):rest) =
+    go n (Ast.For (Ast.Body l1) (Ast.Body l2) (Ast.Body l3):rest) =
       oneFreeOrIdent n l1 >> oneFreeOrIdent n l2 >> oneFreeOrIdent n l3 >> go (n+1) rest
 
-    go n ((Ast.FloatingLambda (Ast.Body l)):rest) =
+    go n (Ast.FloatingLambda (Ast.Body l):rest) =
       oneFreeOrIdent n l >> go (n+1) rest
 
     go _ _ =
