@@ -6,6 +6,7 @@ module ConwayAst
        , CellIdent(..)
        , CellAlias(..)
        , aliasName
+       , CellAliases
        ) where
 
 import Data.Text

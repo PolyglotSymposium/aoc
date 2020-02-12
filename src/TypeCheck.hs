@@ -20,7 +20,7 @@ data TypeError
   = IdentifierIsNotDefined Text
   | FloatingLambdaCannotReturn Type.Type
   | IdentifierNotAFunctionOfAList Text Text Type.Type
-  | NotAFunction Text Text Type.Type
+  | NotAFunction Text Type.Type
   | CouldNotInferTypeOfFreeVariableInputIn Ast.Value
   | StepNMustBeIdentiferOrContainSingleFree Int Ast.Value
   --                       resolved expectedType actualType value
@@ -43,6 +43,12 @@ unifySolution context (Ast.For cond gen reduce) (Type.List it) = do
   assertTypeIs genot reduceot (UnificationFailure 2 Nothing genot reduceot $ Ast.body reduce)
   pure $ Type.List genot
 
+unifySolution context (Ast.FloatingLambda lambda) Type.Grid = do
+  ot <- unifyLambda context lambda Type.CellState
+  case ot of
+    Type.Arrow Type.Grid Type.Grid -> pure Type.Grid
+    _ -> error "TODO non-unifying grid functions"
+
 unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
   ot <- unifyLambda context lambda it
   case ot of
@@ -60,6 +66,8 @@ unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
       if a == b
       then pure $ Type.List b
       else Left $ FloatingLambdaCannotReturn ot
+    Type.Arrow Type.Grid Type.Grid ->
+      pure Type.Grid
     Type.Arrow (Type.List finElem) fout ->
       if finElem == it
       then pure fout
@@ -119,6 +127,18 @@ unify context ast@(Ast.Identifier name) t env =
           then Right (Just t)
           else Left $ UnificationFailure 4 env t' t ast
 
+unify context ast@(Ast.Application fn arg) t env =
+  case identType fn context of
+    Just (Type.Arrow it ot) -> do
+      _ <- unify context arg it env
+      if ot == t
+      then pure (Just ot)
+      else Left $ UnificationFailure 7 env ot t ast
+    Just t' ->
+      Left $ NotAFunction fn t'
+    Nothing ->
+      Left $ IdentifierIsNotDefined fn
+
 unify context ast t env = do
   t' <- typeOf context ast
   Left $ UnificationFailure 5 env t t' ast
@@ -137,8 +157,10 @@ typeOf context (Ast.Identifier name) =
   case identType name context of
     Nothing -> Left $ IdentifierIsNotDefined name
     Just t  -> Right t
-typeOf _ (Ast.Application _ _) =
-  error "TODO: Try to get type of application from context"
+typeOf context (Ast.Application name _) =
+  case identType name context of
+    Just (Type.Arrow _ ot) -> Right ot
+    _ -> Left $ IdentifierIsNotDefined name
 
 ensureOneFreeOrIdentInEachStep :: Context -> Ast.Solution -> Result ()
 ensureOneFreeOrIdentInEachStep context = go 1 . unpipe

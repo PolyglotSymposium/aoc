@@ -2,9 +2,10 @@ module ConwayProblem
        ( runConwayProblem
        ) where
 
-import           Builtins (conwayContext)
+import           Builtins (conwayContext, add, Context)
 import qualified ConwayAst as Ast
 import qualified ConwayParser as Parse
+import qualified Data.Map.Strict as M
 import           Data.Text
 import qualified System.FilePath as Path
 import           Text.Megaparsec
@@ -12,6 +13,14 @@ import           Text.Megaparsec.Error (parseErrorPretty)
 import qualified Type
 import qualified TypeCheck
 import qualified Value as V
+
+addAliasesToContext :: Ast.CellAliases -> Context -> Context
+addAliasesToContext aliases context =
+  let
+    aliasContext =
+      M.fromList $ fmap (\(Ast.CellIdent c, Ast.CellAlias a) -> (a, (Type.CellState, V.CellState c))) aliases
+  in
+    add aliasContext context
 
 runConwayProblem :: String -> IO (Maybe (Type.Type, Type.Type, V.Value, Ast.Problem))
 runConwayProblem source = do

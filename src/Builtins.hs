@@ -7,6 +7,7 @@ module Builtins
        , identType
        , identValue
        , Context
+       , add
        ) where
 
 import Data.Text
@@ -60,6 +61,9 @@ bool = Type.Boolean
 grid :: Type.Type
 grid = Type.Grid
 
+cellState :: Type.Type
+cellState = Type.CellState
+
 todo :: Value.Value
 todo = Value.False
 
@@ -94,4 +98,10 @@ listContext :: Context
 listContext = core
 
 conwayContext :: Context
-conwayContext = core
+conwayContext =
+  M.insert "first_repeated_generation" (grid --> grid, todo) $
+  M.insert "positions" (cellState --> (grid --> grid), todo)
+    core
+
+add :: Context -> Context -> Context
+add = M.union

@@ -9,5 +9,6 @@ data Type
   | Arrow Type Type
   | Var Char
   | Grid
+  | CellState
   deriving (Show, Eq)
 
