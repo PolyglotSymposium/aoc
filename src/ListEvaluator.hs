@@ -4,9 +4,9 @@ module ListEvaluator
        ) where
 
 import qualified Ast as Ast
-import qualified Value as Value
-import qualified Builtins as Env
+import           Builtins (Context, identValue)
 import qualified Data.Text as Text
+import qualified Value as Value
 
 data EvalError
   = UnexpectedError Int
@@ -15,21 +15,21 @@ data EvalError
 
 type Result a = Either EvalError a
 
-eval :: Value.Value -> Ast.Solution -> Result Value.Value
-eval v (Ast.Pipe s1 s2) = do
-  v' <- eval v s1
-  eval v' s2
+eval :: Context -> Value.Value -> Ast.Solution -> Result Value.Value
+eval context v (Ast.Pipe s1 s2) = do
+  v' <- eval context v s1
+  eval context v' s2
 
-eval (Value.Vs vs) (Ast.For cond gen reduce) = do
+eval context (Value.Vs vs) (Ast.For cond gen reduce) = do
   results <- sequence $ aux <$> vs
   pure $ Value.Vs $ concat results
 
   where
     aux :: Value.Value -> Result [Value.Value]
     aux v = do
-      result  <- applyLambda v gen
-      reduced <- applyLambda v reduce
-      condMet <- applyLambda reduced cond
+      result  <- applyLambda context v gen
+      reduced <- applyLambda context v reduce
+      condMet <- applyLambda context reduced cond
       case condMet of
         Value.True -> do
           rest <- aux reduced
@@ -38,8 +38,8 @@ eval (Value.Vs vs) (Ast.For cond gen reduce) = do
         Value.False -> pure []
         bad         -> Left $ TypeMismatchAtRuntime (Text.pack ("When applying condition in `for` got " ++ show bad ++ " but expected a boolean value"))
 
-eval (Value.Vs vs) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
-  case Env.identValue name of
+eval context (Value.Vs vs) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
+  case identValue name context of
     Just (Value.Fold (initial, step)) ->
       case foldr (\v acc -> acc >>= step v) (Just initial) vs of
         Nothing -> Left $ UnexpectedError 1
@@ -67,7 +67,7 @@ eval (Value.Vs vs) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
       results <- foldSteps step result vs'
       pure $ result:results
 
-eval (Value.Vs vs) (Ast.FloatingLambda lambda) = do
+eval context (Value.Vs vs) (Ast.FloatingLambda lambda) = do
   results <- sequence $ applyAndKeepOriginal <$> vs
   pure $ Value.Vs $ results >>= pick
 
@@ -77,54 +77,54 @@ eval (Value.Vs vs) (Ast.FloatingLambda lambda) = do
       pick (_, v) = [v]
 
       applyAndKeepOriginal v = do
-        result <- applyLambda v lambda
+        result <- applyLambda context v lambda
         pure (v, result)
 
-eval v (Ast.FloatingLambda (Ast.Body op)) = Left $ TypeMismatchAtRuntime (Text.pack ("When applying top level operation " ++ show op ++ " got " ++ show v ++ " but expected a list"))
+eval _ v (Ast.FloatingLambda (Ast.Body op)) = Left $ TypeMismatchAtRuntime (Text.pack ("When applying top level operation " ++ show op ++ " got " ++ show v ++ " but expected a list"))
 
-eval v (Ast.For _ _ _) = Left $ TypeMismatchAtRuntime (Text.pack ("When applying `for` got " ++ show v ++ " but expected a list"))
+eval _ v (Ast.For _ _ _) = Left $ TypeMismatchAtRuntime (Text.pack ("When applying `for` got " ++ show v ++ " but expected a list"))
 
-applyLambda :: Value.Value -> Ast.Lambda -> Result Value.Value
-applyLambda v (Ast.Body lambda) = evalValue (Just v) lambda
+applyLambda :: Context -> Value.Value -> Ast.Lambda -> Result Value.Value
+applyLambda context v (Ast.Body lambda) = evalValue context (Just v) lambda
 
---            value for free var
-evalValue :: Maybe Value.Value -> Ast.Value -> Result Value.Value
-evalValue val (Ast.Identifier name) =
-  case Env.identValue name of
+--                      value for free var
+evalValue :: Context -> Maybe Value.Value -> Ast.Value -> Result Value.Value
+evalValue context val (Ast.Identifier name) =
+  case identValue name context of
     Just v -> Right v
     Nothing ->
       case val of
         Nothing -> Left $ UnexpectedError 4
         Just v  -> Right v
 
-evalValue _ (Ast.Application _ _) =
+evalValue _ _ (Ast.Application _ _) =
   error "TODO: make application work"
 
-evalValue val (Ast.Gt a b) =
-  binNumberOp val (>) ">" a b toBoolean
+evalValue context val (Ast.Gt a b) =
+  binNumberOp context val (>) ">" a b toBoolean
 
-evalValue val (Ast.Divide a b) =
-  binNumberOp val div "/" a b Value.I
+evalValue context val (Ast.Divide a b) =
+  binNumberOp context val div "/" a b Value.I
 
-evalValue val (Ast.Subtract a b) =
-  binNumberOp val (-) "-" a b Value.I
+evalValue context val (Ast.Subtract a b) =
+  binNumberOp context val (-) "-" a b Value.I
 
-evalValue val (Ast.Add a b) =
-  binNumberOp val (+) "+" a b Value.I
+evalValue context val (Ast.Add a b) =
+  binNumberOp context val (+) "+" a b Value.I
 
-evalValue val (Ast.Raised a b) =
-  binNumberOp val (^) "^" a b Value.I
+evalValue context val (Ast.Raised a b) =
+  binNumberOp context val (^) "^" a b Value.I
 
-evalValue val (Ast.And a b) =
-  binBooleanOp val (&&) "&&" a b toBoolean
+evalValue context val (Ast.And a b) =
+  binBooleanOp context val (&&) "&&" a b toBoolean
 
-evalValue val (Ast.Or a b) =
-  binBooleanOp val (||) "||" a b toBoolean
+evalValue context val (Ast.Or a b) =
+  binBooleanOp context val (||) "||" a b toBoolean
 
-evalValue val (Ast.Equals a b) =
-  binBooleanOp val (==) "=" a b toBoolean
+evalValue context val (Ast.Equals a b) =
+  binBooleanOp context val (==) "=" a b toBoolean
 
-evalValue _ (Ast.Inte v) = Right $ Value.I v
+evalValue _ _ (Ast.Inte v) = Right $ Value.I v
 
 toBoolean :: Bool -> Value.Value
 toBoolean True = Value.True
@@ -135,18 +135,18 @@ fromBoolean Value.True = Just True
 fromBoolean Value.False = Just False
 fromBoolean _ = Nothing
 
-binNumberOp :: (Maybe Value.Value) -> (Integer -> Integer -> t) -> String -> Ast.Value -> Ast.Value -> (t -> b) -> Result b
-binNumberOp val op opName a b toValue =  do
-  a' <- evalValue val a
-  b' <- evalValue val b
+binNumberOp :: Context -> (Maybe Value.Value) -> (Integer -> Integer -> t) -> String -> Ast.Value -> Ast.Value -> (t -> b) -> Result b
+binNumberOp context val op opName a b toValue =  do
+  a' <- evalValue context val a
+  b' <- evalValue context val b
   case (a', b') of
     (Value.I a'', Value.I b'') -> Right $ toValue $ op a'' b''
     _                          -> Left $ TypeMismatchAtRuntime (Text.pack ("When applying `" ++ opName ++ "` got " ++ show (a', b') ++ " but expected numbers"))
 
-binBooleanOp :: (Maybe Value.Value) -> (Bool -> Bool -> t) -> String -> Ast.Value -> Ast.Value -> (t -> b) -> Result b
-binBooleanOp val op opName a b toValue = do
-  a' <- evalValue val a
-  b' <- evalValue val b
+binBooleanOp :: Context -> (Maybe Value.Value) -> (Bool -> Bool -> t) -> String -> Ast.Value -> Ast.Value -> (t -> b) -> Result b
+binBooleanOp context val op opName a b toValue = do
+  a' <- evalValue context val a
+  b' <- evalValue context val b
   case (fromBoolean a', fromBoolean b') of
     (Just a'', Just b'') -> Right $ toValue $ op a'' b''
     _                -> Left $ TypeMismatchAtRuntime (Text.pack ("When applying `" ++ opName ++ "` got " ++ show (a', b') ++ " but expected booleans"))

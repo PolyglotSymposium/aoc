@@ -2,16 +2,17 @@ module ListProblem
        ( runListProblem
        ) where
 
+import           Builtins (listContext)
 import           Data.Text
 import qualified ListAst as Ast
 import qualified ListEvaluator as Eval
 import qualified ListParser as Parse
-import qualified TypeCheck
 import qualified Parser as Parse
 import qualified System.FilePath as Path
 import           Text.Megaparsec
 import           Text.Megaparsec.Error (parseErrorPretty)
 import qualified Type
+import qualified TypeCheck
 import qualified Value as V
 
 getInputParser :: Type.Type -> Maybe (Parse.Parser V.Value)
@@ -30,11 +31,9 @@ runListProblem source = do
       let
         inputPath = Path.takeDirectory source Path.</> unpack (Ast.at ast)
         validations = do
-          _ <- TypeCheck.ensureOneFreeOrIdentInEachStep $ Ast.solution ast
-          it <- TypeCheck.inferInputType $ Ast.solution ast
-          -- TODO, needed?
-          _ <- TypeCheck.inferOutputType $ Ast.solution ast
-          ot <- TypeCheck.unifySolution (Ast.solution ast) (Type.List it)
+          _ <- TypeCheck.ensureOneFreeOrIdentInEachStep listContext $ Ast.solution ast
+          it <- TypeCheck.inferInputType listContext $ Ast.solution ast
+          ot <- TypeCheck.unifySolution listContext (Ast.solution ast) (Type.List it)
           pure (it, ot)
       in
         case validations of
@@ -54,7 +53,7 @@ runListProblem source = do
                     putStrLn $ parseErrorPretty err
                     pure Nothing
                   Right input ->
-                    case Eval.eval (V.Vs input) (Ast.solution ast) of
+                    case Eval.eval listContext (V.Vs input) (Ast.solution ast) of
                       Right result -> do
                         print result
                         pure $ Just (Type.List inputElementType, outputType, result, ast)

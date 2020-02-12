@@ -8,5 +8,6 @@ data Type
   | List Type
   | Arrow Type Type
   | Var Char
+  | Grid
   deriving (Show, Eq)
 

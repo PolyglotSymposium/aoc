@@ -2,6 +2,7 @@ module ConwayProblem
        ( runConwayProblem
        ) where
 
+import           Builtins (conwayContext)
 import qualified ConwayAst as Ast
 import qualified ConwayParser as Parse
 import           Data.Text
@@ -27,17 +28,17 @@ runConwayProblem source = do
         validations =
           case Ast.solution ast of
             Ast.Solution solution -> do
-              TypeCheck.ensureOneFreeOrIdentInEachStep solution
-              it <- TypeCheck.inferInputType solution
-              pure ()
-            _ ->
-              pure ()
+              TypeCheck.ensureOneFreeOrIdentInEachStep conwayContext solution
+              it <- TypeCheck.inferInputType conwayContext solution
+              ot <- TypeCheck.unifySolution conwayContext solution Type.Grid
+              pure (it, ot)
       in
         do
+          print inputPath
+          print validations
           print ast
           undefined
 --        validations = do
---          ot <- ListType.unifySolution (Ast.solution ast) (Type.List it)
 --          pure $ (it, ot)
 --      in
 --        case validations of

@@ -10,6 +10,7 @@ import qualified Type
 import qualified ListAst
 import qualified Ast
 import qualified Value as V
+import Builtins (listContext)
 
 import qualified ConwayProblem
 
@@ -62,38 +63,38 @@ main = hspec $ do
 
   describe "TypeCheck.ensureOneFreeOrIdentInEachStep" $ do
     it "finds the identifier in a simple &&" $ do
-      TypeCheck.ensureOneFreeOrIdentInEachStep (lam (number &&& ident "x")) `shouldBe` Right ()
+      TypeCheck.ensureOneFreeOrIdentInEachStep listContext (lam (number &&& ident "x")) `shouldBe` Right ()
 
     it "finds the identifier some piped together steps" $ do
-      TypeCheck.ensureOneFreeOrIdentInEachStep ((lam (number &&& ident "x")) |> (lam (ident "x" `div'` number))) `shouldBe` Right ()
+      TypeCheck.ensureOneFreeOrIdentInEachStep listContext ((lam (number &&& ident "x")) |> (lam (ident "x" `div'` number))) `shouldBe` Right ()
 
   describe "TypeCheck.unify" $ do
     it "numbers unify with numbers" $ do
-      TypeCheck.unify number numTy Nothing `shouldBe` Right Nothing
+      TypeCheck.unify listContext number numTy Nothing `shouldBe` Right Nothing
 
     it "numbers don't unify with bools" $ do
-      TypeCheck.unify number boolTy Nothing `shouldBeUnificationFailureOf` (boolTy, numTy)
+      TypeCheck.unify listContext number boolTy Nothing `shouldBeUnificationFailureOf` (boolTy, numTy)
 
     it "simple free variables can be unified" $ do
-      TypeCheck.unify (ident "a") numTy Nothing `shouldBe` Right (Just numTy)
+      TypeCheck.unify listContext (ident "a") numTy Nothing `shouldBe` Right (Just numTy)
 
     it "mismatches when already unified cause errors" $ do
-      TypeCheck.unify (ident "a") numTy (Just boolTy) `shouldBeUnificationFailureOf` (boolTy, numTy)
+      TypeCheck.unify listContext (ident "a") numTy (Just boolTy) `shouldBeUnificationFailureOf` (boolTy, numTy)
 
     it "unifications can successfully match operands" $ do
-      TypeCheck.unify (ident "a" `sub` ident "a") numTy Nothing `shouldBe` Right (Just numTy)
+      TypeCheck.unify listContext (ident "a" `sub` ident "a") numTy Nothing `shouldBe` Right (Just numTy)
 
     it "unification works on builtin identifiers" $ do
-      TypeCheck.unify (ident "true") boolTy Nothing `shouldBe` Right Nothing
+      TypeCheck.unify listContext (ident "true") boolTy Nothing `shouldBe` Right Nothing
 
     it "when unification fails on builtins the errors make sense" $ do
-      TypeCheck.unify (ident "true") numTy Nothing `shouldBeUnificationFailureOf` (numTy, boolTy)
+      TypeCheck.unify listContext (ident "true") numTy Nothing `shouldBeUnificationFailureOf` (numTy, boolTy)
 
     it "unification flows down the tree and to the right" $ do
-      TypeCheck.unify (ident "a" &&& (ident "a" `gt` number)) boolTy Nothing `shouldBeUnificationFailureOf` (boolTy, numTy)
+      TypeCheck.unify listContext (ident "a" &&& (ident "a" `gt` number)) boolTy Nothing `shouldBeUnificationFailureOf` (boolTy, numTy)
 
     it "silly fat test" $ do
-      TypeCheck.unify ((ident "a" `sub` ident "a") `gt` ident "a") boolTy Nothing `shouldBe` Right (Just numTy)
+      TypeCheck.unify listContext ((ident "a" `sub` ident "a") `gt` ident "a") boolTy Nothing `shouldBe` Right (Just numTy)
 
     it "can unify a left-side variable" $ do
-      TypeCheck.unify ((ident "x" `div'` number) `sub` number) numTy Nothing `shouldBe` Right (Just numTy)
+      TypeCheck.unify listContext ((ident "x" `div'` number) `sub` number) numTy Nothing `shouldBe` Right (Just numTy)

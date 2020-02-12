@@ -2,14 +2,13 @@
 
 module TypeCheck
        ( inferInputType
-       , inferOutputType
        , ensureOneFreeOrIdentInEachStep
        , unifySolution
        , unify
        , TypeError(..)
        ) where
 
-import Builtins (identType)
+import Builtins (Context, identType)
 import Data.Text
 import qualified Ast
 import qualified Type
@@ -30,22 +29,22 @@ data TypeError
 
 type Result a = Either TypeError a
 
---               solution        expectedInputType       outputType
-unifySolution :: Ast.Solution -> Type.Type     -> Result Type.Type
-unifySolution (Ast.Pipe s1 s2) it = do
-  ot <- unifySolution s1 it
-  unifySolution s2 ot
+--                          solution        expectedInputType       outputType
+unifySolution :: Context -> Ast.Solution -> Type.Type            -> Result Type.Type
+unifySolution context (Ast.Pipe s1 s2) it = do
+  ot <- unifySolution context s1 it
+  unifySolution context s2 ot
 
-unifySolution (Ast.For cond gen reduce) (Type.List it) = do
-  condot <- unifyLambda cond it
+unifySolution context (Ast.For cond gen reduce) (Type.List it) = do
+  condot <- unifyLambda context cond it
   assertTypeIs condot Type.Boolean (UnificationFailure 1 Nothing Type.Boolean condot $ Ast.body cond)
-  genot <- unifyLambda gen it
-  reduceot <- unifyLambda reduce it
+  genot <- unifyLambda context gen it
+  reduceot <- unifyLambda context reduce it
   assertTypeIs genot reduceot (UnificationFailure 2 Nothing genot reduceot $ Ast.body reduce)
   pure $ Type.List genot
 
-unifySolution (Ast.FloatingLambda lambda) (Type.List it) = do
-  ot <- unifyLambda lambda it
+unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
+  ot <- unifyLambda context lambda it
   case ot of
     Type.Number                         -> pure $ Type.List Type.Number
     Type.Boolean                        -> pure $ Type.List it
@@ -68,11 +67,11 @@ unifySolution (Ast.FloatingLambda lambda) (Type.List it) = do
 
     _ -> Left $ FloatingLambdaCannotReturn ot
 
-unifySolution (Ast.FloatingLambda (Ast.Body b)) t = do
-  actual <- typeOf b
+unifySolution context (Ast.FloatingLambda (Ast.Body b)) t = do
+  actual <- typeOf context b
   Left $ UnificationFailure 6 Nothing t actual b
 
-unifySolution _ _ = error "TODO unification error for other cases..."
+unifySolution _ _ _ = error "TODO unification error for other cases..."
 
 assertTypeIs :: Type.Type -> Type.Type -> TypeError -> Result ()
 assertTypeIs a b err =
@@ -80,34 +79,34 @@ assertTypeIs a b err =
   then pure ()
   else Left err
 
---             lambda        expectedInputType        outputType
-unifyLambda :: Ast.Lambda -> Type.Type ->      Result Type.Type
-unifyLambda (Ast.Body body) it = do
-  ot <- typeOf body
-  _  <- unify body ot (Just it)
+--                        lambda        expectedInputType outputType
+unifyLambda :: Context -> Ast.Lambda -> Type.Type ->      Result Type.Type
+unifyLambda context (Ast.Body body) it = do
+  ot <- typeOf context body
+  _  <- unify context body ot (Just it)
   pure ot
 
-unifyBinOp :: Ast.Value -> Type.Type -> Ast.Value -> Type.Type -> Env -> Result Env
-unifyBinOp a ta b tb env = do
-  env' <- unify a ta env
-  unify b tb env'
+unifyBinOp :: Context -> Ast.Value -> Type.Type -> Ast.Value -> Type.Type -> Env -> Result Env
+unifyBinOp context a ta b tb env = do
+  env' <- unify context a ta env
+  unify context b tb env'
 
-unify :: Ast.Value -> Type.Type -> Maybe Type.Type -> Result Env
-unify (Ast.Inte _) Type.Number env = Right env
-unify (Ast.Subtract a b) Type.Number env =
-  unifyBinOp a Type.Number b Type.Number env
+unify :: Context -> Ast.Value -> Type.Type -> Maybe Type.Type -> Result Env
+unify _ (Ast.Inte _) Type.Number env = Right env
+unify context (Ast.Subtract a b) Type.Number env =
+  unifyBinOp context a Type.Number b Type.Number env
 
-unify (Ast.And a b) Type.Boolean env =
-  unifyBinOp a Type.Boolean b Type.Boolean env
+unify context (Ast.And a b) Type.Boolean env =
+  unifyBinOp context a Type.Boolean b Type.Boolean env
 
-unify (Ast.Gt a b) Type.Boolean env =
-  unifyBinOp a Type.Number b Type.Number env
+unify context (Ast.Gt a b) Type.Boolean env =
+  unifyBinOp context a Type.Number b Type.Number env
 
-unify (Ast.Divide a b) Type.Number env =
-  unifyBinOp a Type.Number b Type.Number env
+unify context (Ast.Divide a b) Type.Number env =
+  unifyBinOp context a Type.Number b Type.Number env
 
-unify ast@(Ast.Identifier name) t env =
-  case identType name of
+unify context ast@(Ast.Identifier name) t env =
+  case identType name context of
     Just t' ->
       if t == t'
       then Right env
@@ -120,90 +119,67 @@ unify ast@(Ast.Identifier name) t env =
           then Right (Just t)
           else Left $ UnificationFailure 4 env t' t ast
 
-unify ast t env = do
-  t' <- typeOf ast
+unify context ast t env = do
+  t' <- typeOf context ast
   Left $ UnificationFailure 5 env t t' ast
 
-typeOf :: Ast.Value -> Result Type.Type
-typeOf (Ast.Inte _)          = Right Type.Number
-typeOf (Ast.Gt _ _)          = Right Type.Boolean
-typeOf (Ast.And _ _)         = Right Type.Boolean
-typeOf (Ast.Or _ _)          = Right Type.Boolean
-typeOf (Ast.Equals _ _)      = Right Type.Boolean
-typeOf (Ast.Divide _ _)      = Right Type.Number
-typeOf (Ast.Subtract _ _)    = Right Type.Number
-typeOf (Ast.Raised _ _)      = Right Type.Number
-typeOf (Ast.Add _ _)         = Right Type.Number
-typeOf (Ast.Identifier name) =
-  case identType name of
+typeOf :: Context -> Ast.Value -> Result Type.Type
+typeOf _ (Ast.Inte _)          = Right Type.Number
+typeOf _ (Ast.Gt _ _)          = Right Type.Boolean
+typeOf _ (Ast.And _ _)         = Right Type.Boolean
+typeOf _ (Ast.Or _ _)          = Right Type.Boolean
+typeOf _ (Ast.Equals _ _)      = Right Type.Boolean
+typeOf _ (Ast.Divide _ _)      = Right Type.Number
+typeOf _ (Ast.Subtract _ _)    = Right Type.Number
+typeOf _ (Ast.Raised _ _)      = Right Type.Number
+typeOf _ (Ast.Add _ _)         = Right Type.Number
+typeOf context (Ast.Identifier name) =
+  case identType name context of
     Nothing -> Left $ IdentifierIsNotDefined name
     Just t  -> Right t
-typeOf (Ast.Application _ _) =
+typeOf _ (Ast.Application _ _) =
   error "TODO: Try to get type of application from context"
 
-ensureOneFreeOrIdentInEachStep :: Ast.Solution -> Result ()
-ensureOneFreeOrIdentInEachStep = go 1 . unpipe
+ensureOneFreeOrIdentInEachStep :: Context -> Ast.Solution -> Result ()
+ensureOneFreeOrIdentInEachStep context = go 1 . unpipe
   where
 
     go n (Ast.For (Ast.Body l1) (Ast.Body l2) (Ast.Body l3):rest) =
-      oneFreeOrIdent n l1 >> oneFreeOrIdent n l2 >> oneFreeOrIdent n l3 >> go (n+1) rest
+      oneFreeOrIdent context n l1 >> oneFreeOrIdent context n l2 >> oneFreeOrIdent context n l3 >> go (n+1) rest
 
     go n (Ast.FloatingLambda (Ast.Body l):rest) =
-      oneFreeOrIdent n l >> go (n+1) rest
+      oneFreeOrIdent context n l >> go (n+1) rest
 
     go _ _ =
       pure ()
 
-    oneFreeOrIdent :: Int -> Ast.Value -> Result ()
-    oneFreeOrIdent _ (Ast.Identifier _) = pure ()
-    oneFreeOrIdent n ast =
-      if S.size (frees ast) /= 1
+    oneFreeOrIdent :: Context -> Int -> Ast.Value -> Result ()
+    oneFreeOrIdent _ _ (Ast.Identifier _) = pure ()
+    oneFreeOrIdent context n ast =
+      if S.size (frees context ast) /= 1
       then Left $ StepNMustBeIdentiferOrContainSingleFree n ast
       else pure ()
 
-    frees :: Ast.Value -> S.Set Text
-    frees (Ast.Gt a b)          = S.union (frees a) (frees b)
-    frees (Ast.Divide a b)      = S.union (frees a) (frees b)
-    frees (Ast.Subtract a b)    = S.union (frees a) (frees b)
-    frees (Ast.Add a b)         = S.union (frees a) (frees b)
-    frees (Ast.Raised a b)      = S.union (frees a) (frees b)
-    frees (Ast.And a b)         = S.union (frees a) (frees b)
-    frees (Ast.Or a b)          = S.union (frees a) (frees b)
-    frees (Ast.Equals a b)      = S.union (frees a) (frees b)
-    frees (Ast.Inte _)          = S.empty
-    frees (Ast.Identifier name) =
-      case identType name of
+    frees :: Context -> Ast.Value -> S.Set Text
+    frees context (Ast.Gt a b)          = S.union (frees context a) (frees context b)
+    frees context (Ast.Divide a b)      = S.union (frees context a) (frees context b)
+    frees context (Ast.Subtract a b)    = S.union (frees context a) (frees context b)
+    frees context (Ast.Add a b)         = S.union (frees context a) (frees context b)
+    frees context (Ast.Raised a b)      = S.union (frees context a) (frees context b)
+    frees context (Ast.And a b)         = S.union (frees context a) (frees context b)
+    frees context (Ast.Or a b)          = S.union (frees context a) (frees context b)
+    frees context (Ast.Equals a b)      = S.union (frees context a) (frees context b)
+    frees context (Ast.Inte _)          = S.empty
+    frees context (Ast.Identifier name) =
+      case identType name context of
         Nothing -> S.singleton name
         Just _ -> S.empty
 
-    frees (Ast.Application fn arg) =
-      S.union (frees (Ast.Identifier fn)) (frees arg)
+    frees context (Ast.Application fn arg) =
+      S.union (frees context (Ast.Identifier fn)) (frees context arg)
 
     unpipe (Ast.Pipe s1 s2) = unpipe s1 ++ unpipe s2
     unpipe v                = [v]
 
-inferInputType :: Ast.Solution -> Result Type.Type
-inferInputType s = unifySolution s (Type.List Type.Number)
-
-inferOutputType :: Ast.Solution -> Result Type.Type
-inferOutputType (Ast.Pipe _ s)                    = inferOutputType s
-inferOutputType (Ast.For _ (Ast.Body l) _)        = inferOutputType' l
-inferOutputType (Ast.FloatingLambda (Ast.Body l)) = inferOutputType' l
-
-inferOutputType' :: Ast.Value -> Result Type.Type
-inferOutputType' (Ast.Identifier name) =
-  case identType name of
-    Nothing -> Left $ IdentifierIsNotDefined name
-    Just (Type.Arrow _ output) -> pure output
-    Just t -> Left $ NotAFunction "output" name t
-inferOutputType' (Ast.Application _ _) =
-  error "TODO: Try to get type of application from context"
-inferOutputType' (Ast.Gt _ _)       = Right $ Type.List Type.Boolean
-inferOutputType' (Ast.And _ _)      = Right $ Type.List Type.Boolean
-inferOutputType' (Ast.Or _ _)       = Right $ Type.List Type.Boolean
-inferOutputType' (Ast.Equals _ _)   = Right $ Type.List Type.Boolean
-inferOutputType' (Ast.Divide _ _)   = Right $ Type.List Type.Number
-inferOutputType' (Ast.Subtract _ _) = Right $ Type.List Type.Number
-inferOutputType' (Ast.Add _ _)      = Right $ Type.List Type.Number
-inferOutputType' (Ast.Raised _ _)   = Right $ Type.List Type.Number
-inferOutputType' (Ast.Inte _)       = Left $ NotAFunction "output" "literal" Type.Number
+inferInputType :: Context -> Ast.Solution -> Result Type.Type
+inferInputType context s = unifySolution context s (Type.List Type.Number)

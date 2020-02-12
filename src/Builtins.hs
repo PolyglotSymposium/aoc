@@ -2,22 +2,18 @@
 {-# LANGUAGE LambdaCase #-}
 
 module Builtins
-       ( identifiers
+       ( listContext
+       , conwayContext
        , identType
        , identValue
+       , Context
        ) where
 
 import Data.Text
 import qualified Data.Map.Strict as M
 import qualified Type as Type
 import qualified Value as Value
-import qualified Data.Set as S 
-
-identType :: Text -> Maybe Type.Type
-identType ident = fst <$> M.lookup ident identifiers 
-
-identValue :: Text -> Maybe Value.Value
-identValue ident = snd <$> M.lookup ident identifiers 
+import qualified Data.Set as S
 
 makeFold :: Integer -> (Integer -> Integer -> Integer) -> Value.Value
 makeFold i f = Value.Fold (Value.I i, \v1 v2 ->
@@ -47,7 +43,7 @@ dupe = Value.Func $ \case
                       _ -> Nothing
 
 (-->) :: Type.Type -> Type.Type -> Type.Type
-i --> o = Type.Arrow i o 
+i --> o = Type.Arrow i o
 
 list :: Type.Type -> Type.Type
 list = Type.List
@@ -61,21 +57,41 @@ num = Type.Number
 bool :: Type.Type
 bool = Type.Boolean
 
+grid :: Type.Type
+grid = Type.Grid
+
+todo :: Value.Value
+todo = Value.False
+
 baseIdentifiers :: [(Text, Type.Type, Value.Value)]
-baseIdentifiers = 
+baseIdentifiers =
   [
-    ("sum",     list num --> num,  makeFold 0 (+))
-  , ("product", list num --> num,  makeFold 1 (*))
-  , ("repeats", list a --> list a, repeats)
-  , ("true",    bool,              Value.True)
-  , ("false",   bool,              Value.False)
-  , ("first",   list a --> a,      first)
-  , ("dupe",    list a --> list a, dupe)
+    ("sum",                       list num --> num,  makeFold 0 (+))
+  , ("product",                   list num --> num,  makeFold 1 (*))
+  , ("repeats",                   list a --> list a, repeats)
+  , ("true",                      bool,              Value.True)
+  , ("false",                     bool,              Value.False)
+  , ("first",                     list a --> a,      first)
+  , ("dupe",                      list a --> list a, dupe)
   ]
 
-identifiers :: M.Map Text (Type.Type, Value.Value)
-identifiers = M.fromList $ do
+core :: Context
+core = M.fromList $ do
   (name, t, v) <- baseIdentifiers
   case (t, v) of
     (Type.Arrow iT oT, Value.Fold step) -> [(name, (t, v)), (append name "*", (iT --> list oT, Value.StepsOfFold step))]
     _    -> [(name, (t, v))]
+
+type Context = M.Map Text (Type.Type, Value.Value)
+
+identType :: Text -> Context -> Maybe Type.Type
+identType ident ctx = fst <$> M.lookup ident ctx
+
+identValue :: Text -> Context -> Maybe Value.Value
+identValue ident ctx = snd <$> M.lookup ident ctx
+
+listContext :: Context
+listContext = core
+
+conwayContext :: Context
+conwayContext = core
