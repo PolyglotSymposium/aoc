@@ -46,7 +46,7 @@ unifySolution context (Ast.For cond gen reduce) (Type.List it) = do
 unifySolution context (Ast.FloatingLambda lambda) Type.Grid = do
   ot <- unifyLambda context lambda Type.CellState
   case ot of
-    Type.Arrow Type.Grid Type.Grid -> pure Type.Grid
+    Type.Arrow Type.Grid ot -> pure ot
     _ -> error "TODO non-unifying grid functions"
 
 unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
@@ -63,9 +63,7 @@ unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
       then pure $ Type.List it
       else Left $ FloatingLambdaCannotReturn ot
     Type.Arrow (Type.List a) (Type.List b) ->
-      if a == b
-      then pure $ Type.List b
-      else Left $ FloatingLambdaCannotReturn ot
+      pure $ Type.List b
     Type.Arrow Type.Grid Type.Grid ->
       pure Type.Grid
     Type.Arrow (Type.List finElem) fout ->
@@ -141,7 +139,9 @@ unify context ast@(Ast.Application fn arg) t env =
 
 unify context ast t env = do
   t' <- typeOf context ast
-  Left $ UnificationFailure 5 env t t' ast
+  if t' == t
+  then Right env
+  else Left $ UnificationFailure 5 env t t' ast
 
 typeOf :: Context -> Ast.Value -> Result Type.Type
 typeOf _ (Ast.Inte _)          = Right Type.Number

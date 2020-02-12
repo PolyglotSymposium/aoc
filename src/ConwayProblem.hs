@@ -38,9 +38,8 @@ runConwayProblem source = do
           case Ast.solution ast of
             Ast.Solution solution -> do
               TypeCheck.ensureOneFreeOrIdentInEachStep conwayContext solution
-              it <- TypeCheck.inferInputType conwayContext solution
               ot <- TypeCheck.unifySolution conwayContext solution Type.Grid
-              pure (it, ot)
+              pure (Type.Grid, ot)
       in
         do
           print inputPath

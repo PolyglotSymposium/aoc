@@ -10,5 +10,6 @@ data Type
   | Var Char
   | Grid
   | CellState
+  | Position
   deriving (Show, Eq)
 

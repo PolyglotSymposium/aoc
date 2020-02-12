@@ -67,16 +67,20 @@ cellState = Type.CellState
 todo :: Value.Value
 todo = Value.False
 
+pos :: Type.Type
+pos = Type.Position
+
 baseIdentifiers :: [(Text, Type.Type, Value.Value)]
 baseIdentifiers =
   [
-    ("sum",                       list num --> num,  makeFold 0 (+))
-  , ("product",                   list num --> num,  makeFold 1 (*))
-  , ("repeats",                   list a --> list a, repeats)
-  , ("true",                      bool,              Value.True)
-  , ("false",                     bool,              Value.False)
-  , ("first",                     list a --> a,      first)
-  , ("dupe",                      list a --> list a, dupe)
+    ("sum",                       list num --> num,      makeFold 0 (+))
+  , ("product",                   list num --> num,      makeFold 1 (*))
+  , ("repeats",                   list a --> list a,     repeats)
+  , ("true",                      bool,                  Value.True)
+  , ("false",                     bool,                  Value.False)
+  , ("first",                     list a --> a,          first)
+  , ("dupe",                      list a --> list a,     dupe)
+  , ("reading_order",             list pos --> list num, todo)
   ]
 
 core :: Context
@@ -100,7 +104,7 @@ listContext = core
 conwayContext :: Context
 conwayContext =
   M.insert "first_repeated_generation" (grid --> grid, todo) $
-  M.insert "positions" (cellState --> (grid --> grid), todo)
+  M.insert "positions" (cellState --> (grid --> list pos), todo)
     core
 
 add :: Context -> Context -> Context
