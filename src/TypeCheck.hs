@@ -177,6 +177,7 @@ ensureOneFreeOrIdentInEachStep context = go 1 . unpipe
 
     oneFreeOrIdent :: Context -> Int -> Ast.Value -> Result ()
     oneFreeOrIdent _ _ (Ast.Identifier _) = pure ()
+    oneFreeOrIdent _ _ (Ast.Application _ _) = pure ()
     oneFreeOrIdent context n ast =
       if S.size (frees context ast) /= 1
       then Left $ StepNMustBeIdentiferOrContainSingleFree n ast

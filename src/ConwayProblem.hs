@@ -31,45 +31,32 @@ runConwayProblem source = do
       putStrLn "Error parsing aoc code file:"
       putStrLn $ parseErrorPretty err
       pure Nothing
-    Right ast ->
-      let
-        inputPath = Path.takeDirectory source Path.</> unpack (Ast.initialStateAt ast)
-        validations =
-          case Ast.solution ast of
-            Ast.Solution solution -> do
-              TypeCheck.ensureOneFreeOrIdentInEachStep conwayContext solution
-              ot <- TypeCheck.unifySolution conwayContext solution Type.Grid
-              pure (Type.Grid, ot)
-      in
-        do
-          print inputPath
-          print validations
-          print ast
-          undefined
---        validations = do
---          pure $ (it, ot)
---      in
---        case validations of
---          Left err -> do
---            print err
---            pure Nothing
---          Right (inputElementType, outputType) ->
---            case getInputParser inputElementType of
---              Nothing -> do
---                putStrLn $ "Inferred input to have element type " ++ show inputElementType ++ " (only list of integers are supported)"
---                pure Nothing
---              Just parseInput -> do
---                inputText <- readFile inputPath
---                case runParser (Parse.listInput (Ast.separator ast) parseInput) inputPath $ strip $ pack inputText of
---                  Left err -> do
---                    putStrLn "Error parsing input file:"
---                    putStrLn $ parseErrorPretty err
---                    pure Nothing
---                  Right input -> do
---                    case Eval.eval (V.Vs input) (Ast.solution ast) of
---                      Right result -> do
---                        print result
---                        pure $ Just (Type.List inputElementType, outputType, result, ast)
---                      Left err -> do
---                        print err
---                        pure Nothing
+    Right ast -> do
+      let stateSource = Path.takeDirectory source Path.</> unpack (Ast.initialStateAt ast)
+      initialStateText <- readFile stateSource
+      case runParser (Parse.twoDimensionalConwayInput (Ast.cellAliases ast)) stateSource $ pack initialStateText of
+        Left err -> do
+          putStrLn "Error parsing Conway initial state:"
+          putStrLn $ parseErrorPretty err
+          pure Nothing
+
+        Right initialState ->
+          let
+            context = addAliasesToContext (Ast.cellAliases ast) conwayContext
+            validations =
+              case Ast.solution ast of
+                Ast.Solution solution -> do
+                  TypeCheck.ensureOneFreeOrIdentInEachStep context solution
+                  ot <- TypeCheck.unifySolution conwayContext solution Type.Grid
+                  pure ot
+          in
+            case validations of
+              Left err -> do
+                print err
+                pure Nothing
+              Right outputType -> do
+                print validations
+                print ast
+                print outputType
+                print initialState
+                pure Nothing

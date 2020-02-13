@@ -3,14 +3,17 @@
 
 module ConwayParser
        ( conway
+       , twoDimensionalConwayInput
        ) where
 
 import qualified Ast as Conway
 import qualified ConwayAst as Conway
-import           Data.Text
+import qualified Data.Map.Strict as M
+import           Data.Text hiding (zip)
 import qualified Parser as P
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
+import qualified Value as V
 
 conway :: P.Parser Conway.Problem
 conway = do
@@ -29,6 +32,25 @@ conway = do
     , Conway.cellTransitions=transitions
     , Conway.solution=Conway.Solution code
     }
+
+twoDimensionalConwayInput :: Conway.CellAliases -> P.Parser V.Value
+twoDimensionalConwayInput aliases = do
+  rows <- grid
+  pure $ V.Grid $ M.fromList $ do
+    (y, row) <- zip [0..] rows
+    (x, cell) <- zip [0..] row
+    [((x, y), cell)]
+
+  where
+    grid :: P.Parser [[V.Value]]
+    grid = endBy1 row (P.ws <|> eof)
+
+    row :: P.Parser [V.Value]
+    row = some cellState
+
+    cellState :: P.Parser V.Value
+    cellState = choice ((\(Conway.CellIdent c, _) -> V.CellState <$> char c) <$> aliases)
+
 
 alias :: [Conway.CellAlias] -> P.Parser Conway.CellAlias
 alias aliases =  Conway.CellAlias <$> choice (P.lstr . Conway.aliasName <$> aliases)

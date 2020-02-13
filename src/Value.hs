@@ -3,8 +3,9 @@ module Value
        , toOrd
        ) where
 
-import Prelude hiding (True, False)
-import Data.List (intersperse)
+import           Data.List (intersperse)
+import qualified Data.Map.Strict as M
+import           Prelude hiding (True, False)
 
 data Value
   = I Integer
@@ -15,6 +16,7 @@ data Value
   | Func (Value -> Maybe Value)
   | StepsOfFold (Value, Value -> Value -> Maybe Value)
   | CellState Char
+  | Grid (M.Map (Int, Int) Value)
 
 data OrdValue
   = OrdI Integer
@@ -33,6 +35,7 @@ toOrd (CellState c)   = Just $ OrdCellState c
 toOrd (Fold _)        = Nothing
 toOrd (Func _)        = Nothing
 toOrd (StepsOfFold _) = Nothing
+toOrd (Grid _)      = Nothing
 
 instance Show Value where
   show (I v) = show v
@@ -43,3 +46,4 @@ instance Show Value where
   show (StepsOfFold _) = "<function/fold_steps>"
   show (Func _) = "<function>"
   show (CellState c) = "{cell:" ++ [c] ++ "}"
+  show (Grid _) = "{grid}"
