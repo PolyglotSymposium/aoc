@@ -104,7 +104,8 @@ listContext = core
 conwayContext :: Context
 conwayContext =
   M.insert "first_repeated_generation" (grid --> grid, todo) $
-  M.insert "positions" (cellState --> (grid --> list pos), todo)
+  M.insert "positions" (cellState --> (grid --> list pos), todo) $
+  M.insert "neighbors" (cellState --> num, todo) $
     core
 
 add :: Context -> Context -> Context

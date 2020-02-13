@@ -5,6 +5,7 @@ module ConwayProblem
 import           Builtins (conwayContext, add, Context)
 import qualified ConwayAst as Ast
 import qualified ConwayParser as Parse
+import           Data.Foldable (for_)
 import qualified Data.Map.Strict as M
 import           Data.Text
 import qualified System.FilePath as Path
@@ -48,6 +49,9 @@ runConwayProblem source = do
                 Ast.Solution solution -> do
                   TypeCheck.ensureOneFreeOrIdentInEachStep context solution
                   ot <- TypeCheck.unifySolution conwayContext solution Type.Grid
+                  for_ (Ast.transitionCases $ Ast.cellTransitions ast) $ \transitionCase -> do
+                    TypeCheck.noFrees context transitionCase
+                    TypeCheck.unify context transitionCase Type.Boolean Nothing
                   pure ot
           in
             case validations of

@@ -5,14 +5,16 @@ module TypeCheck
        , ensureOneFreeOrIdentInEachStep
        , unifySolution
        , unify
+       , noFrees
        , TypeError(..)
        ) where
 
-import Builtins (Context, identType)
-import Data.Text
 import qualified Ast
-import qualified Type
+import           Builtins (Context, identType)
 import qualified Data.Set as S
+import           Data.Text
+import           Debug.Trace
+import qualified Type
 
 type Env = Maybe Type.Type
 
@@ -22,6 +24,7 @@ data TypeError
   | IdentifierNotAFunctionOfAList Text Text Type.Type
   | NotAFunction Text Type.Type
   | CouldNotInferTypeOfFreeVariableInputIn Ast.Value
+  | NoFreesAllowed Ast.Value
   | StepNMustBeIdentiferOrContainSingleFree Int Ast.Value
   --                       resolved expectedType actualType value
   | UnificationFailure Int Env      Type.Type    Type.Type  Ast.Value
@@ -111,6 +114,14 @@ unify context (Ast.Gt a b) Type.Boolean env =
 unify context (Ast.Divide a b) Type.Number env =
   unifyBinOp context a Type.Number b Type.Number env
 
+unify context ast@(Ast.Equals a b) Type.Boolean env = do
+  t1 <- unify context a (Type.Var 'a') env
+  t2 <- unify context b (Type.Var 'a') env
+  case (t1, t2) of
+    (_, _) | t1 == t2 -> pure t2
+    (Just t1, Just t2) -> Left $ UnificationFailure 8 env t1 t2 ast
+    _ -> error $ "Unexpected error unifying equals in " ++ show ast
+
 unify context ast@(Ast.Identifier name) t env =
   case identType name context of
     Just t' ->
@@ -129,7 +140,7 @@ unify context ast@(Ast.Application fn arg) t env =
   case identType fn context of
     Just (Type.Arrow it ot) -> do
       _ <- unify context arg it env
-      if ot == t
+      if ot == t || isVar t
       then pure (Just ot)
       else Left $ UnificationFailure 7 env ot t ast
     Just t' ->
@@ -137,11 +148,19 @@ unify context ast@(Ast.Application fn arg) t env =
     Nothing ->
       Left $ IdentifierIsNotDefined fn
 
+unify context ast (Type.Var _) env = do
+  t <- typeOf context ast
+  pure $ Just t
+
 unify context ast t env = do
   t' <- typeOf context ast
   if t' == t
   then Right env
   else Left $ UnificationFailure 5 env t t' ast
+
+isVar :: Type.Type -> Bool
+isVar (Type.Var _) = True
+isVar _ = False
 
 typeOf :: Context -> Ast.Value -> Result Type.Type
 typeOf _ (Ast.Inte _)          = Right Type.Number
@@ -183,26 +202,32 @@ ensureOneFreeOrIdentInEachStep context = go 1 . unpipe
       then Left $ StepNMustBeIdentiferOrContainSingleFree n ast
       else pure ()
 
-    frees :: Context -> Ast.Value -> S.Set Text
-    frees context (Ast.Gt a b)          = S.union (frees context a) (frees context b)
-    frees context (Ast.Divide a b)      = S.union (frees context a) (frees context b)
-    frees context (Ast.Subtract a b)    = S.union (frees context a) (frees context b)
-    frees context (Ast.Add a b)         = S.union (frees context a) (frees context b)
-    frees context (Ast.Raised a b)      = S.union (frees context a) (frees context b)
-    frees context (Ast.And a b)         = S.union (frees context a) (frees context b)
-    frees context (Ast.Or a b)          = S.union (frees context a) (frees context b)
-    frees context (Ast.Equals a b)      = S.union (frees context a) (frees context b)
-    frees context (Ast.Inte _)          = S.empty
-    frees context (Ast.Identifier name) =
-      case identType name context of
-        Nothing -> S.singleton name
-        Just _ -> S.empty
-
-    frees context (Ast.Application fn arg) =
-      S.union (frees context (Ast.Identifier fn)) (frees context arg)
-
     unpipe (Ast.Pipe s1 s2) = unpipe s1 ++ unpipe s2
     unpipe v                = [v]
+
+noFrees :: Context -> Ast.Value -> Result ()
+noFrees context ast =
+  if S.size (frees context ast) /= 0
+  then Left $ NoFreesAllowed ast
+  else pure ()
+
+frees :: Context -> Ast.Value -> S.Set Text
+frees context (Ast.Gt a b)          = S.union (frees context a) (frees context b)
+frees context (Ast.Divide a b)      = S.union (frees context a) (frees context b)
+frees context (Ast.Subtract a b)    = S.union (frees context a) (frees context b)
+frees context (Ast.Add a b)         = S.union (frees context a) (frees context b)
+frees context (Ast.Raised a b)      = S.union (frees context a) (frees context b)
+frees context (Ast.And a b)         = S.union (frees context a) (frees context b)
+frees context (Ast.Or a b)          = S.union (frees context a) (frees context b)
+frees context (Ast.Equals a b)      = S.union (frees context a) (frees context b)
+frees context (Ast.Inte _)          = S.empty
+frees context (Ast.Identifier name) =
+  case identType name context of
+    Nothing -> S.singleton name
+    Just _ -> S.empty
+
+frees context (Ast.Application fn arg) =
+  S.union (frees context (Ast.Identifier fn)) (frees context arg)
 
 inferInputType :: Context -> Ast.Solution -> Result Type.Type
 inferInputType context s = unifySolution context s (Type.List Type.Number)

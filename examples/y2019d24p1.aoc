@@ -3,8 +3,8 @@ conway of 2 dimensions
   where '#' means 'bug'
   and   '.' means 'empty'
   cells transition
-    from bug to empty if neighbors bug = 1
-    from empty to bug if neighbors bug = 1 || neighbors bug = 2
+    from bug to empty if (neighbors bug) = 1
+    from empty to bug if (neighbors bug) = 1 || (neighbors bug) = 2
     otherwise a cell is empty
 
 solution

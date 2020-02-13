@@ -7,6 +7,7 @@ module ConwayAst
        , CellAlias(..)
        , aliasName
        , CellAliases
+       , transitionCases
        ) where
 
 import Data.Text
@@ -17,6 +18,9 @@ newtype CellAlias = CellAlias Text deriving (Show, Eq)
 
 aliasName :: CellAlias -> Text
 aliasName (CellAlias name) = name
+
+transitionCases :: CellTransitions -> [Ast.Value]
+transitionCases (CellTransitions cases _) = fmap (\(_, _, v) -> v) cases
 
 data CellTransitions = CellTransitions
   { cases :: [(CellAlias, CellAlias, Ast.Value)]
