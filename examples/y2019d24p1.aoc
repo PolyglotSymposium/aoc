@@ -3,14 +3,13 @@ conway of 2 dimensions
   where '#' means 'bug'
   and   '.' means 'empty'
   cells transition
-    from bug to empty if (neighbors bug) = 1
-    from empty to bug if (neighbors bug) = 1 || (neighbors bug) = 2
+    from bug to bug if (adjacent bug) = 1
+    from empty to bug if (adjacent bug) = 1 || (adjacent bug) = 2
     otherwise a cell is empty
 
 solution
-  first_repeated_generation 
+  first_repeated_generation
     | positions bug
     | reading_order
-    | x + 1
-    | x^2
+    | 2 ^ x
     | sum

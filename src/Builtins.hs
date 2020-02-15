@@ -13,12 +13,11 @@ import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import           Data.Text
+import           Debug.Trace (trace)
 import           ListEvaluator (evalValue)
 import qualified Type as Type
 import qualified Value as C
 import qualified Value as Value
-
-import Debug.Trace
 
 makeFold :: Integer -> (Integer -> Integer -> Integer) -> Value.Value
 makeFold i f = Value.Fold (Value.I i, \v1 v2 ->
@@ -53,18 +52,41 @@ evaluatesToTrue context ast =
     Right Value.True -> True
     _ -> False
 
-adjacent :: (Integer, Integer) -> [(Integer, Integer)]
-adjacent (x, y) =
+allAdjacent :: (Integer, Integer) -> [(Integer, Integer)]
+allAdjacent (x, y) =
   [
-    (x-1, y-1),
+    (x+1, y),
+    (x,   y+1),
+    (x,   y-1),
+    (x-1, y)
+  ]
+
+allSurrounding :: (Integer, Integer) -> [(Integer, Integer)]
+allSurrounding (x, y) =
+  [
+    (x+1, y),
     (x+1, y+1),
-    (x-1, y+1),
     (x+1, y-1),
     (x,   y+1),
     (x,   y-1),
-    (x+1, y),
-    (x-1, y)
+    (x-1, y),
+    (x-1, y+1),
+    (x-1, y-1)
   ]
+
+adjacent :: Value.Value
+adjacent = Value.Func $ \context state ->
+  case (C.identValue "$grid" context, C.identValue "$pos" context, state) of
+    (Just (Value.Grid _ _ state), Just (Value.Pos pos), Value.CellState c) ->
+      Just $
+        Value.I $
+        toInteger $
+        M.size $
+        M.filter (== c) $
+        M.restrictKeys state $
+        S.fromList $
+        allAdjacent pos
+    _ -> Nothing
 
 neighbors :: Value.Value
 neighbors = Value.Func $ \context state ->
@@ -77,7 +99,7 @@ neighbors = Value.Func $ \context state ->
         M.filter (== c) $
         M.restrictKeys state $
         S.fromList $
-        adjacent pos
+        allSurrounding pos
     _ -> Nothing
 
 firstRepeatedGeneration :: Value.Value
@@ -90,7 +112,7 @@ firstRepeatedGeneration = Value.Func $ \context v -> go S.empty context v
         pure grid
       else do
         next <- nextGeneration' context grid
-        go seen context next
+        go (S.insert ord seen) context next
     go _ _ _ = Nothing
 
 nextGeneration :: Value.Value
@@ -213,6 +235,7 @@ conwayContext =
     , ("next_generation",           (grid      --> grid,                nextGeneration))
     , ("positions",                 (cellState --> (grid --> list pos), positions))
     , ("neighbors",                 (cellState --> num,                 neighbors))
+    , ("adjacent",                  (cellState --> num,                 adjacent))
     , ("reading_order",             (list pos  --> list num,            readingOrder))
     , ("trace_grid",                (grid      --> grid,                traceGrid))
     ]

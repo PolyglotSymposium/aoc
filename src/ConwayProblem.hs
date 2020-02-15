@@ -30,7 +30,6 @@ addAliasesToContext aliases context =
 runConwayProblem :: String -> IO (Maybe (Type.Type, Type.Type, V.Value, Ast.Problem))
 runConwayProblem source = do
   text <- readFile source
-  putStrLn text
   case runParser Parse.conway source $ pack text of
     Left err -> do
       putStrLn "Error parsing aoc code file:"
@@ -72,7 +71,7 @@ runConwayProblem source = do
                   case Eval.eval contextWithSize initialState solution of
                     Right result -> do
                       print result
-                      pure Nothing
+                      pure $ Just (Type.Grid, outputType, result, ast)
                     Left err -> do
                       print err
                       pure Nothing

@@ -154,8 +154,8 @@ evalValue context val (Ast.And a b) =
 evalValue context val (Ast.Or a b) =
   binBooleanOp context val (||) "||" a b toBoolean
 
-evalValue context val (Ast.Equals a b) =
-  binBooleanOp context val (==) "=" a b toBoolean
+evalValue context val (Ast.Equals a b) = do
+  binNumberOp context val (==) "=" a b toBoolean
 
 evalValue _ _ (Ast.Inte v) = Right $ Value.I v
 
@@ -169,7 +169,7 @@ fromBoolean Value.False = Just False
 fromBoolean _ = Nothing
 
 binNumberOp :: Context -> (Maybe Value.Value) -> (Integer -> Integer -> t) -> String -> Ast.Value -> Ast.Value -> (t -> b) -> Result b
-binNumberOp context val op opName a b toValue =  do
+binNumberOp context val op opName a b toValue = do
   a' <- evalValue context val a
   b' <- evalValue context val b
   case (a', b') of
