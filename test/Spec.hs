@@ -41,13 +41,17 @@ shouldBeUnificationFailureOf v _ =
 main :: IO ()
 main = hspec $ do
   describe "Aoc.solve" $ do
-    it "solves 2018 D18 P1" $ do
+    it "solves 2015 D18 P1" $ do
       Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2015d18p1.aoc"
       result `shouldBe` 821
 
-    it "solves 2018 D18 P2" $ do
+    it "solves 2015 D18 P2" $ do
       Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2015d18p2.aoc"
       result `shouldBe` 886
+
+    it "solves 2016 D18 P1" $ do
+      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2016d18p1.aoc"
+      result `shouldBe` 1939
 
     it "solves 2019 D24 P1" $ do
       Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2019d24p1.aoc"

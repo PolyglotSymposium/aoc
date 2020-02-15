@@ -1,0 +1,17 @@
+conway of 1 dimension
+  initial state at ./y2016d18.txt
+  where '.' means 'safe'
+  and   '^' means 'trap'
+  cells transition
+    from trap to trap if (left trap) && (right safe)
+    from trap to trap if (right trap) && (left safe)
+    from safe to trap if (left trap) && (right safe)
+    from safe to trap if (right trap) && (left safe)
+    otherwise a cell is safe
+
+  out-of-bounds cells are considered safe
+
+solution
+  to_2d_with_transitions 39
+    | positions safe
+    | count
