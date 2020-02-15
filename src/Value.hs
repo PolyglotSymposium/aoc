@@ -25,9 +25,9 @@ data Value
   | Func (Context -> Value -> Maybe Value)
   | StepsOfFold (Value, Value -> Value -> Maybe Value)
   | CellState Char
-  | Pos (Int, Int)
+  | Pos (Integer, Integer)
   -- TODO: Remove Context from grid
-  | Grid Context Conway.CellTransitions (M.Map (Int, Int) Char)
+  | Grid Context Conway.CellTransitions (M.Map (Integer, Integer) Char)
 
 data OrdValue
   = OrdI Integer
@@ -35,8 +35,8 @@ data OrdValue
   | OrdTrue
   | OrdFalse
   | OrdCellState Char
-  | OrdPos (Int, Int)
-  | OrdGrid (M.Map (Int, Int) Char)
+  | OrdPos (Integer, Integer)
+  | OrdGrid (M.Map (Integer, Integer) Char)
   deriving (Ord, Eq)
 
 toOrd :: Value -> Maybe OrdValue

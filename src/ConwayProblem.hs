@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module ConwayProblem
        ( runConwayProblem
        ) where
@@ -14,7 +16,7 @@ import           Text.Megaparsec
 import           Text.Megaparsec.Error (parseErrorPretty)
 import qualified Type
 import qualified TypeCheck
-import           Value (add, Context)
+import           Value (add, insert, Context)
 import qualified Value as V
 
 addAliasesToContext :: Ast.CellAliases -> Context -> Context
@@ -62,8 +64,8 @@ runConwayProblem source = do
                 putStrLn $ parseErrorPretty err
                 pure Nothing
 
-              Right initialState ->
-                case Eval.eval context initialState solution of
+              Right (width, initialState) ->
+                case Eval.eval (insert "$width" (Type.Number, V.I width) context) initialState solution of
                   Right result -> do
                     print result
                     pure Nothing

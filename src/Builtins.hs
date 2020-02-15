@@ -51,7 +51,7 @@ evaluatesToTrue context ast =
     Right Value.True -> True
     _ -> False
 
-adjacent :: (Int, Int) -> [(Int, Int)]
+adjacent :: (Integer, Integer) -> [(Integer, Integer)]
 adjacent (x, y) =
   [
     (x-1, y-1),
@@ -110,6 +110,23 @@ nextGeneration' _ grid@(Value.Grid context ts@(Conway.CellTransitions { .. }) st
 
 nextGeneration' _ _ = Nothing
 
+readingOrder :: Value.Value
+readingOrder = Value.Func readingOrder'
+
+readingOrder' :: C.Context -> Value.Value -> Maybe Value.Value
+readingOrder' context positions =
+  case (C.identValue "$width" context, positions) of
+    (Just (Value.I width), Value.Vs vs) ->
+      fmap Value.Vs $ sequence $ fmap (fmap (index width) . getPos) vs
+    _ -> Nothing
+
+  where
+    index width (x, y) = Value.I (x + width * y)
+
+getPos :: Value.Value -> Maybe (Integer, Integer)
+getPos (Value.Pos coord) = Just coord
+getPos _ = Nothing
+
 positions :: Value.Value
 positions = Value.Func $ \_ cs -> Just $ Value.Func $ \_ grid ->
   case (cs, grid) of
@@ -151,14 +168,13 @@ pos = Type.Position
 baseIdentifiers :: [(Text, Type.Type, Value.Value)]
 baseIdentifiers =
   [
-    ("sum",                       list num --> num,      makeFold 0 (+))
-  , ("product",                   list num --> num,      makeFold 1 (*))
-  , ("repeats",                   list a --> list a,     repeats)
-  , ("true",                      bool,                  Value.True)
-  , ("false",                     bool,                  Value.False)
-  , ("first",                     list a --> a,          first)
-  , ("dupe",                      list a --> list a,     dupe)
-  , ("reading_order",             list pos --> list num, todo)
+    ("sum",     list num --> num,      makeFold 0 (+))
+  , ("product", list num --> num,      makeFold 1 (*))
+  , ("repeats", list a --> list a,     repeats)
+  , ("true",    bool,                  Value.True)
+  , ("false",   bool,                  Value.False)
+  , ("first",   list a --> a,          first)
+  , ("dupe",    list a --> list a,     dupe)
   ]
 
 core :: C.Context
@@ -176,8 +192,9 @@ conwayContext :: C.Context
 conwayContext =
   C.add core $
     C.fromList [
-      ("first_repeated_generation", (grid      --> grid,                firstRepeatedGeneration)),
-      ("next_generation",           (grid      --> grid,                nextGeneration)),
-      ("positions",                 (cellState --> (grid --> list pos), positions)),
-      ("neighbors",                 (cellState --> num,                 neighbors))
+      ("first_repeated_generation", (grid      --> grid,                firstRepeatedGeneration))
+    , ("next_generation",           (grid      --> grid,                nextGeneration))
+    , ("positions",                 (cellState --> (grid --> list pos), positions))
+    , ("neighbors",                 (cellState --> num,                 neighbors))
+    , ("reading_order",             (list pos   --> list num,           readingOrder))
     ]

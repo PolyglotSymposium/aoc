@@ -9,7 +9,7 @@ module ConwayParser
 import qualified Ast as Conway
 import qualified ConwayAst as Conway
 import qualified Data.Map.Strict as M
-import           Data.Text hiding (zip)
+import           Data.Text hiding (zip, maximum)
 import qualified Parser as P
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -33,15 +33,22 @@ conway = do
     , Conway.solution=Conway.Solution code
     }
 
-twoDimensionalConwayInput :: V.Context -> Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
+twoDimensionalConwayInput :: V.Context -> Conway.CellTransitions -> Conway.CellAliases -> P.Parser (Integer, V.Value)
 twoDimensionalConwayInput context transitions aliases = do
   rows <- grid
-  pure $ V.Grid context transitions $ M.fromList $ do
-    (y, row) <- zip [0..] rows
-    (x, cell) <- zip [0..] row
-    [((x, y), cell)]
+  let cells = positionCells rows
+  pure
+    (
+      maximum $ fmap ((+ 1) . fst . fst) cells,
+      V.Grid context transitions $ M.fromList cells
+    )
 
   where
+    positionCells rows = do
+      (y, row) <- zip [0..] rows
+      (x, cell) <- zip [0..] row
+      [((x, y), cell)]
+
     grid :: P.Parser [[Char]]
     grid = endBy1 row (P.ws <|> eof)
 
