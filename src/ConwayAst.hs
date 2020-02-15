@@ -19,19 +19,20 @@ newtype CellAlias = CellAlias Text deriving (Show, Eq)
 aliasName :: CellAlias -> Text
 aliasName (CellAlias name) = name
 
+trd :: (a, b, c) -> c
+trd (_, _, t) = t
+
 transitionCases :: CellTransitions -> [Ast.Value]
-transitionCases (CellTransitions cases _) = fmap (\(_, _, v) -> v) cases
+transitionCases (CellTransitions cases _) = trd <$> cases
 
 data CellTransitions = CellTransitions
-  { cases :: [(CellAlias, CellAlias, Ast.Value)]
-  , otherwiseCellIs :: CellAlias
+  { cases :: [(CellIdent, CellIdent, Ast.Value)]
+  , otherwiseCellIs :: CellIdent
   }
   deriving (Show, Eq)
 
 data GenerationDirective
   = Solution Ast.Solution
-  -- TODO
-  -- | Animate
   deriving (Show, Eq)
 
 data SolvableConwayDimensions
@@ -42,7 +43,6 @@ type CellAliases = [(CellIdent, CellAlias)]
 
 data Problem =
   ConwayProblem
-    -- TODO filepath
   { initialStateAt :: Text
   , dimensions :: SolvableConwayDimensions
   , cellAliases :: CellAliases

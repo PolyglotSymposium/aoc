@@ -6,6 +6,7 @@ module Value
 import           Data.List (intersperse)
 import qualified Data.Map.Strict as M
 import           Prelude hiding (True, False)
+import qualified ConwayAst as Conway
 
 data Value
   = I Integer
@@ -16,7 +17,7 @@ data Value
   | Func (Value -> Maybe Value)
   | StepsOfFold (Value, Value -> Value -> Maybe Value)
   | CellState Char
-  | Grid (M.Map (Int, Int) Value)
+  | Grid Conway.CellTransitions (M.Map (Int, Int) Char)
 
 data OrdValue
   = OrdI Integer
@@ -24,6 +25,7 @@ data OrdValue
   | OrdTrue
   | OrdFalse
   | OrdCellState Char
+  | OrdGrid (M.Map (Int, Int) Char)
   deriving (Ord, Eq)
 
 toOrd :: Value -> Maybe OrdValue
@@ -31,11 +33,11 @@ toOrd (I v)           = Just $ OrdI v
 toOrd (Vs vs)         = OrdVs <$> (sequence $ map toOrd vs)
 toOrd True            = Just $ OrdTrue
 toOrd False           = Just $ OrdFalse
-toOrd (CellState c)   = Just $ OrdCellState c
+toOrd (CellState s)   = Just $ OrdCellState s
+toOrd (Grid _ state)  = Just $ OrdGrid state
 toOrd (Fold _)        = Nothing
 toOrd (Func _)        = Nothing
 toOrd (StepsOfFold _) = Nothing
-toOrd (Grid _)      = Nothing
 
 instance Show Value where
   show (I v) = show v
@@ -46,4 +48,4 @@ instance Show Value where
   show (StepsOfFold _) = "<function/fold_steps>"
   show (Func _) = "<function>"
   show (CellState c) = "{cell:" ++ [c] ++ "}"
-  show (Grid _) = "{grid}"
+  show (Grid _ _) = "{grid}"

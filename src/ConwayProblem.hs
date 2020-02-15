@@ -8,6 +8,7 @@ import qualified ConwayParser as Parse
 import           Data.Foldable (for_)
 import qualified Data.Map.Strict as M
 import           Data.Text
+import qualified ListEvaluator as Eval
 import qualified System.FilePath as Path
 import           Text.Megaparsec
 import           Text.Megaparsec.Error (parseErrorPretty)
@@ -35,7 +36,7 @@ runConwayProblem source = do
     Right ast -> do
       let stateSource = Path.takeDirectory source Path.</> unpack (Ast.initialStateAt ast)
       initialStateText <- readFile stateSource
-      case runParser (Parse.twoDimensionalConwayInput (Ast.cellAliases ast)) stateSource $ pack initialStateText of
+      case runParser (Parse.twoDimensionalConwayInput (Ast.cellTransitions ast) (Ast.cellAliases ast)) stateSource $ pack initialStateText of
         Left err -> do
           putStrLn "Error parsing Conway initial state:"
           putStrLn $ parseErrorPretty err
@@ -44,23 +45,27 @@ runConwayProblem source = do
         Right initialState ->
           let
             context = addAliasesToContext (Ast.cellAliases ast) conwayContext
-            validations =
+            solution =
               case Ast.solution ast of
-                Ast.Solution solution -> do
-                  TypeCheck.ensureOneFreeOrIdentInEachStep context solution
-                  ot <- TypeCheck.unifySolution conwayContext solution Type.Grid
-                  for_ (Ast.transitionCases $ Ast.cellTransitions ast) $ \transitionCase -> do
-                    TypeCheck.noFrees context transitionCase
-                    TypeCheck.unify context transitionCase Type.Boolean Nothing
-                  pure ot
+                Ast.Solution solution -> solution
+
+            validations = do
+              TypeCheck.ensureOneFreeOrIdentInEachStep context solution
+              ot <- TypeCheck.unifySolution conwayContext solution Type.Grid
+              for_ (Ast.transitionCases $ Ast.cellTransitions ast) $ \transitionCase -> do
+                TypeCheck.noFrees context transitionCase
+                TypeCheck.unify context transitionCase Type.Boolean Nothing
+              pure ot
           in
             case validations of
               Left err -> do
                 print err
                 pure Nothing
               Right outputType -> do
-                print validations
-                print ast
-                print outputType
-                print initialState
-                pure Nothing
+                case Eval.eval context initialState solution of
+                  Right result -> do
+                    print result
+                    pure Nothing
+                  Left err -> do
+                    print err
+                    pure Nothing

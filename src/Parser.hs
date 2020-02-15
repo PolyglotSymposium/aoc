@@ -78,7 +78,7 @@ value = lexeme $ makeExprParser valueTerm [
   , [InfixL (Ast.Gt <$ lstr ">")]
   , [InfixL (Ast.Raised <$ lstr "^")]
   , [InfixL (Ast.Divide <$ lstr "/")]
-  , [InfixL (Ast.Add <$ lstr "+")]
+  , [InfixL (Ast.Add    <$ lstr "+")]
   , [InfixL (Ast.Subtract <$ lstr "-")]
   ]
 

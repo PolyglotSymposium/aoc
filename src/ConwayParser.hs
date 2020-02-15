@@ -21,7 +21,7 @@ conway = do
   dim <- dimensions
   statePath <- initialStatePath
   aliases <- cellAliases
-  transitions <- cellTransitions (snd <$> aliases)
+  transitions <- cellTransitions aliases
   _ <- P.lstr "solution"
   code <- P.code
   eof
@@ -33,29 +33,31 @@ conway = do
     , Conway.solution=Conway.Solution code
     }
 
-twoDimensionalConwayInput :: Conway.CellAliases -> P.Parser V.Value
-twoDimensionalConwayInput aliases = do
+twoDimensionalConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
+twoDimensionalConwayInput transitions aliases = do
   rows <- grid
-  pure $ V.Grid $ M.fromList $ do
+  pure $ V.Grid transitions $ M.fromList $ do
     (y, row) <- zip [0..] rows
     (x, cell) <- zip [0..] row
     [((x, y), cell)]
 
   where
-    grid :: P.Parser [[V.Value]]
+    grid :: P.Parser [[Char]]
     grid = endBy1 row (P.ws <|> eof)
 
-    row :: P.Parser [V.Value]
+    row :: P.Parser [Char]
     row = some cellState
 
-    cellState :: P.Parser V.Value
-    cellState = choice ((\(Conway.CellIdent c, _) -> V.CellState <$> char c) <$> aliases)
+    cellState :: P.Parser Char
+    cellState = choice ((\(Conway.CellIdent c, _) -> char c) <$> aliases)
 
+alias :: Conway.CellAliases -> P.Parser Conway.CellIdent
+alias aliases = choice $ identFromAlias <$> aliases
+  where
+    identFromAlias (ident, Conway.CellAlias alias) =
+      ident <$ P.lstr alias
 
-alias :: [Conway.CellAlias] -> P.Parser Conway.CellAlias
-alias aliases =  Conway.CellAlias <$> choice (P.lstr . Conway.aliasName <$> aliases)
-
-cellTransitions :: [Conway.CellAlias] -> P.Parser Conway.CellTransitions
+cellTransitions :: Conway.CellAliases -> P.Parser Conway.CellTransitions
 cellTransitions aliases = do
   _ <- P.lstr "cells" *> P.lstr "transition"
   transitions <- some cellTransition
@@ -67,7 +69,7 @@ cellTransitions aliases = do
     }
 
   where
-    cellTransition :: P.Parser (Conway.CellAlias, Conway.CellAlias, Conway.Value)
+    cellTransition :: P.Parser (Conway.CellIdent, Conway.CellIdent, Conway.Value)
     cellTransition = do
       _ <- P.lstr "from"
       previous <- alias aliases
