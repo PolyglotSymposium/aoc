@@ -19,9 +19,8 @@ getInputParser :: Type.Type -> Maybe (Parse.Parser V.Value)
 getInputParser Type.Number = Just Parse.integer
 getInputParser _ = Nothing
 
-runListProblem :: String -> IO (Maybe (Type.Type, Type.Type, V.Value, Ast.Problem))
-runListProblem source = do
-  text <- readFile source
+runListProblem :: (String, String) -> IO (Maybe (Type.Type, Type.Type, V.Value, Ast.Problem))
+runListProblem (source, text) =
   case runParser Parse.list source $ pack text of
     Left err -> do
       putStrLn "Error parsing aoc code file:"

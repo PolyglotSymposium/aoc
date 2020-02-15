@@ -1,24 +1,25 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main (main) where
 
-import Test.Hspec
-import Test.QuickCheck
+import           Test.Hspec
+import           Test.QuickCheck
 
-import qualified ListProblem
-import qualified TypeCheck
-import qualified Type
-import qualified ListAst
+import qualified Aoc as Aoc
 import qualified Ast
+import           Builtins (listContext)
+import qualified ListAst
+import qualified ListProblem
+import qualified Type
+import qualified TypeCheck
 import qualified Value as V
-import Builtins (listContext)
 
 import qualified ConwayProblem
 
 number = Ast.Inte 42
-numTy = Type.Number
+numTy  = Type.Number
 boolTy = Type.Boolean
 
-sub a b = Ast.Subtract a b
+sub a b  = Ast.Subtract a b
 div' a b = Ast.Divide a b
 
 a &&& b = Ast.And a b
@@ -39,26 +40,25 @@ shouldBeUnificationFailureOf v _ =
 
 main :: IO ()
 main = hspec $ do
-  describe "ConwayProblem.runConwayProblem" $ do
+  describe "Aoc.solve" $ do
     it "solves 2019 D24 P1" $ do
-      Just (_, _, V.I result, _) <- ConwayProblem.runConwayProblem "./examples/y2019d24p1.aoc"
+      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2019d24p1.aoc"
       result `shouldBe` 18844281
 
-  describe "ListProblem.runListProblem" $ do
     it "solves 2018 D1 P1" $ do
-      Just (_, _, V.I result, _) <- ListProblem.runListProblem "./examples/y2018d1p1.aoc"
+      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2018d1p1.aoc"
       result `shouldBe` 595
 
     it "solves 2018 D1 P2" $ do
-      Just (_, _, V.I result, _) <- ListProblem.runListProblem "./examples/y2018d1p2.aoc"
+      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2018d1p2.aoc"
       result `shouldBe` 80598
 
     it "solves 2019 D1 P1" $ do
-      Just (_, _, V.I result, _) <- ListProblem.runListProblem "./examples/y2019d1p1.aoc"
+      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2019d1p1.aoc"
       result `shouldBe` 3308377
 
     it "solves 2019 D1 P2" $ do
-      Just (_, _, V.I result, _) <- ListProblem.runListProblem "./examples/y2019d1p2.aoc"
+      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2019d1p2.aoc"
       result `shouldBe` 4959709
 
   describe "TypeCheck.ensureOneFreeOrIdentInEachStep" $ do

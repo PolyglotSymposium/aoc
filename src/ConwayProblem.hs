@@ -27,9 +27,8 @@ addAliasesToContext aliases context =
   in
     add aliasContext context
 
-runConwayProblem :: String -> IO (Maybe (Type.Type, Type.Type, V.Value, Ast.Problem))
-runConwayProblem source = do
-  text <- readFile source
+runConwayProblem :: (String, String) -> IO (Maybe (Type.Type, Type.Type, V.Value, Ast.Problem))
+runConwayProblem (source, text) =
   case runParser Parse.conway source $ pack text of
     Left err -> do
       putStrLn "Error parsing aoc code file:"
