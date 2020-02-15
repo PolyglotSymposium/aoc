@@ -2,6 +2,7 @@ module ListEvaluator
        ( EvalError(..)
        , eval
        , evalValue
+       , toBoolean
        ) where
 
 import qualified Ast as Ast
@@ -81,7 +82,7 @@ eval context (Value.Vs vs) (Ast.FloatingLambda lambda) = do
         result <- applyLambda context v lambda
         pure (v, result)
 
-eval context grid@(Value.Grid _ _ _) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
+eval context grid@(Value.Grid _ _) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
   case identValue name context of
     Just (Value.Func f) ->
       case f context grid of

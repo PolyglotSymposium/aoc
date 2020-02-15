@@ -56,7 +56,7 @@ runConwayProblem (source, text) =
           Right outputType -> do
             let stateSource = Path.takeDirectory source Path.</> unpack (Ast.initialStateAt ast)
             initialStateText <- readFile stateSource
-            case runParser (Parse.twoDimensionalConwayInput context (Ast.cellTransitions ast) (Ast.cellAliases ast)) stateSource $ pack initialStateText of
+            case runParser (Parse.twoDimensionalConwayInput (Ast.cellTransitions ast) (Ast.cellAliases ast)) stateSource $ pack initialStateText of
               Left err -> do
                 putStrLn "Error parsing Conway initial state:"
                 putStrLn $ parseErrorPretty err

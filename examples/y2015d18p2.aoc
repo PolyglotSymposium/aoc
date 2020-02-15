@@ -1,0 +1,14 @@
+conway of 2 dimensions
+  initial state at ./y2015d18-corners.txt
+  where '#' means 'on'
+  and   '.' means 'off'
+  cells transition
+    from on to on if (at corner)
+    from on to on if (neighbors on) = 2 || (neighbors on) = 3
+    from off to on if (neighbors on) = 3
+    otherwise a cell is off
+
+solution
+  after_transitions 100
+    | positions on
+    | count

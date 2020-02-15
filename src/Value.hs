@@ -26,8 +26,7 @@ data Value
   | StepsOfFold (Value, Value -> Value -> Maybe Value)
   | CellState Char
   | Pos (Integer, Integer)
-  -- TODO: Remove Context from grid
-  | Grid Context Conway.CellTransitions (M.Map (Integer, Integer) Char)
+  | Grid Conway.CellTransitions (M.Map (Integer, Integer) Char)
 
 data OrdValue
   = OrdI Integer
@@ -46,7 +45,7 @@ toOrd True             = Just $ OrdTrue
 toOrd False            = Just $ OrdFalse
 toOrd (CellState s)    = Just $ OrdCellState s
 toOrd (Pos coords)     = Just $ OrdPos coords
-toOrd (Grid _ _ state) = Just $ OrdGrid state
+toOrd (Grid _ state)   = Just $ OrdGrid state
 toOrd (Fold _)         = Nothing
 toOrd (Func _)         = Nothing
 toOrd (StepsOfFold _)  = Nothing
@@ -61,7 +60,7 @@ instance Show Value where
   show (Func _) = "<function>"
   show (CellState c) = "{cell:" ++ [c] ++ "}"
   show (Pos (x, y)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ "}"
-  show (Grid _ _ _) = "{grid}"
+  show (Grid _ _) = "{grid}"
 
 type Context = M.Map Text (Type.Type, Value.Value)
 

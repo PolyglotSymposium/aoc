@@ -87,6 +87,8 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Runtime errors
    - [ ] Error formatting
    - [ ] Clean up *Problem.hs files
+   - [ ] Comments
+   - [ ] Application parsing is wonky (and it should be `(value value)`) not `(text value)`
  - `conway`
    - [ ] Be able to simply animate a solution rather than solve it
    - [ ] Solve more actual Conway-esque problems
@@ -96,4 +98,4 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Transitions should have context distinct from `grid`
    - [ ] Allow `any_state` in transitions "from"
    - [ ] `Grid` should store what generation it is 
-   - [ ] Optimize (2015, d19p1 is kinda slow)
+   - [ ] Optimize (2015, d18 is kinda slow)

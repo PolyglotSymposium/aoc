@@ -13,8 +13,8 @@ import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import           Data.Text hiding (count, length)
-import           Debug.Trace (trace)
-import           ListEvaluator (evalValue)
+import           Debug.Trace (trace, traceShow)
+import           ListEvaluator (evalValue, toBoolean)
 import qualified Type as Type
 import qualified Value as C
 import qualified Value as Value
@@ -83,7 +83,7 @@ allSurrounding (x, y) =
 adjacent :: Value.Value
 adjacent = Value.Func $ \context cell ->
   case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
-    (Just (Value.Grid _ _ state), Just (Value.Pos coords), Value.CellState c) ->
+    (Just (Value.Grid _ state), Just (Value.Pos coords), Value.CellState c) ->
       Just $
         Value.I $
         toInteger $
@@ -97,7 +97,7 @@ adjacent = Value.Func $ \context cell ->
 neighbors :: Value.Value
 neighbors = Value.Func $ \context cell ->
   case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
-    (Just (Value.Grid _ _ state), Just (Value.Pos coords), Value.CellState c) ->
+    (Just (Value.Grid _ state), Just (Value.Pos coords), Value.CellState c) ->
       Just $
         Value.I $
         toInteger $
@@ -108,10 +108,28 @@ neighbors = Value.Func $ \context cell ->
         allSurrounding coords
     _ -> Nothing
 
+at :: Value.Value
+at = Value.Func $ \ctx arg ->
+  case (C.identValue "$pos" ctx, arg) of
+    (Just (Value.Pos current), Value.Pos desired) ->
+      Just $ toBoolean $ current == desired
+    (Just current, Value.Func f) ->
+      f ctx current
+    _ -> Nothing
+
+corner :: Value.Value
+corner = Value.Func $ \ctx current ->
+  case (C.identValue "$height" ctx, C.identValue "$width" ctx, current) of
+    (Just (Value.I height), Just (Value.I width), Value.Pos (x, y)) ->
+      Just $
+        toBoolean $
+          (x == 0 && (y == 0 || y == height-1)) || (x == width-1 && (y == 0 || y == height-1))
+    _ -> Nothing
+
 firstRepeatedGeneration :: Value.Value
 firstRepeatedGeneration = Value.Func $ \context v -> go S.empty context v
   where
-    go seen context grd@(Value.Grid _ _ _) = do
+    go seen context grd@(Value.Grid _ _) = do
       ord <- Value.toOrd grd
       if S.member ord seen
       then
@@ -133,9 +151,9 @@ afterTransitions = Value.Func $ \ctx n -> Just $ Value.Func $ \_ grd -> go n ctx
 nextGeneration :: Value.Value
 nextGeneration = Value.Func nextGeneration'
 
-nextGeneration' :: a -> Value.Value -> Maybe Value.Value
-nextGeneration' _ grd@(Value.Grid context ts@(Conway.CellTransitions { .. }) state) =
-  Just $ Value.Grid context ts $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grd) context)) state
+nextGeneration' :: C.Context -> Value.Value -> Maybe Value.Value
+nextGeneration' context grd@(Value.Grid ts@(Conway.CellTransitions { .. }) state) =
+  Just $ Value.Grid ts $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grd) context)) state
     where
       transition ctx coords c =
         fromMaybe (Conway.ident otherwiseCellIs) $
@@ -169,7 +187,7 @@ traceGrid = Value.Func traceGrid'
 traceGrid' :: C.Context -> Value.Value -> Maybe Value.Value
 traceGrid' context grd =
   case (C.identValue "$width" context, C.identValue "$height" context, grd) of
-    (Just (Value.I width), Just (Value.I height), Value.Grid _ _ state) ->
+    (Just (Value.I width), Just (Value.I height), Value.Grid _ state) ->
       trace (render width height state) $ Just grd
     _ -> Nothing
 
@@ -185,7 +203,7 @@ getPos _ = Nothing
 positions :: Value.Value
 positions = Value.Func $ \_ cs -> Just $ Value.Func $ \_ grd ->
   case (cs, grd) of
-    (Value.CellState c, Value.Grid _ _ state) ->
+    (Value.CellState c, Value.Grid _ state) ->
       Just $
         Value.Vs $
         fmap Value.Pos $
@@ -250,6 +268,8 @@ conwayContext =
     , ("after_transitions",         (num       --> (grid --> grid),     afterTransitions))
     , ("positions",                 (cellState --> (grid --> list pos), positions))
     , ("neighbors",                 (cellState --> num,                 neighbors))
+    , ("corner",                    (pos,                               corner))
+    , ("at",                        (pos       --> bool,                at))
     , ("adjacent",                  (cellState --> num,                 adjacent))
     , ("reading_order",             (list pos  --> list num,            readingOrder))
     , ("trace_grid",                (grid      --> grid,                traceGrid))
