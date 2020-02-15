@@ -1,6 +1,6 @@
 # aoc
 
-A programming language inspired by and designed for solving Advent of Code
+A programming language inspired by and designed for solving [Advent of Code](https://adventofcode.com/)
 puzzles.
 
 ## Why?
@@ -50,7 +50,7 @@ processing problems.
 Since list processing is a fairly rudimentary form of processing, I suspect this
 domain to make appearances in other domains.
 
-### Conway's Game of Life (Cellular Automaton)
+### Conway's Game of Life ([Cellular Automaton](https://en.wikipedia.org/wiki/Cellular_automaton))
 
 Cellular automaton domain solutions begin with `conway`.
 
@@ -60,9 +60,14 @@ hadn't).
 
 ### Turtles
 
+You know, like in the [logo programming language](https://en.wikipedia.org/wiki/Logo_%28programming_language%29).
+
 This is a work in progress...
 
 ### Assembly Code
+
+There are a bunch of these. I probably won't be tackling the optimization
+problems but that would certainly be a challenge.
 
 This is a work in progress...
 
