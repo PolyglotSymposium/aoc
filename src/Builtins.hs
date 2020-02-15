@@ -78,6 +78,19 @@ neighbors = Value.Func $ \context state ->
         adjacent pos
     _ -> Nothing
 
+firstRepeatedGeneration :: Value.Value
+firstRepeatedGeneration = Value.Func $ \context v -> go S.empty context v
+  where
+    go seen context grid@(Value.Grid _ _ _) = do
+      ord <- Value.toOrd grid
+      if S.member ord seen
+      then
+        pure grid
+      else do
+        next <- nextGeneration' context grid
+        go seen context next
+    go _ _ _ = Nothing
+
 nextGeneration :: Value.Value
 nextGeneration = Value.Func nextGeneration'
 
@@ -152,7 +165,7 @@ conwayContext :: C.Context
 conwayContext =
   C.add core $
     C.fromList [
-      ("first_repeated_generation", (grid      --> grid,                todo)),
+      ("first_repeated_generation", (grid      --> grid,                firstRepeatedGeneration)),
       ("next_generation",           (grid      --> grid,                nextGeneration)),
       ("positions",                 (cellState --> (grid --> list pos), todo)),
       ("neighbors",                 (cellState --> num,                 neighbors))
