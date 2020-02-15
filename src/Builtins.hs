@@ -12,7 +12,7 @@ import qualified ConwayAst as Conway
 import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
-import           Data.Text
+import           Data.Text hiding (count, length)
 import           Debug.Trace (trace)
 import           ListEvaluator (evalValue)
 import qualified Type as Type
@@ -24,6 +24,12 @@ makeFold i f = Value.Fold (Value.I i, \v1 v2 ->
   case (v1, v2) of
     (Value.I v, Value.I acc) -> Just $ Value.I $ f v acc
     _                        -> Nothing)
+
+count :: Value.Value
+count = Value.Func $ \_ v ->
+  case v of
+    Value.Vs vs -> Just $ Value.I $ toInteger $ length vs
+    _ -> Nothing
 
 repeats :: Value.Value
 repeats = Value.Func $ \_ v -> Value.Vs <$> go S.empty v
@@ -113,6 +119,15 @@ firstRepeatedGeneration = Value.Func $ \context v -> go S.empty context v
       else do
         next <- nextGeneration' context grd
         go (S.insert ord seen) context next
+    go _ _ _ = Nothing
+
+afterTransitions :: Value.Value
+afterTransitions = Value.Func $ \ctx n -> Just $ Value.Func $ \_ grd -> go n ctx grd
+  where
+    go (Value.I 0) _ grd           = Just grd
+    go (Value.I n) ctx grd | n > 0 = do
+                     next <- nextGeneration' ctx grd
+                     go (Value.I (n - 1)) ctx next
     go _ _ _ = Nothing
 
 nextGeneration :: Value.Value
@@ -206,6 +221,7 @@ baseIdentifiers :: [(Text, Type.Type, Value.Value)]
 baseIdentifiers =
   [
     ("sum",     list num --> num,      makeFold 0 (+))
+  , ("count",   list a   --> num,      count)
   , ("product", list num --> num,      makeFold 1 (*))
   , ("repeats", list a --> list a,     repeats)
   , ("true",    bool,                  Value.True)
@@ -231,6 +247,7 @@ conwayContext =
     C.fromList [
       ("first_repeated_generation", (grid      --> grid,                firstRepeatedGeneration))
     , ("next_generation",           (grid      --> grid,                nextGeneration))
+    , ("after_transitions",         (num       --> (grid --> grid),     afterTransitions))
     , ("positions",                 (cellState --> (grid --> list pos), positions))
     , ("neighbors",                 (cellState --> num,                 neighbors))
     , ("adjacent",                  (cellState --> num,                 adjacent))

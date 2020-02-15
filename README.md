@@ -90,10 +90,10 @@ This may not even be distinct from the `Graph` domain.
  - `conway`
    - [ ] Be able to simply animate a solution rather than solve it
    - [ ] Solve more actual Conway-esque problems
-   - [ ] Encode classic CGoL
-   - [ ] Add `after_generations n`
    - [ ] Remove `trace_grid` and just make that its `Show` instance
    - [ ] Remove `Context` from `Grid` since it is passed now
    - [ ] 1-D Conway
    - [ ] Transitions should have context distinct from `grid`
-   - [ ] Allow `any_state` in transitions "from".
+   - [ ] Allow `any_state` in transitions "from"
+   - [ ] `Grid` should store what generation it is 
+   - [ ] Optimize (2015, d19p1 is kinda slow)

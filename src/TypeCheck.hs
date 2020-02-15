@@ -19,7 +19,7 @@ type Env = Maybe Type.Type
 
 data TypeError
   = IdentifierIsNotDefined Text
-  | FloatingLambdaCannotReturn Type.Type
+  | FloatingLambdaCannotReturn Int Type.Type
   | IdentifierNotAFunctionOfAList Text Text Type.Type
   | NotAFunction Text Type.Type
   | CouldNotInferTypeOfFreeVariableInputIn Ast.Value
@@ -59,21 +59,21 @@ unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
     Type.Arrow (Type.List (Type.Var a)) (Type.Var b) ->
       if a == b
       then pure it
-      else Left $ FloatingLambdaCannotReturn ot
+      else Left $ FloatingLambdaCannotReturn 1 ot
     Type.Arrow (Type.List (Type.Var a)) (Type.List (Type.Var b)) ->
       if a == b
       then pure $ Type.List it
-      else Left $ FloatingLambdaCannotReturn ot
+      else Left $ FloatingLambdaCannotReturn 2 ot
     Type.Arrow (Type.List _) (Type.List b) ->
       pure $ Type.List b
     Type.Arrow Type.Grid Type.Grid ->
       pure Type.Grid
     Type.Arrow (Type.List finElem) fout ->
-      if finElem == it
+      if finElem == it || isVar finElem
       then pure fout
-      else Left $ FloatingLambdaCannotReturn ot
+      else Left $ FloatingLambdaCannotReturn 3 ot
 
-    _ -> Left $ FloatingLambdaCannotReturn ot
+    _ -> Left $ FloatingLambdaCannotReturn 4 ot
 
 unifySolution context (Ast.FloatingLambda (Ast.Body b)) t = do
   actual <- typeOf context b
