@@ -1,20 +1,22 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Builtins
        ( listContext
        , conwayContext
-       , identType
-       , identValue
-       , Context
-       , add
        ) where
 
-import Data.Text
+import qualified Ast
+import qualified ConwayAst as Conway
 import qualified Data.Map.Strict as M
-import qualified Type as Type
-import qualified Value as Value
+import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
+import           Data.Text
+import           ListEvaluator (evalValue)
+import qualified Type as Type
+import qualified Value as C
+import qualified Value as Value
 
 makeFold :: Integer -> (Integer -> Integer -> Integer) -> Value.Value
 makeFold i f = Value.Fold (Value.I i, \v1 v2 ->
@@ -23,7 +25,7 @@ makeFold i f = Value.Fold (Value.I i, \v1 v2 ->
     _                        -> Nothing)
 
 repeats :: Value.Value
-repeats = Value.Func $ \v -> Value.Vs <$> go S.empty v
+repeats = Value.Func $ \_ v -> Value.Vs <$> go S.empty v
   where
     go _ (Value.Vs []) = Just []
     go seen (Value.Vs (v:vs)) = do
@@ -34,14 +36,36 @@ repeats = Value.Func $ \v -> Value.Vs <$> go S.empty v
     go _ _ = Nothing
 
 first :: Value.Value
-first = Value.Func $ \case
+first = Value.Func $ \_ -> \case
                       Value.Vs (v:_) -> Just v
                       _ -> Nothing
 
 dupe :: Value.Value
-dupe = Value.Func $ \case
+dupe = Value.Func $ \_ -> \case
                       Value.Vs vs -> Just (Value.Vs (vs ++ vs))
                       _ -> Nothing
+
+nextGeneration :: Value.Value
+nextGeneration = Value.Func nextGeneration'
+
+evaluatesToTrue :: Value.Context -> Ast.Value -> Bool
+evaluatesToTrue context ast =
+  case evalValue context Nothing ast of
+    Right Value.True -> True
+    _ -> False
+
+nextGeneration' _ grid@(Value.Grid context ts@(Conway.CellTransitions { .. }) state) =
+  Just $ Value.Grid context ts $ M.mapWithKey transition state
+    where
+      transition pos c = fromMaybe (Conway.ident otherwiseCellIs) $ matching cases pos c (M.insert "$grid" (Type.Grid, grid) context)
+
+      matching [] _ _ _ = Nothing
+      matching ((from, to, cond):cases) pos c ctx =
+        if Conway.ident from == c && evaluatesToTrue ctx cond
+        then Just $ Conway.ident to
+        else matching cases pos c ctx
+
+nextGeneration' _ _ = Nothing
 
 (-->) :: Type.Type -> Type.Type -> Type.Type
 i --> o = Type.Arrow i o
@@ -83,30 +107,23 @@ baseIdentifiers =
   , ("reading_order",             list pos --> list num, todo)
   ]
 
-core :: Context
-core = M.fromList $ do
+core :: C.Context
+core = C.fromList $ do
   (name, t, v) <- baseIdentifiers
   case (t, v) of
     (Type.Arrow iT oT, Value.Fold step) -> [(name, (t, v)), (append name "*", (iT --> list oT, Value.StepsOfFold step))]
     _    -> [(name, (t, v))]
 
-type Context = M.Map Text (Type.Type, Value.Value)
 
-identType :: Text -> Context -> Maybe Type.Type
-identType ident ctx = fst <$> M.lookup ident ctx
-
-identValue :: Text -> Context -> Maybe Value.Value
-identValue ident ctx = snd <$> M.lookup ident ctx
-
-listContext :: Context
+listContext :: C.Context
 listContext = core
 
-conwayContext :: Context
+conwayContext :: C.Context
 conwayContext =
-  M.insert "first_repeated_generation" (grid --> grid, todo) $
-  M.insert "positions" (cellState --> (grid --> list pos), todo) $
-  M.insert "neighbors" (cellState --> num, todo) $
-    core
-
-add :: Context -> Context -> Context
-add = M.union
+  C.add core $
+    C.fromList [
+      ("first_repeated_generation", (grid      --> grid,                todo)),
+      ("next_generation",           (grid      --> grid,                nextGeneration)),
+      ("positions",                 (cellState --> (grid --> list pos), todo)),
+      ("neighbors",                 (cellState --> num,                 todo))
+    ]

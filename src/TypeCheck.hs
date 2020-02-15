@@ -10,7 +10,7 @@ module TypeCheck
        ) where
 
 import qualified Ast
-import           Builtins (Context, identType)
+import           Value (Context, identType)
 import qualified Data.Set as S
 import           Data.Text
 import           Debug.Trace

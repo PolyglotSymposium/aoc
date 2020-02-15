@@ -33,10 +33,10 @@ conway = do
     , Conway.solution=Conway.Solution code
     }
 
-twoDimensionalConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
-twoDimensionalConwayInput transitions aliases = do
+twoDimensionalConwayInput :: V.Context -> Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
+twoDimensionalConwayInput context transitions aliases = do
   rows <- grid
-  pure $ V.Grid transitions $ M.fromList $ do
+  pure $ V.Grid context transitions $ M.fromList $ do
     (y, row) <- zip [0..] rows
     (x, cell) <- zip [0..] row
     [((x, y), cell)]

@@ -2,7 +2,7 @@ module ConwayProblem
        ( runConwayProblem
        ) where
 
-import           Builtins (conwayContext, add, Context)
+import           Builtins (conwayContext)
 import qualified ConwayAst as Ast
 import qualified ConwayParser as Parse
 import           Data.Foldable (for_)
@@ -14,6 +14,7 @@ import           Text.Megaparsec
 import           Text.Megaparsec.Error (parseErrorPretty)
 import qualified Type
 import qualified TypeCheck
+import           Value (add, Context)
 import qualified Value as V
 
 addAliasesToContext :: Ast.CellAliases -> Context -> Context
@@ -33,35 +34,35 @@ runConwayProblem source = do
       putStrLn "Error parsing aoc code file:"
       putStrLn $ parseErrorPretty err
       pure Nothing
-    Right ast -> do
-      let stateSource = Path.takeDirectory source Path.</> unpack (Ast.initialStateAt ast)
-      initialStateText <- readFile stateSource
-      case runParser (Parse.twoDimensionalConwayInput (Ast.cellTransitions ast) (Ast.cellAliases ast)) stateSource $ pack initialStateText of
-        Left err -> do
-          putStrLn "Error parsing Conway initial state:"
-          putStrLn $ parseErrorPretty err
-          pure Nothing
+    Right ast ->
+      let
+        context = addAliasesToContext (Ast.cellAliases ast) conwayContext
+        solution =
+          case Ast.solution ast of
+            Ast.Solution solution -> solution
 
-        Right initialState ->
-          let
-            context = addAliasesToContext (Ast.cellAliases ast) conwayContext
-            solution =
-              case Ast.solution ast of
-                Ast.Solution solution -> solution
-
-            validations = do
-              TypeCheck.ensureOneFreeOrIdentInEachStep context solution
-              ot <- TypeCheck.unifySolution conwayContext solution Type.Grid
-              for_ (Ast.transitionCases $ Ast.cellTransitions ast) $ \transitionCase -> do
-                TypeCheck.noFrees context transitionCase
-                TypeCheck.unify context transitionCase Type.Boolean Nothing
-              pure ot
-          in
-            case validations of
+        validations = do
+          TypeCheck.ensureOneFreeOrIdentInEachStep context solution
+          ot <- TypeCheck.unifySolution conwayContext solution Type.Grid
+          for_ (Ast.transitionCases $ Ast.cellTransitions ast) $ \transitionCase -> do
+            TypeCheck.noFrees context transitionCase
+            TypeCheck.unify context transitionCase Type.Boolean Nothing
+          pure ot
+      in
+        case validations of
+          Left err -> do
+            print err
+            pure Nothing
+          Right outputType -> do
+            let stateSource = Path.takeDirectory source Path.</> unpack (Ast.initialStateAt ast)
+            initialStateText <- readFile stateSource
+            case runParser (Parse.twoDimensionalConwayInput context (Ast.cellTransitions ast) (Ast.cellAliases ast)) stateSource $ pack initialStateText of
               Left err -> do
-                print err
+                putStrLn "Error parsing Conway initial state:"
+                putStrLn $ parseErrorPretty err
                 pure Nothing
-              Right outputType -> do
+
+              Right initialState ->
                 case Eval.eval context initialState solution of
                   Right result -> do
                     print result

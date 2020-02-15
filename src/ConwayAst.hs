@@ -6,6 +6,7 @@ module ConwayAst
        , CellIdent(..)
        , CellAlias(..)
        , aliasName
+       , ident
        , CellAliases
        , transitionCases
        ) where
@@ -18,6 +19,9 @@ newtype CellAlias = CellAlias Text deriving (Show, Eq)
 
 aliasName :: CellAlias -> Text
 aliasName (CellAlias name) = name
+
+ident :: CellIdent -> Char
+ident (CellIdent c) = c
 
 trd :: (a, b, c) -> c
 trd (_, _, t) = t

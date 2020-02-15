@@ -1,17 +1,18 @@
 module ListEvaluator
        ( EvalError(..)
        , eval
+       , evalValue
        ) where
 
 import qualified Ast as Ast
-import           Builtins (Context, identValue)
 import qualified Data.Text as Text
+import           Value (Context, identValue)
 import qualified Value as Value
 
 data EvalError
   = UnexpectedError Int
   | TypeMismatchAtRuntime Text.Text
-  deriving Show
+  deriving (Show, Eq)
 
 type Result a = Either EvalError a
 
@@ -48,7 +49,7 @@ eval context (Value.Vs vs) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name)))
       Value.Vs <$> foldSteps step initial vs
 
     Just (Value.Func f) ->
-      case f (Value.Vs vs) of
+      case f context (Value.Vs vs) of
         Nothing -> Left $ UnexpectedError 2
         Just v  -> Right v
 
