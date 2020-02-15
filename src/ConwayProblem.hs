@@ -64,11 +64,15 @@ runConwayProblem source = do
                 putStrLn $ parseErrorPretty err
                 pure Nothing
 
-              Right (width, initialState) ->
-                case Eval.eval (insert "$width" (Type.Number, V.I width) context) initialState solution of
-                  Right result -> do
-                    print result
-                    pure Nothing
-                  Left err -> do
-                    print err
-                    pure Nothing
+              Right (width, height, initialState) ->
+                let
+                  contextWithSize =
+                    insert "$height" (Type.Number, V.I height) $ insert "$width" (Type.Number, V.I width) context
+                in
+                  case Eval.eval contextWithSize initialState solution of
+                    Right result -> do
+                      print result
+                      pure Nothing
+                    Left err -> do
+                      print err
+                      pure Nothing

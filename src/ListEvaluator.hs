@@ -9,6 +9,8 @@ import qualified Data.Text as Text
 import           Value (Context, identValue)
 import qualified Value as Value
 
+import Debug.Trace
+
 data EvalError
   = UnexpectedError Int
   | TypeMismatchAtRuntime Text.Text
@@ -81,6 +83,28 @@ eval context (Value.Vs vs) (Ast.FloatingLambda lambda) = do
         result <- applyLambda context v lambda
         pure (v, result)
 
+eval context grid@(Value.Grid _ _ _) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
+  case identValue name context of
+    Just (Value.Func f) ->
+      case f context grid of
+        Nothing -> Left $ UnexpectedError 2
+        Just v  -> Right v
+
+    _ -> Left $ TypeMismatchAtRuntime (Text.pack ("Built-in " ++ Text.unpack name ++ " specified at the top level of list evaluation but it's not a list function" ))
+
+eval context arg2 (Ast.FloatingLambda (Ast.Body (Ast.Application fn arg1))) = do
+  fnValue <- evalValue context Nothing (Ast.Identifier fn)
+  argValue <- evalValue context (Just arg2) arg1
+  case fnValue of
+    Value.Func f ->
+      case f context argValue of
+        Just (Value.Func g) ->
+          case g context arg2 of
+            Nothing -> error (show fn) -- Left $ UnexpectedError 9
+            Just v -> Right v
+        _ -> Left $ UnexpectedError 8
+    _ -> Left $ UnexpectedError 7
+
 eval _ v (Ast.FloatingLambda (Ast.Body op)) = Left $ TypeMismatchAtRuntime (Text.pack ("When applying top level operation " ++ show op ++ " got " ++ show v ++ " which is not expected as a top-level input"))
 
 eval _ v (Ast.For _ _ _) = Left $ TypeMismatchAtRuntime (Text.pack ("When applying `for` got " ++ show v ++ " but expected a list"))
@@ -98,8 +122,16 @@ evalValue context val (Ast.Identifier name) =
         Nothing -> Left $ UnexpectedError 4
         Just v  -> Right v
 
-evalValue _ _ (Ast.Application _ _) =
-  error "TODO: make application work"
+evalValue context val (Ast.Application fn arg) = do
+  fnValue <- evalValue context val (Ast.Identifier fn)
+  argValue <- evalValue context val arg
+  case fnValue of
+    (Value.Func f) ->
+      case f context argValue of
+        Nothing -> Left $ UnexpectedError 6
+        Just v  -> Right v
+
+    _ -> Left $ UnexpectedError 5
 
 evalValue context val (Ast.Gt a b) =
   binNumberOp context val (>) ">" a b toBoolean

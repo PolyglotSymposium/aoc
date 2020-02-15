@@ -33,13 +33,14 @@ conway = do
     , Conway.solution=Conway.Solution code
     }
 
-twoDimensionalConwayInput :: V.Context -> Conway.CellTransitions -> Conway.CellAliases -> P.Parser (Integer, V.Value)
+twoDimensionalConwayInput :: V.Context -> Conway.CellTransitions -> Conway.CellAliases -> P.Parser (Integer, Integer, V.Value)
 twoDimensionalConwayInput context transitions aliases = do
   rows <- grid
   let cells = positionCells rows
   pure
     (
       maximum $ fmap ((+ 1) . fst . fst) cells,
+      maximum $ fmap ((+ 1) . snd . fst) cells,
       V.Grid context transitions $ M.fromList cells
     )
 

@@ -18,6 +18,8 @@ import qualified Type as Type
 import qualified Value as C
 import qualified Value as Value
 
+import Debug.Trace
+
 makeFold :: Integer -> (Integer -> Integer -> Integer) -> Value.Value
 makeFold i f = Value.Fold (Value.I i, \v1 v2 ->
   case (v1, v2) of
@@ -123,6 +125,21 @@ readingOrder' context positions =
   where
     index width (x, y) = Value.I (x + width * y)
 
+traceGrid :: Value.Value
+traceGrid = Value.Func traceGrid'
+
+traceGrid' :: C.Context -> Value.Value -> Maybe Value.Value
+traceGrid' context grid =
+  case (C.identValue "$width" context, C.identValue "$height" context, grid) of
+    (Just (Value.I width), Just (Value.I height), Value.Grid _ _ state) ->
+      trace (render width height state) $ Just grid
+    _ -> Nothing
+
+  where
+    render width height state = do
+      y <- [0..height-1]
+      fmap (\x -> state M.! (x, y)) [0..width-1] ++ "\n"
+
 getPos :: Value.Value -> Maybe (Integer, Integer)
 getPos (Value.Pos coord) = Just coord
 getPos _ = Nothing
@@ -196,5 +213,6 @@ conwayContext =
     , ("next_generation",           (grid      --> grid,                nextGeneration))
     , ("positions",                 (cellState --> (grid --> list pos), positions))
     , ("neighbors",                 (cellState --> num,                 neighbors))
-    , ("reading_order",             (list pos   --> list num,           readingOrder))
+    , ("reading_order",             (list pos  --> list num,            readingOrder))
+    , ("trace_grid",                (grid      --> grid,                traceGrid))
     ]
