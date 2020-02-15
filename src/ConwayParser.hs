@@ -46,8 +46,8 @@ twoDimensionalConwayInput context transitions aliases = do
 
   where
     positionCells rows = do
-      (y, row) <- zip [0..] rows
-      (x, cell) <- zip [0..] row
+      (y, line) <- zip [0..] rows
+      (x, cell) <- zip [0..] line
       [((x, y), cell)]
 
     grid :: P.Parser [[Char]]
@@ -62,8 +62,8 @@ twoDimensionalConwayInput context transitions aliases = do
 alias :: Conway.CellAliases -> P.Parser Conway.CellIdent
 alias aliases = choice $ identFromAlias <$> aliases
   where
-    identFromAlias (ident, Conway.CellAlias alias) =
-      ident <$ P.lstr alias
+    identFromAlias (ident, Conway.CellAlias al) =
+      ident <$ P.lstr al
 
 cellTransitions :: Conway.CellAliases -> P.Parser Conway.CellTransitions
 cellTransitions aliases = do

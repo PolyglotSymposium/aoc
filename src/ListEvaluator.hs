@@ -9,8 +9,6 @@ import qualified Data.Text as Text
 import           Value (Context, identValue)
 import qualified Value as Value
 
-import Debug.Trace
-
 data EvalError
   = UnexpectedError Int
   | TypeMismatchAtRuntime Text.Text

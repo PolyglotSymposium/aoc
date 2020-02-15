@@ -39,7 +39,7 @@ runConwayProblem (source, text) =
         context = addAliasesToContext (Ast.cellAliases ast) conwayContext
         solution =
           case Ast.solution ast of
-            Ast.Solution solution -> solution
+            Ast.Solution sol -> sol
 
         validations = do
           TypeCheck.ensureOneFreeOrIdentInEachStep context solution

@@ -75,9 +75,9 @@ allSurrounding (x, y) =
   ]
 
 adjacent :: Value.Value
-adjacent = Value.Func $ \context state ->
-  case (C.identValue "$grid" context, C.identValue "$pos" context, state) of
-    (Just (Value.Grid _ _ state), Just (Value.Pos pos), Value.CellState c) ->
+adjacent = Value.Func $ \context cell ->
+  case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
+    (Just (Value.Grid _ _ state), Just (Value.Pos coords), Value.CellState c) ->
       Just $
         Value.I $
         toInteger $
@@ -85,13 +85,13 @@ adjacent = Value.Func $ \context state ->
         M.filter (== c) $
         M.restrictKeys state $
         S.fromList $
-        allAdjacent pos
+        allAdjacent coords
     _ -> Nothing
 
 neighbors :: Value.Value
-neighbors = Value.Func $ \context state ->
-  case (C.identValue "$grid" context, C.identValue "$pos" context, state) of
-    (Just (Value.Grid _ _ state), Just (Value.Pos pos), Value.CellState c) ->
+neighbors = Value.Func $ \context cell ->
+  case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
+    (Just (Value.Grid _ _ state), Just (Value.Pos coords), Value.CellState c) ->
       Just $
         Value.I $
         toInteger $
@@ -99,38 +99,39 @@ neighbors = Value.Func $ \context state ->
         M.filter (== c) $
         M.restrictKeys state $
         S.fromList $
-        allSurrounding pos
+        allSurrounding coords
     _ -> Nothing
 
 firstRepeatedGeneration :: Value.Value
 firstRepeatedGeneration = Value.Func $ \context v -> go S.empty context v
   where
-    go seen context grid@(Value.Grid _ _ _) = do
-      ord <- Value.toOrd grid
+    go seen context grd@(Value.Grid _ _ _) = do
+      ord <- Value.toOrd grd
       if S.member ord seen
       then
-        pure grid
+        pure grd
       else do
-        next <- nextGeneration' context grid
+        next <- nextGeneration' context grd
         go (S.insert ord seen) context next
     go _ _ _ = Nothing
 
 nextGeneration :: Value.Value
 nextGeneration = Value.Func nextGeneration'
 
-nextGeneration' _ grid@(Value.Grid context ts@(Conway.CellTransitions { .. }) state) =
-  Just $ Value.Grid context ts $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grid) context)) state
+nextGeneration' :: a -> Value.Value -> Maybe Value.Value
+nextGeneration' _ grd@(Value.Grid context ts@(Conway.CellTransitions { .. }) state) =
+  Just $ Value.Grid context ts $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grd) context)) state
     where
-      transition context pos c =
+      transition ctx coords c =
         fromMaybe (Conway.ident otherwiseCellIs) $
-          matching cases pos c $
-          M.insert "$pos" (Type.Position, Value.Pos pos) context
+          matching cases coords c $
+          M.insert "$pos" (Type.Position, Value.Pos coords) ctx
 
       matching [] _ _ _ = Nothing
-      matching ((from, to, cond):cases) pos c ctx =
+      matching ((from, to, cond):cs) coords c ctx =
         if Conway.ident from == c && evaluatesToTrue ctx cond
         then Just $ Conway.ident to
-        else matching cases pos c ctx
+        else matching cs coords c ctx
 
 nextGeneration' _ _ = Nothing
 
@@ -138,23 +139,23 @@ readingOrder :: Value.Value
 readingOrder = Value.Func readingOrder'
 
 readingOrder' :: C.Context -> Value.Value -> Maybe Value.Value
-readingOrder' context positions =
-  case (C.identValue "$width" context, positions) of
+readingOrder' context ps =
+  case (C.identValue "$width" context, ps) of
     (Just (Value.I width), Value.Vs vs) ->
-      fmap Value.Vs $ sequence $ fmap (fmap (index width) . getPos) vs
+      fmap Value.Vs $ sequence $ fmap (fmap (readingIndex width) . getPos) vs
     _ -> Nothing
 
   where
-    index width (x, y) = Value.I (x + width * y)
+    readingIndex width (x, y) = Value.I (x + width * y)
 
 traceGrid :: Value.Value
 traceGrid = Value.Func traceGrid'
 
 traceGrid' :: C.Context -> Value.Value -> Maybe Value.Value
-traceGrid' context grid =
-  case (C.identValue "$width" context, C.identValue "$height" context, grid) of
+traceGrid' context grd =
+  case (C.identValue "$width" context, C.identValue "$height" context, grd) of
     (Just (Value.I width), Just (Value.I height), Value.Grid _ _ state) ->
-      trace (render width height state) $ Just grid
+      trace (render width height state) $ Just grd
     _ -> Nothing
 
   where
@@ -167,8 +168,8 @@ getPos (Value.Pos coord) = Just coord
 getPos _ = Nothing
 
 positions :: Value.Value
-positions = Value.Func $ \_ cs -> Just $ Value.Func $ \_ grid ->
-  case (cs, grid) of
+positions = Value.Func $ \_ cs -> Just $ Value.Func $ \_ grd ->
+  case (cs, grd) of
     (Value.CellState c, Value.Grid _ _ state) ->
       Just $
         Value.Vs $
@@ -197,9 +198,6 @@ grid = Type.Grid
 
 cellState :: Type.Type
 cellState = Type.CellState
-
-todo :: Value.Value
-todo = Value.False
 
 pos :: Type.Type
 pos = Type.Position

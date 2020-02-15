@@ -22,8 +22,8 @@ data SupportedDomainAst
 type Solver a = (String, String) -> IO (Maybe (Type.Type, Type.Type, V.Value, a))
 
 toDomain :: (a -> SupportedDomainAst) -> Solver a -> Solver SupportedDomainAst
-toDomain convert solver input = do
-  ans <- solver input
+toDomain convert slvr input = do
+  ans <- slvr input
   pure $ case ans of
     Just (it, ot, v, domain) -> Just (it, ot, v, convert domain)
     Nothing -> Nothing

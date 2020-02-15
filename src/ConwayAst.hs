@@ -27,7 +27,7 @@ trd :: (a, b, c) -> c
 trd (_, _, t) = t
 
 transitionCases :: CellTransitions -> [Ast.Value]
-transitionCases (CellTransitions cases _) = trd <$> cases
+transitionCases (CellTransitions cs _) = trd <$> cs
 
 data CellTransitions = CellTransitions
   { cases :: [(CellIdent, CellIdent, Ast.Value)]

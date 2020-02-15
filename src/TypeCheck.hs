@@ -13,7 +13,6 @@ import qualified Ast
 import           Value (Context, identType)
 import qualified Data.Set as S
 import           Data.Text
-import           Debug.Trace
 import qualified Type
 
 type Env = Maybe Type.Type
@@ -49,7 +48,7 @@ unifySolution context (Ast.For cond gen reduce) (Type.List it) = do
 unifySolution context (Ast.FloatingLambda lambda) Type.Grid = do
   ot <- unifyLambda context lambda Type.CellState
   case ot of
-    Type.Arrow Type.Grid ot -> pure ot
+    Type.Arrow Type.Grid arrowOt -> pure arrowOt
     _ -> error "TODO non-unifying grid functions"
 
 unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
@@ -65,7 +64,7 @@ unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
       if a == b
       then pure $ Type.List it
       else Left $ FloatingLambdaCannotReturn ot
-    Type.Arrow (Type.List a) (Type.List b) ->
+    Type.Arrow (Type.List _) (Type.List b) ->
       pure $ Type.List b
     Type.Arrow Type.Grid Type.Grid ->
       pure Type.Grid
@@ -119,7 +118,7 @@ unify context ast@(Ast.Equals a b) Type.Boolean env = do
   t2 <- unify context b (Type.Var 'a') env
   case (t1, t2) of
     (_, _) | t1 == t2 -> pure t2
-    (Just t1, Just t2) -> Left $ UnificationFailure 8 env t1 t2 ast
+    (Just t1', Just t2') -> Left $ UnificationFailure 8 env t1' t2' ast
     _ -> error $ "Unexpected error unifying equals in " ++ show ast
 
 unify context ast@(Ast.Identifier name) t env =
@@ -148,7 +147,7 @@ unify context ast@(Ast.Application fn arg) t env =
     Nothing ->
       Left $ IdentifierIsNotDefined fn
 
-unify context ast (Type.Var _) env = do
+unify context ast (Type.Var _) _ = do
   t <- typeOf context ast
   pure $ Just t
 
@@ -197,8 +196,8 @@ ensureOneFreeOrIdentInEachStep context = go 1 . unpipe
     oneFreeOrIdent :: Context -> Int -> Ast.Value -> Result ()
     oneFreeOrIdent _ _ (Ast.Identifier _) = pure ()
     oneFreeOrIdent _ _ (Ast.Application _ _) = pure ()
-    oneFreeOrIdent context n ast =
-      if S.size (frees context ast) /= 1
+    oneFreeOrIdent ctx n ast =
+      if S.size (frees ctx ast) /= 1
       then Left $ StepNMustBeIdentiferOrContainSingleFree n ast
       else pure ()
 
@@ -220,7 +219,7 @@ frees context (Ast.Raised a b)      = S.union (frees context a) (frees context b
 frees context (Ast.And a b)         = S.union (frees context a) (frees context b)
 frees context (Ast.Or a b)          = S.union (frees context a) (frees context b)
 frees context (Ast.Equals a b)      = S.union (frees context a) (frees context b)
-frees context (Ast.Inte _)          = S.empty
+frees _       (Ast.Inte _)          = S.empty
 frees context (Ast.Identifier name) =
   case identType name context of
     Nothing -> S.singleton name

@@ -61,7 +61,7 @@ instance Show Value where
   show (Func _) = "<function>"
   show (CellState c) = "{cell:" ++ [c] ++ "}"
   show (Pos (x, y)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ "}"
-  show (Grid _ _ state) = "{grid}"
+  show (Grid _ _ _) = "{grid}"
 
 type Context = M.Map Text (Type.Type, Value.Value)
 
