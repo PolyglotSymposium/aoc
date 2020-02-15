@@ -45,19 +45,49 @@ dupe = Value.Func $ \_ -> \case
                       Value.Vs vs -> Just (Value.Vs (vs ++ vs))
                       _ -> Nothing
 
-nextGeneration :: Value.Value
-nextGeneration = Value.Func nextGeneration'
-
 evaluatesToTrue :: Value.Context -> Ast.Value -> Bool
 evaluatesToTrue context ast =
   case evalValue context Nothing ast of
     Right Value.True -> True
     _ -> False
 
+adjacent :: (Int, Int) -> [(Int, Int)]
+adjacent (x, y) =
+  [
+    (x-1, y-1),
+    (x+1, y+1),
+    (x-1, y+1),
+    (x+1, y-1),
+    (x,   y+1),
+    (x,   y-1),
+    (x+1, y),
+    (x-1, y)
+  ]
+
+neighbors :: Value.Value
+neighbors = Value.Func $ \context state ->
+  case (C.identValue "$grid" context, C.identValue "$pos" context, state) of
+    (Just (Value.Grid _ _ state), Just (Value.Pos pos), Value.CellState c) ->
+      Just $
+        Value.I $
+        toInteger $
+        M.size $
+        M.filter (== c) $
+        M.restrictKeys state $
+        S.fromList $
+        adjacent pos
+    _ -> Nothing
+
+nextGeneration :: Value.Value
+nextGeneration = Value.Func nextGeneration'
+
 nextGeneration' _ grid@(Value.Grid context ts@(Conway.CellTransitions { .. }) state) =
-  Just $ Value.Grid context ts $ M.mapWithKey transition state
+  Just $ Value.Grid context ts $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grid) context)) state
     where
-      transition pos c = fromMaybe (Conway.ident otherwiseCellIs) $ matching cases pos c (M.insert "$grid" (Type.Grid, grid) context)
+      transition context pos c =
+        fromMaybe (Conway.ident otherwiseCellIs) $
+          matching cases pos c $
+          M.insert "$pos" (Type.Position, Value.Pos pos) context
 
       matching [] _ _ _ = Nothing
       matching ((from, to, cond):cases) pos c ctx =
@@ -125,5 +155,5 @@ conwayContext =
       ("first_repeated_generation", (grid      --> grid,                todo)),
       ("next_generation",           (grid      --> grid,                nextGeneration)),
       ("positions",                 (cellState --> (grid --> list pos), todo)),
-      ("neighbors",                 (cellState --> num,                 todo))
+      ("neighbors",                 (cellState --> num,                 neighbors))
     ]
