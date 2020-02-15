@@ -80,3 +80,11 @@ This is a work in progress...
 This is a work in progress...
 
 This may not even be distinct from the `Graph` domain.
+
+## TODO
+
+ - `conway`
+   - Be able to simply animate a solution rather than solve it
+   - Solve more actual Conway-esque problems
+   - Encode classic CGoL
+   - Add `after_generations n`
