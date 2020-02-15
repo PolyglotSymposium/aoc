@@ -110,6 +110,17 @@ nextGeneration' _ grid@(Value.Grid context ts@(Conway.CellTransitions { .. }) st
 
 nextGeneration' _ _ = Nothing
 
+positions :: Value.Value
+positions = Value.Func $ \_ cs -> Just $ Value.Func $ \_ grid ->
+  case (cs, grid) of
+    (Value.CellState c, Value.Grid _ _ state) ->
+      Just $
+        Value.Vs $
+        fmap Value.Pos $
+        M.keys $
+        M.filter (== c) state
+    _ -> Nothing
+
 (-->) :: Type.Type -> Type.Type -> Type.Type
 i --> o = Type.Arrow i o
 
@@ -167,6 +178,6 @@ conwayContext =
     C.fromList [
       ("first_repeated_generation", (grid      --> grid,                firstRepeatedGeneration)),
       ("next_generation",           (grid      --> grid,                nextGeneration)),
-      ("positions",                 (cellState --> (grid --> list pos), todo)),
+      ("positions",                 (cellState --> (grid --> list pos), positions)),
       ("neighbors",                 (cellState --> num,                 neighbors))
     ]
