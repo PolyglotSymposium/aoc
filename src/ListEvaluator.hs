@@ -82,7 +82,7 @@ eval context (Value.Vs vs) (Ast.FloatingLambda lambda) = do
         result <- applyLambda context v lambda
         pure (v, result)
 
-eval context grid@(Value.Grid _ _) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
+eval context grid@(Value.Grid2D _ _) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
   case identValue name context of
     Just (Value.Func f) ->
       case f context grid of
@@ -99,7 +99,7 @@ eval context arg2 (Ast.FloatingLambda (Ast.Body (Ast.Application fn arg1))) = do
       case f context argValue of
         Just (Value.Func g) ->
           case g context arg2 of
-            Nothing -> error (show fn) -- Left $ UnexpectedError 9
+            Nothing -> Left $ UnexpectedError 9
             Just v -> Right v
         _ -> Left $ UnexpectedError 8
     _ -> Left $ UnexpectedError 7

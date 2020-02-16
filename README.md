@@ -89,13 +89,12 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Clean up *Problem.hs files
    - [ ] Comments
    - [ ] Application parsing is wonky (and it should be `(value value)`) not `(text value)`
+   - [ ] Multiplication
  - `conway`
    - [ ] Be able to simply animate a solution rather than solve it
-   - [ ] Solve more actual Conway-esque problems
    - [ ] Remove `trace_grid` and just make that its `Show` instance
-   - [ ] Remove `Context` from `Grid` since it is passed now
-   - [ ] 1-D Conway
    - [ ] Transitions should have context distinct from `grid`
    - [ ] Allow `any_state` in transitions "from"
    - [ ] `Grid` should store what generation it is 
    - [ ] Optimize (2015, d18 is kinda slow)
+   - [ ] Faster structure (since we're not doing sparse and things have a fixed size, ATM)

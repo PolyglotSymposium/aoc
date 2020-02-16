@@ -41,6 +41,7 @@ data GenerationDirective
 
 data SolvableConwayDimensions
   = TwoD
+  | OneD
   deriving (Show, Eq)
 
 type CellAliases = [(CellIdent, CellAlias)]
@@ -51,5 +52,6 @@ data Problem =
   , dimensions :: SolvableConwayDimensions
   , cellAliases :: CellAliases
   , cellTransitions :: CellTransitions
+  , outOfBoundsCellsAre :: Maybe CellIdent
   , solution :: GenerationDirective
   } deriving (Show, Eq)

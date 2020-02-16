@@ -9,9 +9,10 @@ conway of 1 dimension
     from safe to trap if (right trap) && (left safe)
     otherwise a cell is safe
 
-  out-of-bounds cells are considered safe
+  an out-of-bounds cell is safe
 
 solution
   to_2d_with_transitions 39
+    | trace_grid
     | positions safe
     | count

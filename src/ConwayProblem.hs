@@ -56,7 +56,10 @@ runConwayProblem (source, text) =
           Right outputType -> do
             let stateSource = Path.takeDirectory source Path.</> unpack (Ast.initialStateAt ast)
             initialStateText <- readFile stateSource
-            case runParser (Parse.twoDimensionalConwayInput (Ast.cellTransitions ast) (Ast.cellAliases ast)) stateSource $ pack initialStateText of
+            let parseState = case Ast.dimensions ast of
+                               Ast.OneD -> Parse.oneDimensionalConwayInput
+                               Ast.TwoD -> Parse.twoDimensionalConwayInput
+            case runParser (parseState (Ast.cellTransitions ast) (Ast.cellAliases ast)) stateSource $ pack initialStateText of
               Left err -> do
                 putStrLn "Error parsing Conway initial state:"
                 putStrLn $ parseErrorPretty err
@@ -64,10 +67,17 @@ runConwayProblem (source, text) =
 
               Right (width, height, initialState) ->
                 let
-                  contextWithSize =
-                    insert "$height" (Type.Number, V.I height) $ insert "$width" (Type.Number, V.I width) context
+                  insertOob =
+                    case Ast.outOfBoundsCellsAre ast of
+                      Just (Ast.CellIdent c) -> insert "$oob" (Type.CellState, V.CellState c)
+                      _                      -> id
+
+                  context' =
+                    insertOob $
+                    insert "$height" (Type.Number, V.I height) $
+                    insert "$width" (Type.Number, V.I width) context
                 in
-                  case Eval.eval contextWithSize initialState solution of
+                  case Eval.eval context' initialState solution of
                     Right result -> do
                       print result
                       pure $ Just (Type.Grid, outputType, result, ast)

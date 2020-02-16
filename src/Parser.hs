@@ -16,6 +16,7 @@ module Parser
 
 import qualified Ast
 import           Data.Maybe (fromMaybe)
+import qualified Data.Set as S
 import           Data.Text
 import           Data.Void
 import           Text.Megaparsec
@@ -41,8 +42,17 @@ integer = V.I <$> L.signed ws L.decimal
 lstr :: Text -> Parser Text
 lstr = lexeme . string
 
+identStart :: S.Set Char
+identStart = S.fromList ("_$" ++ ['a'..'z'] ++ ['A'..'Z'])
+
+identRest :: S.Set Char
+identRest = S.union identStart $ S.fromList ("*" ++ ['0'..'9'])
+
 ident :: Parser Text
-ident = lexeme $ takeWhile1P (Just "identifier") (\c -> c `elem` ("_*" ++ ['a'..'z'] ++ ['A'..'Z']))
+ident = lexeme $ do
+  start <- takeWhile1P (Just "identifier start") (\c -> S.member c identStart)
+  rest <- takeWhileP (Just "identifier end") (\c -> S.member c identRest)
+  pure $ start <> rest
 
 filePath :: Parser Text
 filePath = lexeme $ takeWhile1P (Just "path character") (\c -> not (c `elem` [' ', '\t', '\n', '\r']))

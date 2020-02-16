@@ -4,12 +4,13 @@
 module ConwayParser
        ( conway
        , twoDimensionalConwayInput
+       , oneDimensionalConwayInput
        ) where
 
 import qualified Ast as Conway
 import qualified ConwayAst as Conway
 import qualified Data.Map.Strict as M
-import           Data.Text hiding (zip, maximum)
+import           Data.Text hiding (zip, maximum, length)
 import qualified Parser as P
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -22,6 +23,7 @@ conway = do
   statePath <- initialStatePath
   aliases <- cellAliases
   transitions <- cellTransitions aliases
+  oob <- optional $ outOfBoundsCells aliases
   _ <- P.lstr "solution"
   code <- P.code
   eof
@@ -31,7 +33,32 @@ conway = do
     , Conway.cellAliases=aliases
     , Conway.cellTransitions=transitions
     , Conway.solution=Conway.Solution code
+    , Conway.outOfBoundsCellsAre=oob
     }
+
+outOfBoundsCells :: Conway.CellAliases -> P.Parser Conway.CellIdent
+outOfBoundsCells aliases =
+  P.lstr "an" *> P.lstr "out-of-bounds" *> P.lstr "cell" *> P.lstr "is" *> alias aliases
+
+oneDimensionalConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser (Integer, Integer, V.Value)
+oneDimensionalConwayInput transitions aliases = do
+  r <- row
+  let cells = positionCells r
+  pure
+    (
+      toInteger $ length cells,
+      0,
+      V.Grid1D transitions $ M.fromList cells
+    )
+
+  where
+    positionCells row = zip [0..] row
+
+    row :: P.Parser [Char]
+    row = some cellState
+
+    cellState :: P.Parser Char
+    cellState = choice ((\(Conway.CellIdent c, _) -> char c) <$> aliases)
 
 twoDimensionalConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser (Integer, Integer, V.Value)
 twoDimensionalConwayInput transitions aliases = do
@@ -41,7 +68,7 @@ twoDimensionalConwayInput transitions aliases = do
     (
       maximum $ fmap ((+ 1) . fst . fst) cells,
       maximum $ fmap ((+ 1) . snd . fst) cells,
-      V.Grid transitions $ M.fromList cells
+      V.Grid2D transitions $ M.fromList cells
     )
 
   where
@@ -89,7 +116,8 @@ cellTransitions aliases = do
 
 dimensions :: P.Parser Conway.SolvableConwayDimensions
 dimensions =
-  P.lstr "2" *> P.lstr "dimensions" *> pure Conway.TwoD
+  P.lstr "2" *> P.lstr "dimensions" *> pure Conway.TwoD <|>
+  P.lstr "1" *> P.lstr "dimension" *> pure Conway.OneD
 
 initialStatePath :: P.Parser Text
 initialStatePath =
