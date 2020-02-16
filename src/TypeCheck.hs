@@ -110,6 +110,9 @@ unify context (Ast.And a b) Type.Boolean env =
 unify context (Ast.Gt a b) Type.Boolean env =
   unifyBinOp context a Type.Number b Type.Number env
 
+unify context (Ast.Geq a b) Type.Boolean env =
+  unifyBinOp context a Type.Number b Type.Number env
+
 unify context (Ast.Divide a b) Type.Number env =
   unifyBinOp context a Type.Number b Type.Number env
 
@@ -164,6 +167,7 @@ isVar _ = False
 typeOf :: Context -> Ast.Value -> Result Type.Type
 typeOf _ (Ast.Inte _)          = Right Type.Number
 typeOf _ (Ast.Gt _ _)          = Right Type.Boolean
+typeOf _ (Ast.Geq _ _)         = Right Type.Boolean
 typeOf _ (Ast.And _ _)         = Right Type.Boolean
 typeOf _ (Ast.Or _ _)          = Right Type.Boolean
 typeOf _ (Ast.Equals _ _)      = Right Type.Boolean
@@ -212,6 +216,7 @@ noFrees context ast =
 
 frees :: Context -> Ast.Value -> S.Set Text
 frees context (Ast.Gt a b)          = S.union (frees context a) (frees context b)
+frees context (Ast.Geq a b)         = S.union (frees context a) (frees context b)
 frees context (Ast.Divide a b)      = S.union (frees context a) (frees context b)
 frees context (Ast.Subtract a b)    = S.union (frees context a) (frees context b)
 frees context (Ast.Add a b)         = S.union (frees context a) (frees context b)

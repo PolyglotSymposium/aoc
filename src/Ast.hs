@@ -18,6 +18,7 @@ newtype Lambda
 
 data Value
   = Gt Value Value
+  | Geq Value Value
   | And Value Value
   | Or Value Value
   | Divide Value Value

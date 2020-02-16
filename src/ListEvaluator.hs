@@ -135,6 +135,9 @@ evalValue context val (Ast.Application fn arg) = do
 evalValue context val (Ast.Gt a b) =
   binNumberOp context val (>) ">" a b toBoolean
 
+evalValue context val (Ast.Geq a b) =
+  binNumberOp context val (>=) ">=" a b toBoolean
+
 evalValue context val (Ast.Divide a b) =
   binNumberOp context val div "/" a b Value.I
 
