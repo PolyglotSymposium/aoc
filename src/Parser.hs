@@ -97,6 +97,7 @@ valueTerm =
   lexeme (between (char '(') (char ')') value
           <|> try application
           <|> Ast.Identifier <$> ident
+          <|> Ast.List <$> between (char '[') (char ']') (sepBy value $ lexeme $ char ',')
           <|> Ast.Inte <$> L.decimal
          )
 

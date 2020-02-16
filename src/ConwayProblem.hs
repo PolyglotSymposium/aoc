@@ -43,7 +43,7 @@ runConwayProblem (source, text) =
 
         validations = do
           TypeCheck.ensureOneFreeOrIdentInEachStep context solution
-          ot <- TypeCheck.unifySolution conwayContext solution Type.Grid
+          ot <- TypeCheck.unifySolution context solution Type.Grid
           for_ (Ast.transitionCases $ Ast.cellTransitions ast) $ \transitionCase -> do
             TypeCheck.noFrees context transitionCase
             TypeCheck.unify context transitionCase Type.Boolean Nothing

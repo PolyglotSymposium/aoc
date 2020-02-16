@@ -13,5 +13,5 @@ conway of 2 dimensions
 
 solution
   after_transitions 10
-    | summing [trees, lumberyard]
+    | count_cells [trees, lumberyard]
     | product

@@ -12,7 +12,7 @@ import qualified ConwayAst as Conway
 import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
-import           Data.Text hiding (count, length)
+import           Data.Text hiding (count, length, foldr, zip)
 import           Debug.Trace (trace, traceShow)
 import           ListEvaluator (evalValue, toBoolean)
 import qualified Type as Type
@@ -240,6 +240,29 @@ traceGrid' context grd =
       y <- [0..height-1]
       fmap (\x -> state M.! (x, y)) [0..width-1] ++ "\n"
 
+countCells :: Value.Value
+countCells = Value.Func $ \_ vs -> Just $ Value.Func $ \context grd -> countCells' vs context grd
+
+getCellState :: Value.Value -> Maybe Char
+getCellState (Value.CellState c) = Just c
+getCellState _ = Nothing
+
+countCells' :: Value.Value -> C.Context -> Value.Value -> Maybe Value.Value
+countCells' (Value.Vs vs) context grd =
+  case (C.identValue "$width" context, C.identValue "$height" context, grd, sequence $ getCellState <$> vs) of
+    (Just (Value.I width), Just (Value.I height), Value.Grid2D _ state, Just buckets) ->
+      let
+        counts = go width height state $ M.fromList $ zip buckets (repeat 0)
+      in
+        Just $ Value.Vs $ fmap (\b -> Value.I (counts M.! b)) buckets
+    _ -> Nothing
+
+  where
+    go width height state buckets =
+      foldr (M.adjust (+ 1)) buckets [state M.! (x, y) | x <- [0..width-1], y <- [0..height-1]]
+
+sumCells' _ _ _ = Nothing
+
 getPos :: Value.Value -> Maybe (Integer, Integer)
 getPos (Value.Pos coord) = Just coord
 getPos _ = Nothing
@@ -307,17 +330,18 @@ conwayContext :: C.Context
 conwayContext =
   C.add core $
     C.fromList [
-      ("first_repeated_generation", (grid      --> grid,                firstRepeatedGeneration))
-    , ("next_generation",           (grid      --> grid,                nextGeneration))
-    , ("to_2d_with_transitions",    (num       --> (grid --> grid),     to2dWithTransitions))
-    , ("after_transitions",         (num       --> (grid --> grid),     afterTransitions))
-    , ("positions",                 (cellState --> (grid --> list pos), positions))
-    , ("neighbors",                 (cellState --> num,                 neighbors))
-    , ("corner",                    (pos,                               corner))
-    , ("at",                        (pos       --> bool,                at))
-    , ("adjacent",                  (cellState --> num,                 adjacent))
-    , ("left",                      (cellState --> bool,                left))
-    , ("right",                     (cellState --> bool,                right))
-    , ("reading_order",             (list pos  --> list num,            readingOrder))
-    , ("trace_grid",                (grid      --> grid,                traceGrid))
+      ("first_repeated_generation", (grid      --> grid,                       firstRepeatedGeneration))
+    , ("next_generation",           (grid      --> grid,                       nextGeneration))
+    , ("to_2d_with_transitions",    (num       --> (grid --> grid),            to2dWithTransitions))
+    , ("after_transitions",         (num       --> (grid --> grid),            afterTransitions))
+    , ("positions",                 (cellState --> (grid --> list pos),        positions))
+    , ("neighbors",                 (cellState --> num,                        neighbors))
+    , ("corner",                    (pos,                                      corner))
+    , ("at",                        (pos       --> bool,                       at))
+    , ("adjacent",                  (cellState --> num,                        adjacent))
+    , ("left",                      (cellState --> bool,                       left))
+    , ("right",                     (cellState --> bool,                       right))
+    , ("reading_order",             (list pos  --> list num,                   readingOrder))
+    , ("trace_grid",                (grid      --> grid,                       traceGrid))
+    , ("count_cells",                 (list cellState --> (grid --> list num), countCells))
     ]

@@ -10,10 +10,11 @@ module TypeCheck
        ) where
 
 import qualified Ast
-import           Value (Context, identType)
+import           Data.List (nub)
 import qualified Data.Set as S
 import           Data.Text
 import qualified Type
+import           Value (Context, identType)
 
 type Env = Maybe Type.Type
 
@@ -25,6 +26,7 @@ data TypeError
   | CouldNotInferTypeOfFreeVariableInputIn Ast.Value
   | NoFreesAllowed Ast.Value
   | StepNMustBeIdentiferOrContainSingleFree Int Ast.Value
+  | CouldNotInferListType Ast.Value
   --                       resolved expectedType actualType value
   | UnificationFailure Int Env      Type.Type    Type.Type  Ast.Value
   deriving (Show, Eq)
@@ -116,6 +118,13 @@ unify context (Ast.Geq a b) Type.Boolean env =
 unify context (Ast.Divide a b) Type.Number env =
   unifyBinOp context a Type.Number b Type.Number env
 
+unify context ast@(Ast.List vs) (Type.List it) env = do
+  envs <- sequence $ fmap (\v -> unify context v it env) vs
+  case nub envs of
+    [single] -> pure single
+    []       -> pure Nothing
+    _        -> Left $ CouldNotInferTypeOfFreeVariableInputIn ast
+
 unify context ast@(Ast.Equals a b) Type.Boolean env = do
   t1 <- unify context a (Type.Var 'a') env
   t2 <- unify context b (Type.Var 'a') env
@@ -175,6 +184,13 @@ typeOf _ (Ast.Divide _ _)      = Right Type.Number
 typeOf _ (Ast.Subtract _ _)    = Right Type.Number
 typeOf _ (Ast.Raised _ _)      = Right Type.Number
 typeOf _ (Ast.Add _ _)         = Right Type.Number
+
+typeOf context ast@(Ast.List vs) = do
+  types <- sequence $ fmap (typeOf context) vs
+  case nub types of
+    [single] -> pure single
+    _        -> Left $ CouldNotInferListType ast
+
 typeOf context (Ast.Identifier name) =
   case identType name context of
     Nothing -> Left $ IdentifierIsNotDefined name
@@ -224,6 +240,7 @@ frees context (Ast.Raised a b)      = S.union (frees context a) (frees context b
 frees context (Ast.And a b)         = S.union (frees context a) (frees context b)
 frees context (Ast.Or a b)          = S.union (frees context a) (frees context b)
 frees context (Ast.Equals a b)      = S.union (frees context a) (frees context b)
+frees context (Ast.List vs)         = S.unions $ frees context <$> vs
 frees _       (Ast.Inte _)          = S.empty
 frees context (Ast.Identifier name) =
   case identType name context of

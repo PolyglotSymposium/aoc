@@ -29,4 +29,5 @@ data Value
   | Identifier Text
   | Inte Integer
   | Application Text Value
+  | List [Value]
   deriving (Show, Eq)
