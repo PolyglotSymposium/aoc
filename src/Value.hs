@@ -1,5 +1,7 @@
+{-# LANGUAGE NamedFieldPuns #-}
 module Value
        ( Value(..)
+       , WidthHeight(..)
        , toOrd
        , identType
        , identValue
@@ -16,6 +18,10 @@ import           Data.Text hiding (concat)
 import           Prelude hiding (True, False)
 import qualified Type
 
+data WidthHeight
+  = WidthHeight { width :: Integer, height :: Integer }
+  deriving (Show, Eq)
+
 data Value
   = I Integer
   | Vs [Value]
@@ -26,8 +32,7 @@ data Value
   | StepsOfFold (Value, Value -> Value -> Maybe Value)
   | CellState Char
   | Pos (Integer, Integer)
-  | Grid2D Conway.CellTransitions (M.Map (Integer, Integer) Char)
-  | Grid1D Conway.CellTransitions (M.Map Integer Char)
+  | Grid Conway.CellTransitions WidthHeight (M.Map (Integer, Integer) Char)
 
 data OrdValue
   = OrdI Integer
@@ -36,8 +41,7 @@ data OrdValue
   | OrdFalse
   | OrdCellState Char
   | OrdPos (Integer, Integer)
-  | OrdGrid2D (M.Map (Integer, Integer) Char)
-  | OrdGrid1D (M.Map Integer Char)
+  | OrdGrid (M.Map (Integer, Integer) Char)
   deriving (Ord, Eq)
 
 toOrd :: Value -> Maybe OrdValue
@@ -47,8 +51,7 @@ toOrd True             = Just $ OrdTrue
 toOrd False            = Just $ OrdFalse
 toOrd (CellState s)    = Just $ OrdCellState s
 toOrd (Pos coords)     = Just $ OrdPos coords
-toOrd (Grid2D _ state) = Just $ OrdGrid2D state
-toOrd (Grid1D _ state) = Just $ OrdGrid1D state
+toOrd (Grid _ _ state) = Just $ OrdGrid state
 toOrd (Fold _)         = Nothing
 toOrd (Func _)         = Nothing
 toOrd (StepsOfFold _)  = Nothing
@@ -63,8 +66,9 @@ instance Show Value where
   show (Func _) = "<function>"
   show (CellState c) = "{cell:" ++ [c] ++ "}"
   show (Pos (x, y)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ "}"
-  show (Grid2D _ _) = "{grid 2D}"
-  show (Grid1D _ _) = "{grid 1D}"
+  show (Grid _ (WidthHeight{ width, height }) state) = do
+     y <- [0..height-1]
+     fmap (\x -> state M.! (x, y)) [0..width-1] ++ "\n"
 
 type Context = M.Map Text (Type.Type, Value.Value)
 

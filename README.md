@@ -90,9 +90,10 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Comments
    - [ ] Application parsing is wonky (and it should be `(value value)`) not `(text value)`
    - [ ] Multiplication
+   - [ ] Doc-gen of builtins.
+   - [ ] Too many parens necessary in places.
  - `conway`
    - [ ] Be able to simply animate a solution rather than solve it
-   - [ ] Remove `trace_grid` and just make that its `Show` instance
    - [ ] Transitions should have context distinct from `grid`
    - [ ] Allow `any_state` in transitions "from"
    - [ ] `Grid` should store what generation it is 

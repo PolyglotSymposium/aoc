@@ -82,11 +82,11 @@ eval context (Value.Vs vs) (Ast.FloatingLambda lambda) = do
         result <- applyLambda context v lambda
         pure (v, result)
 
-eval context grid@(Value.Grid2D _ _) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
+eval context grid@(Value.Grid _ _ _) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
   case identValue name context of
     Just (Value.Func f) ->
       case f context grid of
-        Nothing -> Left $ UnexpectedError 2
+        Nothing -> Left $ UnexpectedError 22
         Just v  -> Right v
 
     _ -> Left $ TypeMismatchAtRuntime (Text.pack ("Built-in " ++ Text.unpack name ++ " specified at the top level of list evaluation but it's not a list function" ))

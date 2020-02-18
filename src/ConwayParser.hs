@@ -40,36 +40,26 @@ outOfBoundsCells :: Conway.CellAliases -> P.Parser Conway.CellIdent
 outOfBoundsCells aliases =
   P.lstr "an" *> P.lstr "out-of-bounds" *> P.lstr "cell" *> P.lstr "is" *> alias aliases
 
-oneDimensionalConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser (Integer, Integer, V.Value)
+oneDimensionalConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
 oneDimensionalConwayInput transitions aliases = do
   r <- row
-  let cells = positionCells r
-  pure
-    (
-      toInteger $ length cells,
-      0,
-      V.Grid1D transitions $ M.fromList cells
-    )
+  let cells = (\(x, v) -> ((x, 0), v)) <$> zip [0..] r
+  pure $ V.Grid transitions (V.WidthHeight{ V.width=toInteger $ length r, V.height=1 }) $ M.fromList cells
 
   where
-    positionCells row = zip [0..] row
-
     row :: P.Parser [Char]
     row = some cellState
 
     cellState :: P.Parser Char
     cellState = choice ((\(Conway.CellIdent c, _) -> char c) <$> aliases)
 
-twoDimensionalConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser (Integer, Integer, V.Value)
+twoDimensionalConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
 twoDimensionalConwayInput transitions aliases = do
   rows <- grid
   let cells = positionCells rows
-  pure
-    (
-      maximum $ fmap ((+ 1) . fst . fst) cells,
-      maximum $ fmap ((+ 1) . snd . fst) cells,
-      V.Grid2D transitions $ M.fromList cells
-    )
+  let width = maximum $ fmap ((+ 1) . fst . fst) cells
+  let height = maximum $ fmap ((+ 1) . snd . fst) cells
+  pure $ V.Grid transitions (V.WidthHeight{ V.width=width, V.height=height }) $ M.fromList cells
 
   where
     positionCells rows = do

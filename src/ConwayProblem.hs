@@ -40,6 +40,7 @@ runConwayProblem (source, text) =
         solution =
           case Ast.solution ast of
             Ast.Solution sol -> sol
+            Ast.Animate _ -> Ast.nextGenerationSolution
 
         validations = do
           TypeCheck.ensureOneFreeOrIdentInEachStep context solution
@@ -65,17 +66,13 @@ runConwayProblem (source, text) =
                 putStrLn $ parseErrorPretty err
                 pure Nothing
 
-              Right (width, height, initialState) ->
+              Right initialState ->
                 let
-                  insertOob =
-                    case Ast.outOfBoundsCellsAre ast of
-                      Just (Ast.CellIdent c) -> insert "$oob" (Type.CellState, V.CellState c)
-                      _                      -> id
-
                   context' =
-                    insertOob $
-                    insert "$height" (Type.Number, V.I height) $
-                    insert "$width" (Type.Number, V.I width) context
+                    insert "$generation_0" (Type.Grid, initialState) $
+                      case Ast.outOfBoundsCellsAre ast of
+                        Just (Ast.CellIdent c) -> insert "$oob" (Type.CellState, V.CellState c) context
+                        _                      -> context
                 in
                   case Eval.eval context' initialState solution of
                     Right result -> do

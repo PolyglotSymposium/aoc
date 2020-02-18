@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module ConwayAst
        ( Problem(..)
        , SolvableConwayDimensions(..)
@@ -9,6 +11,7 @@ module ConwayAst
        , ident
        , CellAliases
        , transitionCases
+       , nextGenerationSolution
        ) where
 
 import Data.Text
@@ -35,8 +38,13 @@ data CellTransitions = CellTransitions
   }
   deriving (Show, Eq)
 
+data AnimationDirective
+  = Forever
+  deriving (Show, Eq)
+
 data GenerationDirective
   = Solution Ast.Solution
+  | Animate AnimationDirective
   deriving (Show, Eq)
 
 data SolvableConwayDimensions
@@ -55,3 +63,8 @@ data Problem =
   , outOfBoundsCellsAre :: Maybe CellIdent
   , solution :: GenerationDirective
   } deriving (Show, Eq)
+
+
+nextGenerationSolution :: Ast.Solution
+nextGenerationSolution =
+  Ast.FloatingLambda $ Ast.Body $ Ast.Identifier "next_generation"
