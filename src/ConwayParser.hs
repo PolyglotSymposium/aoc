@@ -23,18 +23,22 @@ conway = do
   statePath <- initialStatePath
   aliases <- cellAliases
   transitions <- cellTransitions aliases
-  oob <- optional $ outOfBoundsCells aliases
-  _ <- P.lstr "solution"
-  code <- P.code
+  oob <- optional $ try $ outOfBoundsCells aliases
+  directive <- generationDirective
   eof
   pure $ Conway.ConwayProblem
     { Conway.initialStateAt=statePath
     , Conway.dimensions=dim
     , Conway.cellAliases=aliases
     , Conway.cellTransitions=transitions
-    , Conway.solution=Conway.Solution code
+    , Conway.solution=directive
     , Conway.outOfBoundsCellsAre=oob
     }
+
+generationDirective :: P.Parser Conway.GenerationDirective
+generationDirective =
+  (Conway.Solution <$> (P.lstr "solution" *> P.code)) <|>
+  (Conway.Animate Conway.Forever <$ (P.lstr "animate" *> P.lstr "forever"))
 
 outOfBoundsCells :: Conway.CellAliases -> P.Parser Conway.CellIdent
 outOfBoundsCells aliases =

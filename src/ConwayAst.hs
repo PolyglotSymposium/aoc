@@ -5,6 +5,7 @@ module ConwayAst
        , SolvableConwayDimensions(..)
        , CellTransitions(..)
        , GenerationDirective(..)
+       , AnimationDirective(..)
        , CellIdent(..)
        , CellAlias(..)
        , aliasName
@@ -63,7 +64,6 @@ data Problem =
   , outOfBoundsCellsAre :: Maybe CellIdent
   , solution :: GenerationDirective
   } deriving (Show, Eq)
-
 
 nextGenerationSolution :: Ast.Solution
 nextGenerationSolution =

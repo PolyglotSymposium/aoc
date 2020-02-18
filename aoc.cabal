@@ -35,6 +35,7 @@ library
                      , megaparsec
                      , text
                      , filepath
+                     , ansi-terminal
                      
 
   ghc-options:         -Wall

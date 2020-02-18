@@ -217,6 +217,7 @@ readingOrder = Value.Func readingOrder'
 
 readingOrder' :: C.Context -> Value.Value -> Maybe Value.Value
 readingOrder' context ps =
+  -- TODO generation_0 is not the best thing to use here since grids _can_ change
   case (C.identValue "$generation_0" context, ps) of
     (Just (Value.Grid _ size _), Value.Vs vs) ->
       fmap Value.Vs $ sequence $ fmap (fmap (readingIndex (Value.width size)) . getPos) vs

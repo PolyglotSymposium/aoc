@@ -93,7 +93,6 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Doc-gen of builtins.
    - [ ] Too many parens necessary in places.
  - `conway`
-   - [ ] Be able to simply animate a solution rather than solve it
    - [ ] Transitions should have context distinct from `grid`
    - [ ] Allow `any_state` in transitions "from"
    - [ ] `Grid` should store what generation it is 
