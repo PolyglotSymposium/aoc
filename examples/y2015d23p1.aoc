@@ -1,0 +1,14 @@
+program at ./y2015d23.txt
+  with instructions
+    hlf {r:reg}               means set r to r / 2
+    tpl {r:reg}               means set r to r * 3
+    inc {r:reg}               means set r to r + 1
+    jmp {offset:num}          means jump offset away
+    jie {r:reg}, {offset:num} means jump offset away if (even r)
+    jio {r:reg}, {offset:num} means jump offset away if (r = 1)
+
+  registers start at value 0
+
+solution
+  run
+    | register b
