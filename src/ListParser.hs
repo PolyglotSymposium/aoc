@@ -26,7 +26,7 @@ list = do
   eof
   pure $
     List.ListProblem {
-    List.at          = file
+      List.at        = file
     , List.separator = separator
     , List.solution  = code
     }

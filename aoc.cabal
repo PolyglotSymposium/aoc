@@ -26,6 +26,9 @@ library
                      , ListParser 
                      , ListProblem 
                      , Parser
+                     , ProgramAst
+                     , ProgramParser
+                     , ProgramProblem
                      , Type 
                      , TypeCheck 
                      , Value 

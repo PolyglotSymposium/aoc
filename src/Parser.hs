@@ -5,6 +5,7 @@ module Parser
        ( Parser
        , ws
        , integer
+       , rawInteger
        , ident
        , lstr
        , lexeme
@@ -37,7 +38,10 @@ lexeme :: Parser a -> Parser a
 lexeme = L.lexeme ws
 
 integer :: Parser V.Value
-integer = V.I <$> L.signed ws L.decimal
+integer = V.I <$> rawInteger
+
+rawInteger :: Parser Integer
+rawInteger = L.signed ws L.decimal
 
 lstr :: Text -> Parser Text
 lstr = lexeme . string
