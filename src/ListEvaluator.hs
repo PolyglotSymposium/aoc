@@ -89,7 +89,16 @@ eval context grid@(Value.Grid _ _ _) (Ast.FloatingLambda (Ast.Body (Ast.Identifi
         Nothing -> Left $ UnexpectedError 22
         Just v  -> Right v
 
-    _ -> Left $ TypeMismatchAtRuntime (Text.pack ("Built-in " ++ Text.unpack name ++ " specified at the top level of list evaluation but it's not a list function" ))
+    _ -> Left $ TypeMismatchAtRuntime (Text.pack ("Built-in " ++ Text.unpack name ++ " specified at the top level of conway evaluation but it's not a conway function" ))
+
+eval context program@(Value.Program _ _ _) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
+  case identValue name context of
+    Just (Value.Func f) ->
+      case f context program of
+        Nothing -> Left $ UnexpectedError 23
+        Just v  -> Right v
+
+    _ -> Left $ TypeMismatchAtRuntime (Text.pack ("Built-in " ++ Text.unpack name ++ " specified at the top level of program evaluation but it's not a program function" ))
 
 eval context arg2 (Ast.FloatingLambda (Ast.Body (Ast.Application fn arg1))) = do
   fnValue <- evalValue context Nothing (Ast.Identifier fn)

@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module ProgramAst
        ( Problem(..)
        , ParseTerm(..)
@@ -7,6 +5,9 @@ module ProgramAst
        , InstructionSpec(..)
        , Instruction(..)
        , Program(..)
+       , IndexedProgram(..)
+       , allRegisters
+       , indexed
        , Registers
        , Numbers
        , NameInSpec(..)
@@ -14,7 +15,8 @@ module ProgramAst
 
 import qualified Ast
 import qualified Data.Map.Strict as M
-import           Data.Text
+import qualified Data.Set as S
+import           Data.Text hiding (zip)
 
 data ParseTerm
   = Literal Text
@@ -43,6 +45,13 @@ data Problem =
   , solution :: Ast.Solution
   } deriving (Show, Eq)
 
+newtype IndexedProgram
+  = IndexedInstructions (M.Map Int Instruction)
+  deriving (Show, Eq)
+
+indexed :: Program -> IndexedProgram
+indexed (Instructions is) = IndexedInstructions $ M.fromList $ zip [0..] is
+
 newtype Program
   = Instructions [Instruction]
   deriving (Show, Eq)
@@ -62,3 +71,9 @@ data Instruction =
   , op::Meaning
   , when::Maybe Ast.Value }
   deriving (Show, Eq)
+
+allRegisters :: Program -> [Text]
+allRegisters (Instructions is) = S.toList $ S.fromList $ do
+  instruction    <- is
+  (SpecName reg) <- M.keys $ registers instruction
+  pure reg

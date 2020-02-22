@@ -2,6 +2,9 @@
 module Value
        ( Value(..)
        , WidthHeight(..)
+       , InstructionPointer(..)
+       , Registers(..)
+       , registersFrom
        , toOrd
        , identType
        , identValue
@@ -33,6 +36,9 @@ newtype Registers
   = Regs (M.Map Text Integer)
   deriving (Show, Eq)
 
+registersFrom :: [(Text, Integer)] -> Registers
+registersFrom = Regs . M.fromList
+
 data Value
   = I Integer
   | Vs [Value]
@@ -45,7 +51,7 @@ data Value
   | Pos (Integer, Integer)
   | Grid Conway.CellTransitions WidthHeight (M.Map (Integer, Integer) Char)
   | Register Text
-  | Program Prog.Program InstructionPointer Registers
+  | Program Prog.IndexedProgram InstructionPointer Registers
 
 data OrdValue
   = OrdI Integer

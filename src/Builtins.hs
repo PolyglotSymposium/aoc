@@ -230,6 +230,12 @@ readingOrder' context ps =
 countCells :: Value.Value
 countCells = Value.Func $ \_ vs -> Just $ Value.Func $ \_ grd -> countCells' vs grd
 
+run :: Value.Value
+run = Value.Func $ \_ vs -> Just $ Value.I 42
+
+register :: Value.Value
+register = Value.Func $ \_ reg -> Just $ Value.Func $ \ _ program -> Just $ Value.I 42
+
 getCellState :: Value.Value -> Maybe Char
 getCellState (Value.CellState c) = Just c
 getCellState _ = Nothing
@@ -344,6 +350,6 @@ programContext :: C.Context
 programContext =
   C.add core $
     C.fromList [
-      ("run",      (prog --> prog,            Value.False))
-    , ("register", (reg  --> (prog --> prog), Value.False))
+      ("run",      (prog --> prog,            run))
+    , ("register", (reg  --> (prog --> prog), register))
     ]
