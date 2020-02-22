@@ -29,5 +29,6 @@ data Problem =
   ProgramProblem
   { programAt :: Text
   , instructions :: [Instruction]
+  , initialRegisterValue :: Integer
   , solution :: Ast.Solution
   } deriving (Show, Eq)

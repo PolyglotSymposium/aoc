@@ -20,18 +20,25 @@ programSpec = do
   _ <- P.ws *> P.lstr "program" *> P.lstr "at"
   programLocation <- P.filePath
   instructions <- instructionsSpec
+  registerStartValue <- initialRegisterValue
+  _ <- P.lstr "solution"
   code <- P.code
   eof
   pure $
     Program.ProgramProblem {
       Program.programAt = programLocation
     , Program.instructions = instructions
+    , Program.initialRegisterValue = registerStartValue
     , Program.solution = code
     }
 
+initialRegisterValue :: P.Parser Integer
+initialRegisterValue =
+  P.lstr "start" *> P.lstr "at" *> P.lexeme P.rawInteger
+
 instructionsSpec :: P.Parser [Program.Instruction]
 instructionsSpec =
-  P.lstr "with" *> P.lstr "instructions" *> manyTill instruction (P.lstr "solution")
+  P.lstr "with" *> P.lstr "instructions" *> manyTill instruction (P.lstr "registers")
 
 instruction :: P.Parser Program.Instruction
 instruction = Program.InstParts <$> manyTill term (P.lstr "means") <*> meaning <*> optional condition

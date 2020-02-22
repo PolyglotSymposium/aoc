@@ -7,6 +7,8 @@ program at ./y2015d23.txt
     jie {r:reg}, {offset:num} means jump offset away if (even r)
     jio {r:reg}, {offset:num} means jump offset away if (r = 1)
 
+  registers start at 0
+
 solution
   run
     | register b
