@@ -279,6 +279,13 @@ register = Value.Func $ \_ r -> Just $ Value.Func $ \ _ program ->
     (Value.Register name, Value.Program _ _ (Value.Regs regs)) -> Just $ Value.I $ regs M.! name
     _ -> Nothing
 
+incrementRegister :: Value.Value
+incrementRegister = Value.Func $ \_ r -> Just $ Value.Func $ \ _ program ->
+  case (r, program) of
+    (Value.Register name, Value.Program p ip (Value.Regs regs)) ->
+      Just $ Value.Program p ip (Value.Regs $ M.adjust (+1) name regs)
+    _ -> Nothing
+
 getCellState :: Value.Value -> Maybe Char
 getCellState (Value.CellState c) = Just c
 getCellState _ = Nothing
@@ -393,6 +400,7 @@ programContext :: C.Context
 programContext =
   C.add core $
     C.fromList [
-      ("run",      (prog --> prog,            run))
-    , ("register", (reg  --> (prog --> prog), register))
+      ("run",                (prog --> prog,            run))
+    , ("register",           (reg  --> (prog --> prog), register))
+    , ("increment_register", (reg  --> (prog --> prog), incrementRegister))
     ]
