@@ -141,6 +141,9 @@ evalValue context val (Ast.Geq a b) =
 evalValue context val (Ast.Divide a b) =
   binNumberOp context val div "/" a b Value.I
 
+evalValue context val (Ast.Multiply a b) =
+  binNumberOp context val (*) "*" a b Value.I
+
 evalValue context val (Ast.Subtract a b) =
   binNumberOp context val (-) "-" a b Value.I
 

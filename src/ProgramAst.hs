@@ -28,7 +28,11 @@ data Meaning
   deriving (Show, Eq)
 
 data InstructionSpec
-  = InstParts { terms::[ParseTerm], meaning::Meaning, condition::Maybe Ast.Value }
+  = InstParts
+  { terms::[ParseTerm]
+  , meaning::Meaning
+  , condition::Maybe Ast.Value
+  }
   deriving (Show, Eq)
 
 data Problem =

@@ -8,15 +8,12 @@ module ProgramParser
        ) where
 
 import qualified Ast as Program
-import           Data.Functor (void)
 import qualified Data.Map.Strict as M
 import           Data.Text hiding (zip, maximum, length, foldr)
 import qualified Parser as P
 import qualified ProgramAst as Program
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-import qualified Type
-import qualified Value as V
 
 programSpec :: P.Parser Program.Problem
 programSpec = do
@@ -43,7 +40,7 @@ instruction = choice . fmap op
   where
     op :: Program.InstructionSpec -> P.Parser Program.Instruction
     op spec = do
-      (registers, numbers) <- merge <$> sequence (term <$> Program.terms spec)
+      (registers, numbers) <- merge <$> sequence (registersAndNumbers <$> Program.terms spec)
       pure $ Program.Instruction
         { Program.registers = registers
         , Program.numbers   = numbers
@@ -51,13 +48,12 @@ instruction = choice . fmap op
         , Program.when      = Program.condition spec
         }
 
-    term :: Program.ParseTerm -> P.Parser (Program.Registers, Program.Numbers)
-    term (Program.Literal literal) = (M.empty, M.empty) <$ P.lstr literal
-    term (Program.Register name) = do
+    registersAndNumbers :: Program.ParseTerm -> P.Parser (Program.Registers, Program.Numbers)
+    registersAndNumbers (Program.Literal literal) = (M.empty, M.empty) <$ P.lstr literal
+    registersAndNumbers (Program.Register name) = do
       reg <- P.ident
       pure (M.singleton (Program.SpecName name) reg, M.empty)
-
-    term (Program.Number name) = do
+    registersAndNumbers (Program.Number name) = do
       value <- P.lexeme P.rawInteger
       pure (M.empty, M.singleton (Program.SpecName name) value)
 
@@ -91,9 +87,10 @@ term = P.lexeme (
       ident <- P.ident
       _ <- char ':'
       ty <- choice [P.lstr "reg", P.lstr "num"]
-      pure $ case ty of
-        "reg" -> Program.Register ident
-        "num" -> Program.Number ident
+      case ty of
+        "reg" -> pure $ Program.Register ident
+        "num" -> pure $ Program.Number ident
+        _     -> fail ("Unexpected type in program spec: " ++ show ty)
 
 meaning :: P.Parser Program.Meaning
 meaning = setOrJump

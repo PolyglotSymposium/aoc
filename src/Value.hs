@@ -27,11 +27,11 @@ data WidthHeight
 
 newtype InstructionPointer
   = Ip Int
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq)
 
 newtype Registers
   = Regs (M.Map Text Integer)
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq)
 
 data Value
   = I Integer
@@ -67,6 +67,7 @@ toOrd (CellState s)    = Just $ OrdCellState s
 toOrd (Pos coords)     = Just $ OrdPos coords
 toOrd (Grid _ _ state) = Just $ OrdGrid state
 toOrd (Register name)  = Just $ OrdRegister name
+toOrd (Program _ _ _)  = Nothing
 toOrd (Fold _)         = Nothing
 toOrd (Func _)         = Nothing
 toOrd (StepsOfFold _)  = Nothing
@@ -85,6 +86,7 @@ instance Show Value where
   show (Grid _ (WidthHeight{ width, height }) state) = do
      y <- [0..height-1]
      fmap (\x -> state M.! (x, y)) [0..width-1] ++ "\n"
+  show (Program _ _ _) = "<program...>"
 
 type Context = M.Map Text (Type.Type, Value.Value)
 

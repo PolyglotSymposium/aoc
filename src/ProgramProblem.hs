@@ -15,7 +15,7 @@ import           Text.Megaparsec
 import           Text.Megaparsec.Error (parseErrorPretty)
 import qualified Type
 import qualified TypeCheck
-import           Value (add, insert, Context)
+import           Value (insert, Context)
 import qualified Value as V
 
 contextWith :: Ast.InstructionSpec -> Context

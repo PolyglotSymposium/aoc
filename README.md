@@ -108,3 +108,5 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Case (exhaustive/overlap) checking in instructions
    - [ ] Context in later instruction parts (e.g. jump should reference earlier `num`)
    - [ ] Backend: C
+   - [ ] Backend: Go
+   - [ ] Think more about `show Program`.

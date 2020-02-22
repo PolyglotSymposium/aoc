@@ -18,5 +18,8 @@ main = do
         Just (it, ot, answer, Aoc.Conway ast) -> do
           putStrLn "Conway domain:"
           putStrLn $ "(inputType, outputType, answer, ast) = " ++ show (it, ot, answer, ast)
+        Just (it, ot, answer, Aoc.Program ast) -> do
+          putStrLn "Program domain:"
+          putStrLn $ "(inputType, outputType, answer, ast) = " ++ show (it, ot, answer, ast)
         Nothing -> pure ()
     _       -> print "One argument (file name) expected"
