@@ -11,5 +11,7 @@ data Type
   | Grid
   | CellState
   | Position
+  | Program
+  | Register
   deriving (Show, Eq)
 

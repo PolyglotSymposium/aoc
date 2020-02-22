@@ -53,6 +53,12 @@ unifySolution context (Ast.FloatingLambda lambda) Type.Grid = do
     Type.Arrow Type.Grid arrowOt -> pure arrowOt
     _ -> error "TODO non-unifying grid functions"
 
+unifySolution context (Ast.FloatingLambda lambda) Type.Program = do
+  ot <- unifyLambda context lambda Type.Register
+  case ot of
+    Type.Arrow Type.Program arrowOt -> pure arrowOt
+    _ -> error "TODO non-unifying grid functions"
+
 unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
   ot <- unifyLambda context lambda it
   case ot of
@@ -131,13 +137,13 @@ unify context ast@(Ast.Equals a b) Type.Boolean env = do
   case (t1, t2) of
     (_, _) | t1 == t2 -> pure t2
     (Just t1', Just t2') -> Left $ UnificationFailure 8 env t1' t2' ast
-    _ -> error $ "Unexpected error unifying equals in " ++ show ast
+    _ -> error $ "Unexpected error unifying equals in " ++ show ast ++ " found types " ++ show (t1, t2)
 
 unify context ast@(Ast.Identifier name) t env =
   case identType name context of
     Just t' ->
-      if t == t'
-      then Right env
+      if t == t' || isVar t' || isVar t
+      then Right (Just t')
       else Left $ UnificationFailure 3 env t t' ast
     Nothing ->
       case env of
@@ -181,6 +187,7 @@ typeOf _ (Ast.And _ _)         = Right Type.Boolean
 typeOf _ (Ast.Or _ _)          = Right Type.Boolean
 typeOf _ (Ast.Equals _ _)      = Right Type.Boolean
 typeOf _ (Ast.Divide _ _)      = Right Type.Number
+typeOf _ (Ast.Multiply _ _)    = Right Type.Number
 typeOf _ (Ast.Subtract _ _)    = Right Type.Number
 typeOf _ (Ast.Raised _ _)      = Right Type.Number
 typeOf _ (Ast.Add _ _)         = Right Type.Number
@@ -234,6 +241,7 @@ frees :: Context -> Ast.Value -> S.Set Text
 frees context (Ast.Gt a b)          = S.union (frees context a) (frees context b)
 frees context (Ast.Geq a b)         = S.union (frees context a) (frees context b)
 frees context (Ast.Divide a b)      = S.union (frees context a) (frees context b)
+frees context (Ast.Multiply a b)    = S.union (frees context a) (frees context b)
 frees context (Ast.Subtract a b)    = S.union (frees context a) (frees context b)
 frees context (Ast.Add a b)         = S.union (frees context a) (frees context b)
 frees context (Ast.Raised a b)      = S.union (frees context a) (frees context b)

@@ -5,6 +5,7 @@
 module Builtins
        ( listContext
        , conwayContext
+       , programContext
        ) where
 
 import qualified Ast
@@ -282,6 +283,12 @@ bool = Type.Boolean
 grid :: Type.Type
 grid = Type.Grid
 
+prog :: Type.Type
+prog = Type.Program
+
+reg :: Type.Type
+reg = Type.Register
+
 cellState :: Type.Type
 cellState = Type.CellState
 
@@ -299,6 +306,8 @@ baseIdentifiers =
   , ("false",   bool,                  Value.False)
   , ("first",   list a --> a,          first)
   , ("dupe",    list a --> list a,     dupe)
+  , ("even",    num --> bool,          Value.False)
+  , ("odd",     num --> bool,          Value.False)
   ]
 
 core :: C.Context
@@ -316,17 +325,25 @@ conwayContext :: C.Context
 conwayContext =
   C.add core $
     C.fromList [
-      ("first_repeated_generation", (grid      --> grid,                       firstRepeatedGeneration))
-    , ("next_generation",           (grid      --> grid,                       nextGeneration))
-    , ("to_2d_with_transitions",    (num       --> (grid --> grid),            to2dWithTransitions))
-    , ("after_transitions",         (num       --> (grid --> grid),            afterTransitions))
-    , ("positions",                 (cellState --> (grid --> list pos),        positions))
-    , ("neighbors",                 (cellState --> num,                        neighbors))
-    , ("corner",                    (pos,                                      corner))
-    , ("at",                        (pos       --> bool,                       at))
-    , ("adjacent",                  (cellState --> num,                        adjacent))
-    , ("left",                      (cellState --> bool,                       left))
-    , ("right",                     (cellState --> bool,                       right))
-    , ("reading_order",             (list pos  --> list num,                   readingOrder))
-    , ("count_cells",                 (list cellState --> (grid --> list num), countCells))
+      ("first_repeated_generation", (grid      --> grid,                     firstRepeatedGeneration))
+    , ("next_generation",           (grid      --> grid,                     nextGeneration))
+    , ("to_2d_with_transitions",    (num       --> (grid --> grid),          to2dWithTransitions))
+    , ("after_transitions",         (num       --> (grid --> grid),          afterTransitions))
+    , ("positions",                 (cellState --> (grid --> list pos),      positions))
+    , ("neighbors",                 (cellState --> num,                      neighbors))
+    , ("corner",                    (pos,                                    corner))
+    , ("at",                        (pos       --> bool,                     at))
+    , ("adjacent",                  (cellState --> num,                      adjacent))
+    , ("left",                      (cellState --> bool,                     left))
+    , ("right",                     (cellState --> bool,                     right))
+    , ("reading_order",             (list pos  --> list num,                 readingOrder))
+    , ("count_cells",               (list cellState --> (grid --> list num), countCells))
+    ]
+
+programContext :: C.Context
+programContext =
+  C.add core $
+    C.fromList [
+      ("run",      (prog --> prog,            Value.False))
+    , ("register", (reg  --> (prog --> prog), Value.False))
     ]

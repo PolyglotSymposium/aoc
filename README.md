@@ -92,11 +92,18 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Multiplication
    - [ ] Doc-gen of builtins.
    - [ ] Too many parens necessary in places.
+   - [ ] Benchmarks
+   - [ ] Travis
+   - [ ] Hlint
+   - [ ] "One free" in solutions should only check when list is the type
  - `conway`
    - [ ] Transitions should have context distinct from `grid`
    - [ ] Allow `any_state` in transitions "from"
    - [ ] `Grid` should store what generation it is 
    - [ ] Optimize (2015, d18 is kinda slow)
    - [ ] Faster structure (since we're not doing sparse and things have a fixed size, ATM)
+   - [ ] Animate N generations
+   - [ ] Lumberyard part 2
  - `program`
-   - [ ] Case checking in instructions
+   - [ ] Case (exhaustive/overlap) checking in instructions
+   - [ ] Context in later instruction parts (e.g. jump should reference earlier `num`)

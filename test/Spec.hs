@@ -105,7 +105,7 @@ main = hspec $ do
       TypeCheck.unify listContext (ident "a" `sub` ident "a") numTy Nothing `shouldBe` Right (Just numTy)
 
     it "unification works on builtin identifiers" $ do
-      TypeCheck.unify listContext (ident "true") boolTy Nothing `shouldBe` Right Nothing
+      TypeCheck.unify listContext (ident "true") boolTy Nothing `shouldBe` Right (Just boolTy)
 
     it "when unification fails on builtins the errors make sense" $ do
       TypeCheck.unify listContext (ident "true") numTy Nothing `shouldBeUnificationFailureOf` (numTy, boolTy)
