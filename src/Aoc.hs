@@ -11,6 +11,8 @@ import           Data.Text (pack)
 import qualified ListAst as ListProblem
 import           ListProblem
 import qualified Parser as P
+import qualified ProgramAst as ProgramProblem
+import qualified ProgramProblem
 import           Text.Megaparsec
 import qualified Type
 import qualified Value as V
@@ -18,6 +20,7 @@ import qualified Value as V
 data SupportedDomainAst
   = List ListProblem.Problem
   | Conway ConwayProblem.Problem
+  | Program ProgramProblem.Problem
 
 type Solver a = (String, String) -> IO (Maybe (Type.Type, Type.Type, V.Value, a))
 
@@ -32,6 +35,7 @@ solver :: P.Parser (Solver SupportedDomainAst)
 solver =
   P.lstr "conway" *> pure (toDomain Conway ConwayProblem.runConwayProblem)
     <|> P.lstr "list" *> pure (toDomain List ListProblem.runListProblem)
+    <|> P.lstr "program" *> pure (toDomain Program ProgramProblem.runProgramProblem)
 
 solve :: String -> IO (Maybe (Type.Type, Type.Type, V.Value, SupportedDomainAst))
 solve source = do

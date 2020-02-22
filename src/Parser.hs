@@ -91,7 +91,7 @@ value = lexeme $ makeExprParser valueTerm [
   , [InfixL (Ast.Geq <$ lstr ">="), InfixL (Ast.Gt <$ lstr ">")]
   , [InfixL (Ast.And <$ lstr "&&"), InfixL (Ast.Or <$ lstr "||")]
   , [InfixL (Ast.Raised <$ lstr "^")]
-  , [InfixL (Ast.Divide <$ lstr "/")]
+  , [InfixL (Ast.Multiply <$ lstr "*"), InfixL (Ast.Divide <$ lstr "/")]
   , [InfixL (Ast.Add    <$ lstr "+")]
   , [InfixL (Ast.Subtract <$ lstr "-")]
   ]

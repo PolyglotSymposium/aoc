@@ -4,7 +4,6 @@ module ProgramAst
        ( Problem(..)
        , ParseTerm(..)
        , Meaning(..)
-       , InstPart(..)
        , Instruction(..)
        ) where
 
@@ -22,17 +21,13 @@ data Meaning
   | RelativeJump Text
   deriving (Show, Eq)
 
-data InstPart = InstPart { terms::[ParseTerm], meaning::Meaning, condition::Maybe Ast.Value }
-  deriving (Show, Eq)
-
-newtype Instruction
-  = InstForm [InstPart]
+data Instruction
+  = InstParts { terms::[ParseTerm], meaning::Meaning, condition::Maybe Ast.Value }
   deriving (Show, Eq)
 
 data Problem =
   ProgramProblem
   { programAt :: Text
-  , initialRegisterValue :: Integer
   , instructions :: [Instruction]
   , solution :: Ast.Solution
   } deriving (Show, Eq)
