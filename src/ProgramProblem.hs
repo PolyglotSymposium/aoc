@@ -20,7 +20,7 @@ import qualified TypeCheck
 import           Value (insert, Context)
 import qualified Value as V
 
-withRegisters :: Ast.Program -> Context -> Context
+withRegisters :: Ast.IntermediateProgram -> Context -> Context
 withRegisters prog context =
   foldr addToContext context $ Ast.allRegisters prog
 
@@ -59,9 +59,9 @@ runProgramProblem (source, text) =
             context = programContext
             executionContext = withRegisters programAst context
             program =
-              V.Program (Ast.indexed programAst) (V.Ip 0) $ V.registersFrom $ (, Ast.initialRegisterValue programSpec) <$> Ast.allRegisters programAst
+              V.Program (Ast.indexed $ Ast.inlineSpecs programAst) (V.Ip 0) $ V.registersFrom $ (, Ast.initialRegisterValue programSpec) <$> Ast.allRegisters programAst
             validations = do
-              TypeCheck.ensureOneFreeOrIdentInEachStep context solution
+              TypeCheck.ensureOneFreeOrIdentInEachStep executionContext solution
               ot <- TypeCheck.unifySolution executionContext solution Type.Program
               for_ (Ast.instructions programSpec) $ \instruction -> do
                 let contextWithInstruction = contextWith instruction
@@ -89,5 +89,7 @@ runProgramProblem (source, text) =
                     print result
                     pure $ Just (Type.Program, outputType, result, programSpec)
                   Left err -> do
+                    print program
+                    print executionContext
                     print err
                     pure Nothing

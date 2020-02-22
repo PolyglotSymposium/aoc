@@ -32,20 +32,20 @@ programSpec = do
     , Program.solution = code
     }
 
-program :: Program.Problem -> P.Parser Program.Program
-program spec = Program.Instructions <$> manyTill (instruction $ Program.instructions spec) eof
+program :: Program.Problem -> P.Parser Program.IntermediateProgram
+program spec = Program.IntermediateInstructions <$> manyTill (instruction $ Program.instructions spec) eof
 
-instruction :: [Program.InstructionSpec] -> P.Parser Program.Instruction
+instruction :: [Program.InstructionSpec] -> P.Parser Program.IntermediateInstruction
 instruction = choice . fmap op
   where
-    op :: Program.InstructionSpec -> P.Parser Program.Instruction
+    op :: Program.InstructionSpec -> P.Parser Program.IntermediateInstruction
     op spec = do
       (registers, numbers) <- merge <$> sequence (registersAndNumbers <$> Program.terms spec)
-      pure $ Program.Instruction
+      pure $ Program.IntermediateInstruction
         { Program.registers = registers
         , Program.numbers   = numbers
-        , Program.op        = Program.meaning spec
-        , Program.when      = Program.condition spec
+        , Program.specOp    = Program.meaning spec
+        , Program.specWhen  = Program.condition spec
         }
 
     registersAndNumbers :: Program.ParseTerm -> P.Parser (Program.Registers, Program.Numbers)

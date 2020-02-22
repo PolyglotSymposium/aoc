@@ -96,6 +96,7 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Travis
    - [ ] Hlint
    - [ ] "One free" in solutions should only check when list is the type
+   - [ ] Better organization post-remedial-program
  - `conway`
    - [ ] Transitions should have context distinct from `grid`
    - [ ] Allow `any_state` in transitions "from"
@@ -105,8 +106,10 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Animate N generations
    - [ ] Lumberyard part 2
  - `program`
+   - [ ] Check no repeated names in instruction specs.
    - [ ] Case (exhaustive/overlap) checking in instructions
    - [ ] Context in later instruction parts (e.g. jump should reference earlier `num`)
    - [ ] Backend: C
    - [ ] Backend: Go
+   - [ ] Backend: Haskell
    - [ ] Think more about `show Program`.

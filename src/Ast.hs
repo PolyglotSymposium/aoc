@@ -2,9 +2,11 @@ module Ast
   ( Solution(..)
   , Lambda(..)
   , Value(..)
+  , substitute
   ) where
 
-import Data.Text
+import qualified Data.Map.Strict as M
+import           Data.Text
 
 data Solution
   = Pipe Solution Solution
@@ -32,3 +34,22 @@ data Value
   | Application Text Value
   | List [Value]
   deriving (Show, Eq)
+
+substitute :: M.Map Text Value -> Value -> Value
+substitute subs (Gt l r)             = Gt       (substitute subs l) (substitute subs r)
+substitute subs (Geq l r)            = Geq      (substitute subs l) (substitute subs r)
+substitute subs (And l r)            = And      (substitute subs l) (substitute subs r)
+substitute subs (Or l r)             = Or       (substitute subs l) (substitute subs r)
+substitute subs (Divide l r)         = Divide   (substitute subs l) (substitute subs r)
+substitute subs (Multiply l r)       = Multiply (substitute subs l) (substitute subs r)
+substitute subs (Add l r)            = Add      (substitute subs l) (substitute subs r)
+substitute subs (Subtract l r)       = Subtract (substitute subs l) (substitute subs r)
+substitute subs (Raised l r)         = Raised   (substitute subs l) (substitute subs r)
+substitute subs (Equals l r)         = Equals   (substitute subs l) (substitute subs r)
+substitute _ num@(Inte _)            = num
+substitute subs (Application fn arg) = Application fn $ substitute subs arg
+substitute subs (List vs)            = List $ substitute subs <$> vs
+substitute subs (Identifier name) =
+  case M.lookup name subs of
+    Just desired -> desired
+    Nothing      -> Identifier name

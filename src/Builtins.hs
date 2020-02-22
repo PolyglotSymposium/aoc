@@ -15,6 +15,7 @@ import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import           Data.Text hiding (count, length, foldr, zip)
 import           ListEvaluator (evalValue, toBoolean)
+import qualified ProgramAst as Program
 import qualified Type as Type
 import qualified Value as C
 import qualified Value as Value
@@ -231,10 +232,27 @@ countCells :: Value.Value
 countCells = Value.Func $ \_ vs -> Just $ Value.Func $ \_ grd -> countCells' vs grd
 
 run :: Value.Value
-run = Value.Func $ \_ vs -> Just $ Value.I 42
+run = Value.Func $ \context program ->
+  case program of
+    Value.Program (Program.IndexedInstructions p) (Value.Ip ip) (Value.Regs regs) ->
+      run' p ip regs context
+    _ -> Nothing
+
+  where
+    run' p ip regs context =
+      case M.lookup ip p of
+        Nothing -> Just $ Value.Program (Program.IndexedInstructions p) (Value.Ip ip) (Value.Regs regs)
+        Just (Program.Instruction{..}) ->
+          let
+            currentContext = foldr (\(name, value) -> C.insert name (Type.Number, Value.I value)) context $ M.toList regs
+          in
+            error "TODO"
 
 register :: Value.Value
-register = Value.Func $ \_ reg -> Just $ Value.Func $ \ _ program -> Just $ Value.I 42
+register = Value.Func $ \_ r -> Just $ Value.Func $ \ _ program ->
+  case (r, program) of
+    (Value.Register name, Value.Program _ _ (Value.Regs regs)) -> Just $ Value.I $ regs M.! name
+    _ -> Nothing
 
 getCellState :: Value.Value -> Maybe Char
 getCellState (Value.CellState c) = Just c
