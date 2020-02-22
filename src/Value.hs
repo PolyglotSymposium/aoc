@@ -29,7 +29,7 @@ data WidthHeight
   deriving (Show, Eq)
 
 newtype InstructionPointer
-  = Ip Int
+  = Ip Integer
   deriving (Show, Eq)
 
 newtype Registers

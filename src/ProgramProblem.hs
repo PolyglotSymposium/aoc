@@ -89,7 +89,6 @@ runProgramProblem (source, text) =
                     print result
                     pure $ Just (Type.Program, outputType, result, programSpec)
                   Left err -> do
-                    print program
                     print executionContext
                     print err
                     pure Nothing

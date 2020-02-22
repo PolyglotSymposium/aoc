@@ -48,6 +48,16 @@ first = Value.Func $ \_ -> \case
                       Value.Vs (v:_) -> Just v
                       _ -> Nothing
 
+even' :: Value.Value
+even' = Value.Func $ \_ -> \case
+                      Value.I v -> Just $ toBoolean $ even v
+                      _ -> Nothing
+
+odd' :: Value.Value
+odd' = Value.Func $ \_ -> \case
+                      Value.I v -> Just $ toBoolean $ odd v
+                      _ -> Nothing
+
 dupe :: Value.Value
 dupe = Value.Func $ \_ -> \case
                       Value.Vs vs -> Just (Value.Vs (vs ++ vs))
@@ -245,8 +255,23 @@ run = Value.Func $ \context program ->
         Just (Program.Instruction{..}) ->
           let
             currentContext = foldr (\(name, value) -> C.insert name (Type.Number, Value.I value)) context $ M.toList regs
+            shouldExecute =
+              case when of
+                Just condition -> evaluatesToTrue currentContext condition
+                Nothing -> True
           in
-            error "TODO"
+            if not shouldExecute
+            then run' p (ip+1) regs context
+            else
+              case op of
+                Program.JumpAway v ->
+                  case evalValue currentContext Nothing v of
+                    Right (Value.I offset) -> run' p (ip + offset) regs context
+                    _ -> Nothing
+                Program.Set dest v ->
+                  case evalValue currentContext Nothing v of
+                    Right (Value.I result) -> run' p (ip + 1) (M.insert dest result regs) context
+                    _ -> Nothing
 
 register :: Value.Value
 register = Value.Func $ \_ r -> Just $ Value.Func $ \ _ program ->
@@ -330,8 +355,8 @@ baseIdentifiers =
   , ("false",   bool,                  Value.False)
   , ("first",   list a --> a,          first)
   , ("dupe",    list a --> list a,     dupe)
-  , ("even",    num --> bool,          Value.False)
-  , ("odd",     num --> bool,          Value.False)
+  , ("even",    num --> bool,          even')
+  , ("odd",     num --> bool,          odd')
   ]
 
 core :: C.Context

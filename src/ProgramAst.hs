@@ -14,6 +14,7 @@ module ProgramAst
        , NameInSpec(..)
        , IntermediateProgram(..)
        , IntermediateInstruction(..)
+       , Op(..)
        ) where
 
 import qualified Ast
@@ -49,7 +50,7 @@ data Problem =
   } deriving (Show, Eq)
 
 newtype IndexedProgram
-  = IndexedInstructions (M.Map Int Instruction)
+  = IndexedInstructions (M.Map Integer Instruction)
   deriving (Show, Eq)
 
 indexed :: Program -> IndexedProgram
