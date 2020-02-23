@@ -38,7 +38,8 @@ conway = do
 generationDirective :: P.Parser Conway.GenerationDirective
 generationDirective =
   (Conway.Solution <$> (P.lstr "solution" *> P.code)) <|>
-  (Conway.Animate Conway.Forever <$ (P.lstr "animate" *> P.lstr "forever"))
+  try (Conway.Animate Conway.Forever <$ (P.lstr "animate" *> P.lstr "forever")) <|>
+  (Conway.Animate . Conway.Generations <$> (P.lstr "animate" *> P.lexeme P.rawInteger <* P.lstr "generations"))
 
 outOfBoundsCells :: Conway.CellAliases -> P.Parser Conway.CellIdent
 outOfBoundsCells aliases =

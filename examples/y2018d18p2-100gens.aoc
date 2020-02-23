@@ -1,0 +1,14 @@
+conway of 2 dimensions
+  initial state at ./y2018d18.txt
+  where '.' means 'open'
+  and   '|' means 'trees'
+  and   '#' means 'lumberyard'
+  cells transition
+    from open to trees if (neighbors trees) >= 3
+    from open to open if (true)
+    from trees to lumberyard if (neighbors lumberyard) >= 3
+    from trees to trees if (true)
+    from lumberyard to lumberyard if (neighbors lumberyard) >= 1 && (neighbors trees) >= 1
+    otherwise a cell is open
+
+animate 100 generations

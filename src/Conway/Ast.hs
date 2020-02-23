@@ -41,6 +41,7 @@ data CellTransitions = CellTransitions
 
 data AnimationDirective
   = Forever
+  | Generations Integer
   deriving (Show, Eq)
 
 data GenerationDirective

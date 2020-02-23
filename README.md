@@ -104,7 +104,6 @@ This may not even be distinct from the `Graph` domain.
    - [ ] `Grid` should store what generation it is 
    - [ ] Optimize (2015, d18 is kinda slow)
    - [ ] Faster structure (since we're not doing sparse and things have a fixed size, ATM)
-   - [ ] Animate N generations
    - [ ] Lumberyard part 2
  - `program`
    - [ ] Check no repeated names in instruction specs.

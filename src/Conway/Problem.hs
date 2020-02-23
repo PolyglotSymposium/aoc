@@ -41,6 +41,21 @@ solve context initialState outputType ast =
           print err
           pure Nothing
 
+    Ast.Animate (Ast.Generations n) -> animate initialState n
+      where
+        animate state m | m <= 0 =
+          pure $ Just (Type.Grid, outputType, state, ast)
+
+        animate state m = do
+          putStrLn $ "Generation: " ++ show (n - m)
+          print state
+          case Eval.eval context state (solutionForDirective ast) of
+            Right nextGeneration -> do
+              animate nextGeneration $ m-1
+            Left err -> do
+              print err
+              pure Nothing
+
     Ast.Animate Ast.Forever -> animateForever initialState
       where
         animateForever state =
