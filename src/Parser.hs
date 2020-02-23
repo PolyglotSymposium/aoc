@@ -54,12 +54,12 @@ identRest = S.union identStart $ S.fromList ("*" ++ ['0'..'9'])
 
 ident :: Parser Text
 ident = lexeme $ do
-  start <- takeWhile1P (Just "identifier start") (\c -> S.member c identStart)
-  rest <- takeWhileP (Just "identifier end") (\c -> S.member c identRest)
+  start <- takeWhile1P (Just "identifier start") (`S.member` identStart)
+  rest <- takeWhileP (Just "identifier end") (`S.member` identRest)
   pure $ start <> rest
 
 filePath :: Parser Text
-filePath = lexeme $ takeWhile1P (Just "path character") (\c -> not (c `elem` [' ', '\t', '\n', '\r']))
+filePath = lexeme $ takeWhile1P (Just "path character") (`notElem` [' ', '\t', '\n', '\r'])
 
 simpleQuoted :: Parser Text
 simpleQuoted = lexeme $ pack <$> (char '\'' >> manyTill L.charLiteral (char '\''))

@@ -8,6 +8,7 @@ module ProgramProblem
 
 import           Builtins (programContext)
 import           Data.Foldable (for_)
+import           Data.Functor (($>))
 import           Data.Text hiding (foldr)
 import qualified ListEvaluator as Eval
 import qualified ProgramAst as Ast
@@ -28,7 +29,7 @@ withRegisters prog context =
     addToContext reg = insert reg (Type.Register, V.Register reg)
 
 contextWith :: Ast.InstructionSpec -> Context
-contextWith (Ast.InstParts {..}) =
+contextWith Ast.InstParts{..} =
   foldr insertNumeric programContext terms
 
   where
@@ -68,14 +69,12 @@ runProgramProblem (source, text) =
                 _ <- case Ast.condition instruction of
                   Just cond ->
                     TypeCheck.noFrees contextWithInstruction cond *>
-                    TypeCheck.unify contextWithInstruction cond Type.Boolean Nothing *>
-                    pure ()
+                    TypeCheck.unify contextWithInstruction cond Type.Boolean Nothing $> ()
                   _ -> pure ()
                 case Ast.meaning instruction of
                   Ast.SetRegister _ value ->
                     TypeCheck.noFrees contextWithInstruction value *>
-                    TypeCheck.unify contextWithInstruction value Type.Number Nothing *>
-                    pure ()
+                    TypeCheck.unify contextWithInstruction value Type.Number Nothing $> ()
                   _ -> pure ()
               pure ot
           in

@@ -46,14 +46,11 @@ outOfBoundsCells aliases =
 
 oneDimensionalConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
 oneDimensionalConwayInput transitions aliases = do
-  r <- row
+  r <- some cellState
   let cells = (\(x, v) -> ((x, 0), v)) <$> zip [0..] r
   pure $ V.Grid transitions (V.WidthHeight{ V.width=toInteger $ length r, V.height=1 }) $ M.fromList cells
 
   where
-    row :: P.Parser [Char]
-    row = some cellState
-
     cellState :: P.Parser Char
     cellState = choice ((\(Conway.CellIdent c, _) -> char c) <$> aliases)
 
@@ -71,11 +68,8 @@ twoDimensionalConwayInput transitions aliases = do
       (x, cell) <- zip [0..] line
       [((x, y), cell)]
 
-    grid :: P.Parser [[Char]]
-    grid = endBy1 row (P.ws <|> eof)
-
-    row :: P.Parser [Char]
-    row = some cellState
+    grid :: P.Parser [String]
+    grid = endBy1 (some cellState) (P.ws <|> eof)
 
     cellState :: P.Parser Char
     cellState = choice ((\(Conway.CellIdent c, _) -> char c) <$> aliases)
@@ -118,7 +112,7 @@ initialStatePath =
   P.lstr "initial" *> P.lstr "state" *> P.lstr "at" *> P.filePath
 
 cellAliases :: P.Parser [(Conway.CellIdent, Conway.CellAlias)]
-cellAliases = do
+cellAliases =
   P.lstr "where" *> sepBy1 cellAlias (P.lstr "and")
 
 cellAlias :: P.Parser (Conway.CellIdent, Conway.CellAlias)

@@ -6,6 +6,7 @@ module Ast
   ) where
 
 import qualified Data.Map.Strict as M
+import           Data.Maybe (fromMaybe)
 import           Data.Text
 
 data Solution
@@ -50,6 +51,4 @@ substitute _ num@(Inte _)            = num
 substitute subs (Application fn arg) = Application fn $ substitute subs arg
 substitute subs (List vs)            = List $ substitute subs <$> vs
 substitute subs (Identifier name) =
-  case M.lookup name subs of
-    Just desired -> desired
-    Nothing      -> Identifier name
+  fromMaybe (Identifier name) $ M.lookup name subs

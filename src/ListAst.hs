@@ -3,7 +3,7 @@ module ListAst
        ) where
 
 import Data.Text
-import qualified Ast as Ast
+import qualified Ast
 
 data Problem =
   ListProblem

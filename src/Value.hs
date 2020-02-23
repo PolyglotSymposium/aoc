@@ -66,21 +66,21 @@ data OrdValue
 
 toOrd :: Value -> Maybe OrdValue
 toOrd (I v)            = Just $ OrdI v
-toOrd (Vs vs)          = OrdVs <$> (sequence $ toOrd <$> vs)
-toOrd True             = Just $ OrdTrue
-toOrd False            = Just $ OrdFalse
+toOrd (Vs vs)          = OrdVs <$> sequence (toOrd <$> vs)
+toOrd True             = Just OrdTrue
+toOrd False            = Just OrdFalse
 toOrd (CellState s)    = Just $ OrdCellState s
 toOrd (Pos coords)     = Just $ OrdPos coords
 toOrd (Grid _ _ state) = Just $ OrdGrid state
 toOrd (Register name)  = Just $ OrdRegister name
-toOrd (Program _ _ _)  = Nothing
+toOrd Program{}        = Nothing
 toOrd (Fold _)         = Nothing
 toOrd (Func _)         = Nothing
 toOrd (StepsOfFold _)  = Nothing
 
 instance Show Value where
   show (I v) = show v
-  show (Vs vs) = "[" ++ concat (L.intersperse "," $ show <$> vs) ++ "]"
+  show (Vs vs) = "[" ++ L.intercalate "," (show <$> vs) ++ "]"
   show True = "true"
   show False = "false"
   show (Fold _) = "<function/fold>"
@@ -89,10 +89,10 @@ instance Show Value where
   show (CellState c) = "{cell:" ++ [c] ++ "}"
   show (Pos (x, y)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ "}"
   show (Register r) = "{" ++ show r ++ ":reg}"
-  show (Grid _ (WidthHeight{ width, height }) state) = do
+  show (Grid _ WidthHeight{ width, height } state) = do
      y <- [0..height-1]
      fmap (\x -> state M.! (x, y)) [0..width-1] ++ "\n"
-  show (Program _ _ _) = "<program...>"
+  show Program{} = "<program...>"
 
 type Context = M.Map Text (Type.Type, Value.Value)
 

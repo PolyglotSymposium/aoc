@@ -16,9 +16,9 @@ import qualified Data.Set as S
 import           Data.Text hiding (count, length, foldr, zip)
 import           ListEvaluator (evalValue, toBoolean)
 import qualified ProgramAst as Program
-import qualified Type as Type
+import qualified Type
 import qualified Value as C
-import qualified Value as Value
+import qualified Value
 
 makeFold :: Integer -> (Integer -> Integer -> Integer) -> Value.Value
 makeFold i f = Value.Fold (Value.I i, \v1 v2 ->
@@ -38,7 +38,7 @@ repeats = Value.Func $ \_ v -> Value.Vs <$> go S.empty v
     go _ (Value.Vs []) = Just []
     go seen (Value.Vs (v:vs)) = do
       ord <- Value.toOrd v
-      let acc = if S.member ord seen then [v] else []
+      let acc = [v | S.member ord seen]
       rest <- go (S.insert ord seen) (Value.Vs vs)
       pure $ acc ++ rest
     go _ _ = Nothing
@@ -166,7 +166,7 @@ corner = Value.Func $ \ctx current ->
 firstRepeatedGeneration :: Value.Value
 firstRepeatedGeneration = Value.Func $ \context v -> go S.empty context v
   where
-    go seen context grd@(Value.Grid _ _ _) = do
+    go seen context grd@Value.Grid{} = do
       ord <- Value.toOrd grd
       if S.member ord seen
       then
@@ -208,7 +208,7 @@ nextGeneration :: Value.Value
 nextGeneration = Value.Func nextGeneration'
 
 nextGeneration' :: C.Context -> Value.Value -> Maybe Value.Value
-nextGeneration' context grd@(Value.Grid ts@(Conway.CellTransitions { .. }) size state) =
+nextGeneration' context grd@(Value.Grid ts@Conway.CellTransitions{ .. } size state) =
   Just $ Value.Grid ts size $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grd) context)) state
     where
       transition ctx coords c =
@@ -232,8 +232,8 @@ readingOrder' context ps =
   -- TODO generation_0 is not the best thing to use here since grids _can_ change
   case (C.identValue "$generation_0" context, ps) of
     (Just (Value.Grid _ size _), Value.Vs vs) ->
-      fmap Value.Vs $ sequence $ fmap (fmap (readingIndex (Value.width size)) . getPos) vs
-    _ -> error $ show (context) -- $ Nothing
+      Value.Vs <$> mapM (fmap (readingIndex (Value.width size)) . getPos) vs
+    _ -> Nothing
 
   where
     readingIndex width (x, y) = Value.I (x + width * y)
@@ -252,7 +252,7 @@ run = Value.Func $ \context program ->
     run' p ip regs context =
       case M.lookup ip p of
         Nothing -> Just $ Value.Program (Program.IndexedInstructions p) (Value.Ip ip) (Value.Regs regs)
-        Just (Program.Instruction{..}) ->
+        Just Program.Instruction{..} ->
           let
             currentContext = foldr (\(name, value) -> C.insert name (Type.Number, Value.I value)) context $ M.toList regs
             shouldExecute =
@@ -372,7 +372,6 @@ core = C.fromList $ do
   case (t, v) of
     (Type.Arrow iT oT, Value.Fold step) -> [(name, (t, v)), (append name "*", (iT --> list oT, Value.StepsOfFold step))]
     _    -> [(name, (t, v))]
-
 
 listContext :: C.Context
 listContext = core

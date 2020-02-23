@@ -5,10 +5,10 @@ module ListEvaluator
        , toBoolean
        ) where
 
-import qualified Ast as Ast
+import qualified Ast
 import qualified Data.Text as Text
 import           Value (Context, identValue)
-import qualified Value as Value
+import qualified Value
 
 data EvalError
   = UnexpectedError Int
@@ -82,7 +82,7 @@ eval context (Value.Vs vs) (Ast.FloatingLambda lambda) = do
         result <- applyLambda context v lambda
         pure (v, result)
 
-eval context grid@(Value.Grid _ _ _) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
+eval context grid@Value.Grid{} (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
   case identValue name context of
     Just (Value.Func f) ->
       case f context grid of
@@ -91,7 +91,7 @@ eval context grid@(Value.Grid _ _ _) (Ast.FloatingLambda (Ast.Body (Ast.Identifi
 
     _ -> Left $ TypeMismatchAtRuntime (Text.pack ("Built-in " ++ Text.unpack name ++ " specified at the top level of conway evaluation but it's not a conway function" ))
 
-eval context program@(Value.Program _ _ _) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
+eval context program@Value.Program{} (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
   case identValue name context of
     Just (Value.Func f) ->
       case f context program of
@@ -115,7 +115,7 @@ eval context arg2 (Ast.FloatingLambda (Ast.Body (Ast.Application fn arg1))) = do
 
 eval _ v (Ast.FloatingLambda (Ast.Body op)) = Left $ TypeMismatchAtRuntime (Text.pack ("When applying top level operation " ++ show op ++ " got " ++ show v ++ " which is not expected as a top-level input"))
 
-eval _ v (Ast.For _ _ _) = Left $ TypeMismatchAtRuntime (Text.pack ("When applying `for` got " ++ show v ++ " but expected a list"))
+eval _ v Ast.For{} = Left $ TypeMismatchAtRuntime (Text.pack ("When applying `for` got " ++ show v ++ " but expected a list"))
 
 applyLambda :: Context -> Value.Value -> Ast.Lambda -> Result Value.Value
 applyLambda context v (Ast.Body lambda) = evalValue context (Just v) lambda
@@ -186,7 +186,7 @@ fromBoolean Value.True = Just True
 fromBoolean Value.False = Just False
 fromBoolean _ = Nothing
 
-binNumberOp :: Context -> (Maybe Value.Value) -> (Integer -> Integer -> t) -> String -> Ast.Value -> Ast.Value -> (t -> b) -> Result b
+binNumberOp :: Context -> Maybe Value.Value -> (Integer -> Integer -> t) -> String -> Ast.Value -> Ast.Value -> (t -> b) -> Result b
 binNumberOp context val op opName a b toValue = do
   a' <- evalValue context val a
   b' <- evalValue context val b
@@ -194,7 +194,7 @@ binNumberOp context val op opName a b toValue = do
     (Value.I a'', Value.I b'') -> Right $ toValue $ op a'' b''
     _                          -> Left $ TypeMismatchAtRuntime (Text.pack ("When applying `" ++ opName ++ "` got " ++ show (a', b') ++ " but expected numbers"))
 
-binBooleanOp :: Context -> (Maybe Value.Value) -> (Bool -> Bool -> t) -> String -> Ast.Value -> Ast.Value -> (t -> b) -> Result b
+binBooleanOp :: Context -> Maybe Value.Value -> (Bool -> Bool -> t) -> String -> Ast.Value -> Ast.Value -> (t -> b) -> Result b
 binBooleanOp context val op opName a b toValue = do
   a' <- evalValue context val a
   b' <- evalValue context val b

@@ -125,7 +125,7 @@ unify context (Ast.Divide a b) Type.Number env =
   unifyBinOp context a Type.Number b Type.Number env
 
 unify context ast@(Ast.List vs) (Type.List it) env = do
-  envs <- sequence $ fmap (\v -> unify context v it env) vs
+  envs <- mapM (\v -> unify context v it env) vs
   case nub envs of
     [single] -> pure single
     []       -> pure Nothing
@@ -193,7 +193,7 @@ typeOf _ (Ast.Raised _ _)      = Right Type.Number
 typeOf _ (Ast.Add _ _)         = Right Type.Number
 
 typeOf context ast@(Ast.List vs) = do
-  types <- sequence $ fmap (typeOf context) vs
+  types <- mapM (typeOf context) vs
   case nub types of
     [single] -> pure single
     _        -> Left $ CouldNotInferListType ast

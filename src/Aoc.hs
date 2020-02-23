@@ -7,6 +7,7 @@ module Aoc
 
 import qualified ConwayAst as ConwayProblem
 import qualified ConwayProblem
+import           Data.Functor (($>))
 import           Data.Text (pack)
 import qualified ListAst as ListProblem
 import           ListProblem
@@ -33,9 +34,9 @@ toDomain convert slvr input = do
 
 solver :: P.Parser (Solver SupportedDomainAst)
 solver =
-  P.lstr "conway" *> pure (toDomain Conway ConwayProblem.runConwayProblem)
-    <|> P.lstr "list" *> pure (toDomain List ListProblem.runListProblem)
-    <|> P.lstr "program" *> pure (toDomain Program ProgramProblem.runProgramProblem)
+  P.lstr "conway" $> toDomain Conway ConwayProblem.runConwayProblem
+    <|> P.lstr "list" $> toDomain List ListProblem.runListProblem
+    <|> P.lstr "program" $> toDomain Program ProgramProblem.runProgramProblem
 
 solve :: String -> IO (Maybe (Type.Type, Type.Type, V.Value, SupportedDomainAst))
 solve source = do

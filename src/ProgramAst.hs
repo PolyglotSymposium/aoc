@@ -107,7 +107,7 @@ inlineSpecs (IntermediateInstructions iis) =
         Instruction
         { op =
             case specOp ii of
-              SetRegister dest op -> Set (registers ii M.! SpecName dest) $ sub op
+              SetRegister dest op' -> Set (registers ii M.! SpecName dest) $ sub op'
               RelativeJump name   -> JumpAway $ sub $ Ast.Identifier name
         , when = sub <$> specWhen ii
         }
