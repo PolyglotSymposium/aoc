@@ -66,10 +66,10 @@ This is a work in progress...
 
 ### Assembly Code
 
+Cellular automaton domain solutions begin with `program`.
+
 There are a bunch of these. I probably won't be tackling the optimization
 problems but that would certainly be a challenge.
-
-This is a work in progress...
 
 ### Graph
 
