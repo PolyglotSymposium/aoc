@@ -183,6 +183,8 @@ typeOf :: Context -> Ast.Value -> Result Type.Type
 typeOf _ (Ast.Inte _)          = Right Type.Number
 typeOf _ (Ast.Gt _ _)          = Right Type.Boolean
 typeOf _ (Ast.Geq _ _)         = Right Type.Boolean
+typeOf _ (Ast.Lt _ _)          = Right Type.Boolean
+typeOf _ (Ast.Leq _ _)         = Right Type.Boolean
 typeOf _ (Ast.And _ _)         = Right Type.Boolean
 typeOf _ (Ast.Or _ _)          = Right Type.Boolean
 typeOf _ (Ast.Equals _ _)      = Right Type.Boolean
@@ -241,6 +243,8 @@ noFrees context ast =
 frees :: Context -> Ast.Value -> S.Set Text
 frees context (Ast.Gt a b)          = S.union (frees context a) (frees context b)
 frees context (Ast.Geq a b)         = S.union (frees context a) (frees context b)
+frees context (Ast.Leq a b)         = S.union (frees context a) (frees context b)
+frees context (Ast.Lt a b)          = S.union (frees context a) (frees context b)
 frees context (Ast.Divide a b)      = S.union (frees context a) (frees context b)
 frees context (Ast.Multiply a b)    = S.union (frees context a) (frees context b)
 frees context (Ast.Subtract a b)    = S.union (frees context a) (frees context b)

@@ -1,0 +1,26 @@
+program at ./y2017d8.txt
+  with instructions
+    {r:reg} dec {n:num} if {cr:reg} > {cn:num}  means set r to (r - n) if (cr > cn)
+    {r:reg} inc {n:num} if {cr:reg} > {cn:num}  means set r to (r + n) if (cr > cn)
+
+    {r:reg} dec {n:num} if {cr:reg} < {cn:num}  means set r to (r - n) if (cr < cn)
+    {r:reg} inc {n:num} if {cr:reg} < {cn:num}  means set r to (r + n) if (cr < cn)
+
+    {r:reg} dec {n:num} if {cr:reg} == {cn:num} means set r to (r - n) if (cr = cn)
+    {r:reg} inc {n:num} if {cr:reg} == {cn:num} means set r to (r + n) if (cr = cn)
+
+    {r:reg} dec {n:num} if {cr:reg} <= {cn:num} means set r to (r - n) if (cr <= cn)
+    {r:reg} inc {n:num} if {cr:reg} <= {cn:num} means set r to (r + n) if (cr <= cn)
+
+    {r:reg} dec {n:num} if {cr:reg} >= {cn:num} means set r to (r - n) if (cr >= cn)
+    {r:reg} inc {n:num} if {cr:reg} >= {cn:num} means set r to (r + n) if (cr >= cn)
+
+    {r:reg} dec {n:num} if {cr:reg} != {cn:num} means set r to (r - n) if (cr /= cn)
+    {r:reg} inc {n:num} if {cr:reg} != {cn:num} means set r to (r + n) if (cr /= cn)
+
+  registers start at 0
+
+solution
+  run
+    | register_values
+    | maximum

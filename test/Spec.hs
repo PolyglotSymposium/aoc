@@ -65,6 +65,10 @@ main = hspec $ do
       Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2016d12p2.aoc"
       result `shouldBe` 9227674
 
+    it "solves 2017 D8 P1" $ do
+      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2017d8p1.aoc"
+      result `shouldBe` 6828
+
     it "solves 2019 D24 P1" $ do
       Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2019d24p1.aoc"
       result `shouldBe` 18844281

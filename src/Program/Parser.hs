@@ -39,7 +39,7 @@ instruction = choice . fmap op
   where
     op :: Program.InstructionSpec -> P.Parser Program.IntermediateInstruction
     op spec = do
-      (registers, numbers) <- merge <$> sequence (registersAndNumbers <$> Program.terms spec)
+      (registers, numbers) <- merge <$> try (sequence (registersAndNumbers <$> Program.terms spec))
       pure $ Program.IntermediateInstruction
         { Program.registers = registers
         , Program.numbers   = numbers
@@ -79,7 +79,7 @@ term :: P.Parser Program.ParseTerm
 term = P.lexeme (
    between (char '{') (char '}') numberOrRegister
      <|> Program.Literal <$> P.ident
-     <|> Program.Literal . singleton <$> punctuationChar
+     <|> Program.Literal . pack <$> some (punctuationChar <|> symbolChar)
    )
 
   where

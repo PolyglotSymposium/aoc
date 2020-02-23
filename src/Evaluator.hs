@@ -147,6 +147,12 @@ evalValue context val (Ast.Gt a b) =
 evalValue context val (Ast.Geq a b) =
   binNumberOp context val (>=) ">=" a b toBoolean
 
+evalValue context val (Ast.Lt a b) =
+  binNumberOp context val (<) "<" a b toBoolean
+
+evalValue context val (Ast.Leq a b) =
+  binNumberOp context val (<=) "<=" a b toBoolean
+
 evalValue context val (Ast.Divide a b) =
   binNumberOp context val div "/" a b Value.I
 

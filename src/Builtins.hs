@@ -13,7 +13,7 @@ import qualified Conway.Ast as Conway
 import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
-import           Data.Text hiding (count, length, foldr, zip)
+import           Data.Text hiding (count, length, foldr, zip, maximum)
 import           Evaluator (evalValue, toBoolean)
 import qualified Program.Ast as Program
 import qualified Type
@@ -47,6 +47,17 @@ first :: Value.Value
 first = Value.Func $ \_ -> \case
                       Value.Vs (v:_) -> Just v
                       _ -> Nothing
+
+maximum' :: Value.Value
+maximum' = Value.Func $ \_ -> \case
+                      Value.Vs vs -> Value.I . maximum <$> extractIntegers vs
+                      _ -> Nothing
+  where
+    extractIntegers [] = Just []
+    extractIntegers (Value.I i:rest) = do
+      others <- extractIntegers rest
+      pure $ i:others
+    extractIntegers _ = Nothing
 
 even' :: Value.Value
 even' = Value.Func $ \_ -> \case
@@ -286,6 +297,13 @@ incrementRegister = Value.Func $ \_ r -> Just $ Value.Func $ \ _ program ->
       Just $ Value.Program p ip (Value.Regs $ M.adjust (+1) name regs)
     _ -> Nothing
 
+registerValues :: Value.Value
+registerValues = Value.Func $ \ _ program ->
+  case program of
+    (Value.Program _ _ (Value.Regs regs)) ->
+      Just $ Value.Vs $ Value.I . snd <$> M.toList regs
+    _ -> Nothing
+
 getCellState :: Value.Value -> Maybe Char
 getCellState (Value.CellState c) = Just c
 getCellState _ = Nothing
@@ -364,6 +382,7 @@ baseIdentifiers =
   , ("dupe",    list a --> list a,     dupe)
   , ("even",    num --> bool,          even')
   , ("odd",     num --> bool,          odd')
+  , ("maximum", list num --> num,      maximum')
   ]
 
 core :: C.Context
@@ -402,4 +421,5 @@ programContext =
       ("run",                (prog --> prog,            run))
     , ("register",           (reg  --> (prog --> prog), register))
     , ("increment_register", (reg  --> (prog --> prog), incrementRegister))
+    , ("register_values",    (prog --> list num,        registerValues))
     ]

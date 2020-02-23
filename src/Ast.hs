@@ -22,6 +22,8 @@ newtype Lambda
 data Value
   = Gt Value Value
   | Geq Value Value
+  | Leq Value Value
+  | Lt Value Value
   | And Value Value
   | Or Value Value
   | Divide Value Value
@@ -40,6 +42,8 @@ data Value
 substitute :: M.Map Text Value -> Value -> Value
 substitute subs (Gt l r)             = Gt        (substitute subs l) (substitute subs r)
 substitute subs (Geq l r)            = Geq       (substitute subs l) (substitute subs r)
+substitute subs (Leq l r)            = Leq       (substitute subs l) (substitute subs r)
+substitute subs (Lt l r)             = Lt        (substitute subs l) (substitute subs r)
 substitute subs (And l r)            = And       (substitute subs l) (substitute subs r)
 substitute subs (Or l r)             = Or        (substitute subs l) (substitute subs r)
 substitute subs (Divide l r)         = Divide    (substitute subs l) (substitute subs r)
