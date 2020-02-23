@@ -9,6 +9,8 @@ module Program.Problem
 import           Builtins (programContext)
 import           Data.Foldable (for_)
 import           Data.Functor (($>))
+import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import           Data.Text hiding (foldr)
 import qualified Evaluator as Eval
 import qualified Program.Ast as Ast
@@ -61,7 +63,18 @@ runProgramProblem (source, text) =
             context = programContext
             executionContext = withRegisters programAst context
             program =
-              V.Program (Ast.indexed $ Ast.inlineSpecs programAst) (V.Ip 0) $ V.registersFrom $ (, Ast.initialRegisterValue programSpec) <$> Ast.allRegisters programAst
+              V.Program
+                (Ast.indexed $ Ast.inlineSpecs programAst)
+                (V.Ip 0)
+                (V.registersFrom $ (, Ast.initialRegisterValue programSpec) <$> Ast.allRegisters programAst)
+                (V.Traces
+                 {
+                   V.registerValues =
+                     if S.member Ast.TraceRegisterValues (Ast.traces programSpec)
+                     then Just $ V.RegHistory M.empty
+                     else Nothing
+                 }
+                )
             validations = do
               TypeCheck.ensureOneFreeOrIdentInEachStep executionContext solution
               ot <- TypeCheck.unifySolution executionContext solution Type.Program

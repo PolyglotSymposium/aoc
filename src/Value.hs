@@ -14,6 +14,8 @@ module Value
        , insert
        , empty
        , merge
+       , Traces(..)
+       , RegisterHistory(..)
        ) where
 
 import qualified Conway.Ast as Conway
@@ -36,8 +38,14 @@ newtype Registers
   = Regs (M.Map Text Integer)
   deriving (Show, Eq)
 
+newtype RegisterHistory
+  = RegHistory (M.Map Text [Integer])
+  deriving (Show, Eq)
+
 registersFrom :: [(Text, Integer)] -> Registers
 registersFrom = Regs . M.fromList
+
+data Traces = Traces { registerValues :: Maybe RegisterHistory }
 
 data Value
   = I Integer
@@ -51,7 +59,7 @@ data Value
   | Pos (Integer, Integer)
   | Grid Conway.CellTransitions WidthHeight (M.Map (Integer, Integer) Char)
   | Register Text
-  | Program Prog.IndexedProgram InstructionPointer Registers
+  | Program Prog.IndexedProgram InstructionPointer Registers Traces
 
 data OrdValue
   = OrdI Integer

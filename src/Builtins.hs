@@ -13,7 +13,7 @@ import qualified Conway.Ast as Conway
 import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
-import           Data.Text hiding (count, length, foldr, zip, maximum)
+import           Data.Text hiding (count, length, foldr, zip, maximum, concat)
 import           Evaluator (evalValue, toBoolean)
 import qualified Program.Ast as Program
 import qualified Type
@@ -252,17 +252,22 @@ readingOrder' context ps =
 countCells :: Value.Value
 countCells = Value.Func $ \_ vs -> Just $ Value.Func $ \_ grd -> countCells' vs grd
 
+traceRegisterValue :: Text -> Integer -> Value.Traces -> Value.Traces
+traceRegisterValue r value Value.Traces{registerValues=Just (Value.RegHistory rh) } =
+  Value.Traces $ Just $ Value.RegHistory $ M.alter (Just . (value :) . fromMaybe []) r rh
+traceRegisterValue _ _ ts = ts
+
 run :: Value.Value
 run = Value.Func $ \context program ->
   case program of
-    Value.Program (Program.IndexedInstructions p) (Value.Ip ip) (Value.Regs regs) ->
-      run' p ip regs context
+    Value.Program (Program.IndexedInstructions p) (Value.Ip ip) (Value.Regs regs) traces ->
+      run' p ip regs context traces
     _ -> Nothing
 
   where
-    run' p ip regs context =
+    run' p ip regs context traces =
       case M.lookup ip p of
-        Nothing -> Just $ Value.Program (Program.IndexedInstructions p) (Value.Ip ip) (Value.Regs regs)
+        Nothing -> Just $ Value.Program (Program.IndexedInstructions p) (Value.Ip ip) (Value.Regs regs) traces
         Just Program.Instruction{..} ->
           let
             currentContext = foldr (\(name, value) -> C.insert name (Type.Number, Value.I value)) context $ M.toList regs
@@ -272,36 +277,47 @@ run = Value.Func $ \context program ->
                 Nothing -> True
           in
             if not shouldExecute
-            then run' p (ip+1) regs context
+            then run' p (ip+1) regs context traces
             else
               case op of
                 Program.JumpAway v ->
                   case evalValue currentContext Nothing v of
-                    Right (Value.I offset) -> run' p (ip + offset) regs context
+                    Right (Value.I offset) -> run' p (ip + offset) regs context traces
                     _ -> Nothing
                 Program.Set dest v ->
                   case evalValue currentContext Nothing v of
-                    Right (Value.I result) -> run' p (ip + 1) (M.insert dest result regs) context
+                    Right (Value.I result) ->
+                      run' p (ip + 1) (M.insert dest result regs) context $ traceRegisterValue dest result traces
                     _ -> Nothing
 
 register :: Value.Value
 register = Value.Func $ \_ r -> Just $ Value.Func $ \ _ program ->
   case (r, program) of
-    (Value.Register name, Value.Program _ _ (Value.Regs regs)) -> Just $ Value.I $ regs M.! name
+    (Value.Register name, Value.Program _ _ (Value.Regs regs) _) -> Just $ Value.I $ regs M.! name
     _ -> Nothing
 
 incrementRegister :: Value.Value
 incrementRegister = Value.Func $ \_ r -> Just $ Value.Func $ \ _ program ->
   case (r, program) of
-    (Value.Register name, Value.Program p ip (Value.Regs regs)) ->
-      Just $ Value.Program p ip (Value.Regs $ M.adjust (+1) name regs)
+    (Value.Register name, Value.Program p ip (Value.Regs regs) traces) ->
+      let
+        value = regs M.! name + 1
+      in
+      Just $ Value.Program p ip (Value.Regs $ M.insert name value regs) $ traceRegisterValue name value traces
     _ -> Nothing
 
 registerValues :: Value.Value
 registerValues = Value.Func $ \ _ program ->
   case program of
-    (Value.Program _ _ (Value.Regs regs)) ->
+    (Value.Program _ _ (Value.Regs regs) _) ->
       Just $ Value.Vs $ Value.I . snd <$> M.toList regs
+    _ -> Nothing
+
+tracedRegisterValues :: Value.Value
+tracedRegisterValues = Value.Func $ \ _ program ->
+  case program of
+    (Value.Program _ _ _ Value.Traces{registerValues=Just (Value.RegHistory rh) }) ->
+      Just $ Value.Vs $ Value.I <$> (M.toList rh >>= snd)
     _ -> Nothing
 
 getCellState :: Value.Value -> Maybe Char
@@ -418,8 +434,9 @@ programContext :: C.Context
 programContext =
   C.add core $
     C.fromList [
-      ("run",                (prog --> prog,            run))
-    , ("register",           (reg  --> (prog --> prog), register))
-    , ("increment_register", (reg  --> (prog --> prog), incrementRegister))
-    , ("register_values",    (prog --> list num,        registerValues))
+      ("run",                    (prog --> prog,            run))
+    , ("register",               (reg  --> (prog --> prog), register))
+    , ("increment_register",     (reg  --> (prog --> prog), incrementRegister))
+    , ("register_values",        (prog --> list num,        registerValues))
+    , ("traced_register_values", (prog --> list num,        tracedRegisterValues))
     ]

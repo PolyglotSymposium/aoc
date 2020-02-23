@@ -8,6 +8,8 @@ module Program.Parser
 
 import qualified Ast as Program
 import qualified Data.Map.Strict as M
+import           Data.Maybe (fromMaybe)
+import qualified Data.Set as S
 import           Data.Text hiding (zip, maximum, length, foldr)
 import qualified Parser as P
 import qualified Program.Ast as Program
@@ -20,6 +22,7 @@ programSpec = do
   programLocation <- P.filePath
   instructions <- instructionsSpec
   registerStartValue <- initialRegisterValue
+  traces <- traceRules
   _ <- P.lstr "solution"
   code <- P.code
   eof
@@ -29,7 +32,12 @@ programSpec = do
     , Program.instructions = instructions
     , Program.initialRegisterValue = registerStartValue
     , Program.solution = code
+    , Program.traces = traces
     }
+
+traceRules :: P.Parser (S.Set Program.Trace)
+traceRules =
+  fromMaybe S.empty <$> optional (S.singleton Program.TraceRegisterValues <$ P.lstr "trace" <* P.lstr "register" <* P.lstr "values")
 
 program :: Program.Problem -> P.Parser Program.IntermediateProgram
 program spec = Program.IntermediateInstructions <$> manyTill (instruction $ Program.instructions spec) eof

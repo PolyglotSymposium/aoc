@@ -69,9 +69,9 @@ main = hspec $ do
       Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2017d8p1.aoc"
       result `shouldBe` 6828
 
-    it "solves 2019 D24 P1" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2019d24p1.aoc"
-      result `shouldBe` 18844281
+    it "solves 2017 D8 P2" $ do
+      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2017d8p2.aoc"
+      result `shouldBe` 7234
 
     it "solves 2018 D1 P1" $ do
       Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2018d1p1.aoc"
@@ -92,6 +92,11 @@ main = hspec $ do
     it "solves 2019 D1 P2" $ do
       Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2019d1p2.aoc"
       result `shouldBe` 4959709
+
+    it "solves 2019 D24 P1" $ do
+      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2019d24p1.aoc"
+      result `shouldBe` 18844281
+
 
   describe "TypeCheck.ensureOneFreeOrIdentInEachStep" $ do
     it "finds the identifier in a simple &&" $ do

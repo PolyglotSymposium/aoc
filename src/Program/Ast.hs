@@ -15,6 +15,7 @@ module Program.Ast
        , IntermediateProgram(..)
        , IntermediateInstruction(..)
        , Op(..)
+       , Trace(..)
        ) where
 
 import qualified Ast
@@ -42,12 +43,17 @@ data InstructionSpec
   }
   deriving (Show, Eq)
 
+data Trace
+  = TraceRegisterValues
+  deriving (Show, Eq, Ord)
+
 data Problem =
   ProgramProblem
   { programAt :: Text
   , instructions :: [InstructionSpec]
   , initialRegisterValue :: Integer
   , solution :: Ast.Solution
+  , traces :: S.Set Trace
   } deriving (Show, Eq)
 
 newtype IndexedProgram
