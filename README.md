@@ -113,3 +113,4 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Backend: Go
    - [ ] Backend: Haskell
    - [ ] Think more about `Show Program`.
+   - [ ] Are types in instruction spec really necessary?

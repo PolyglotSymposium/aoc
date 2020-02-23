@@ -26,6 +26,7 @@ data ParseTerm
   = Literal Text
   | Register Text
   | Number Text
+  | Val Text
   deriving (Show, Eq)
 
 data Meaning

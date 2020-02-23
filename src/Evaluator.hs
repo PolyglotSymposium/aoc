@@ -171,6 +171,9 @@ evalValue context val (Ast.Or a b) =
 evalValue context val (Ast.Equals a b) =
   binNumberOp context val (==) "=" a b toBoolean
 
+evalValue context val (Ast.NotEquals a b) =
+  binNumberOp context val (/=) "/=" a b toBoolean
+
 evalValue context val (Ast.List vs) = do
   vs' <- sequence $ evalValue context val <$> vs
   pure $ Value.Vs vs'

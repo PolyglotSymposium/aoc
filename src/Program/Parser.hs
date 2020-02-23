@@ -50,11 +50,13 @@ instruction = choice . fmap op
     registersAndNumbers :: Program.ParseTerm -> P.Parser (Program.Registers, Program.Numbers)
     registersAndNumbers (Program.Literal literal) = (M.empty, M.empty) <$ P.lstr literal
     registersAndNumbers (Program.Register name) = do
-      reg <- P.ident
+      reg <- P.lexeme P.ident
       pure (M.singleton (Program.SpecName name) reg, M.empty)
     registersAndNumbers (Program.Number name) = do
       value <- P.lexeme P.rawInteger
       pure (M.empty, M.singleton (Program.SpecName name) value)
+    registersAndNumbers (Program.Val name) =
+      registersAndNumbers (Program.Number name) <|> registersAndNumbers (Program.Register name)
 
     merge :: [(Program.Registers, Program.Numbers)] -> (Program.Registers, Program.Numbers)
     merge = foldr (\(r1, n1) (r2, n2) -> (M.union r1 r2, M.union n1 n2)) (M.empty, M.empty)
@@ -85,10 +87,11 @@ term = P.lexeme (
     numberOrRegister = do
       ident <- P.ident
       _ <- char ':'
-      ty <- choice [P.lstr "reg", P.lstr "num"]
+      ty <- choice [P.lstr "reg", P.lstr "num", P.lstr "val"]
       case ty of
         "reg" -> pure $ Program.Register ident
         "num" -> pure $ Program.Number ident
+        "val" -> pure $ Program.Val ident
         _     -> fail ("Unexpected type in program spec: " ++ show ty)
 
 meaning :: P.Parser Program.Meaning

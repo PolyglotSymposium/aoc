@@ -35,6 +35,7 @@ contextWith Ast.InstParts{..} =
   where
     insertNumeric (Ast.Number reg) context = insert reg (Type.Number, V.I 0) context
     insertNumeric (Ast.Register reg) context = insert reg (Type.Number, V.I 0) context
+    insertNumeric (Ast.Val reg) context = insert reg (Type.Number, V.I 0) context
     insertNumeric (Ast.Literal _) context = context
 
 runProgramProblem :: (String, String) -> IO (Maybe (Type.Type, Type.Type, V.Value, Ast.Problem))

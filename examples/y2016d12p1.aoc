@@ -1,0 +1,12 @@
+program at ./y2016d12.txt
+  with instructions
+    cpy {x:val} {y:reg} means set y to (x)
+    inc {x:reg}         means set x to (x + 1)
+    dec {x:reg}         means set x to (x - 1)
+    jnz {x:val} {y:num} means jump y away if (x /= 0)
+
+  registers start at 0
+
+solution
+  run
+    | register a

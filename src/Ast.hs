@@ -30,6 +30,7 @@ data Value
   | Subtract Value Value
   | Raised Value Value
   | Equals Value Value
+  | NotEquals Value Value
   | Identifier Text
   | Inte Integer
   | Application Text Value
@@ -37,16 +38,17 @@ data Value
   deriving (Show, Eq)
 
 substitute :: M.Map Text Value -> Value -> Value
-substitute subs (Gt l r)             = Gt       (substitute subs l) (substitute subs r)
-substitute subs (Geq l r)            = Geq      (substitute subs l) (substitute subs r)
-substitute subs (And l r)            = And      (substitute subs l) (substitute subs r)
-substitute subs (Or l r)             = Or       (substitute subs l) (substitute subs r)
-substitute subs (Divide l r)         = Divide   (substitute subs l) (substitute subs r)
-substitute subs (Multiply l r)       = Multiply (substitute subs l) (substitute subs r)
-substitute subs (Add l r)            = Add      (substitute subs l) (substitute subs r)
-substitute subs (Subtract l r)       = Subtract (substitute subs l) (substitute subs r)
-substitute subs (Raised l r)         = Raised   (substitute subs l) (substitute subs r)
-substitute subs (Equals l r)         = Equals   (substitute subs l) (substitute subs r)
+substitute subs (Gt l r)             = Gt        (substitute subs l) (substitute subs r)
+substitute subs (Geq l r)            = Geq       (substitute subs l) (substitute subs r)
+substitute subs (And l r)            = And       (substitute subs l) (substitute subs r)
+substitute subs (Or l r)             = Or        (substitute subs l) (substitute subs r)
+substitute subs (Divide l r)         = Divide    (substitute subs l) (substitute subs r)
+substitute subs (Multiply l r)       = Multiply  (substitute subs l) (substitute subs r)
+substitute subs (Add l r)            = Add       (substitute subs l) (substitute subs r)
+substitute subs (Subtract l r)       = Subtract  (substitute subs l) (substitute subs r)
+substitute subs (Raised l r)         = Raised    (substitute subs l) (substitute subs r)
+substitute subs (Equals l r)         = Equals    (substitute subs l) (substitute subs r)
+substitute subs (NotEquals l r)      = NotEquals (substitute subs l) (substitute subs r)
 substitute _ num@(Inte _)            = num
 substitute subs (Application fn arg) = Application fn $ substitute subs arg
 substitute subs (List vs)            = List $ substitute subs <$> vs
