@@ -1,9 +1,9 @@
-module ListAst
+module List.Ast
        ( Problem(..)
        ) where
 
-import Data.Text
 import qualified Ast
+import           Data.Text
 
 data Problem =
   ListProblem

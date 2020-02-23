@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module ListParser
+module List.Parser
        ( list
        , listInput
        ) where
 
 import           Data.Text
-import qualified ListAst as List
+import qualified List.Ast as List
 import qualified Parser as P
 import           Text.Megaparsec
 import qualified Value as V

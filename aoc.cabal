@@ -18,17 +18,17 @@ library
   exposed-modules:     Aoc
                      , Ast
                      , Builtins 
-                     , ConwayAst
-                     , ConwayParser
-                     , ConwayProblem
-                     , ListAst 
-                     , ListEvaluator 
-                     , ListParser 
-                     , ListProblem 
+                     , Conway.Ast
+                     , Conway.Parser
+                     , Conway.Problem
+                     , Evaluator 
+                     , List.Ast 
+                     , List.Parser 
+                     , List.Problem 
                      , Parser
-                     , ProgramAst
-                     , ProgramParser
-                     , ProgramProblem
+                     , Program.Ast
+                     , Program.Parser
+                     , Program.Problem
                      , Type 
                      , TypeCheck 
                      , Value 

@@ -1,4 +1,4 @@
-module ProgramAst
+module Program.Ast
        ( Problem(..)
        , ParseTerm(..)
        , Meaning(..)

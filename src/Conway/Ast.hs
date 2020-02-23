@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module ConwayAst
+module Conway.Ast
        ( Problem(..)
        , SolvableConwayDimensions(..)
        , CellTransitions(..)

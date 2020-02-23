@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module ProgramParser
+module Program.Parser
        ( programSpec
        , program
        ) where
@@ -10,7 +10,7 @@ import qualified Ast as Program
 import qualified Data.Map.Strict as M
 import           Data.Text hiding (zip, maximum, length, foldr)
 import qualified Parser as P
-import qualified ProgramAst as Program
+import qualified Program.Ast as Program
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 

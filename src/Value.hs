@@ -16,12 +16,12 @@ module Value
        , merge
        ) where
 
-import qualified ConwayAst as Conway
+import qualified Conway.Ast as Conway
 import qualified Data.List as L
 import qualified Data.Map.Strict as M
 import           Data.Text hiding (concat, empty, foldr)
 import           Prelude hiding (True, False)
-import qualified ProgramAst as Prog
+import qualified Program.Ast as Prog
 import qualified Type
 
 data WidthHeight

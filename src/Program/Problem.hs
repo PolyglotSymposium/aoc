@@ -2,7 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
 
-module ProgramProblem
+module Program.Problem
        ( runProgramProblem
        ) where
 
@@ -10,9 +10,9 @@ import           Builtins (programContext)
 import           Data.Foldable (for_)
 import           Data.Functor (($>))
 import           Data.Text hiding (foldr)
-import qualified ListEvaluator as Eval
-import qualified ProgramAst as Ast
-import qualified ProgramParser as Parse
+import qualified Evaluator as Eval
+import qualified Program.Ast as Ast
+import qualified Program.Parser as Parse
 import qualified System.FilePath as Path
 import           Text.Megaparsec
 import           Text.Megaparsec.Error (parseErrorPretty)

@@ -7,13 +7,9 @@ import           Test.QuickCheck
 import qualified Aoc as Aoc
 import qualified Ast
 import           Builtins (listContext)
-import qualified ListAst
-import qualified ListProblem
 import qualified Type
 import qualified TypeCheck
 import qualified Value as V
-
-import qualified ConwayProblem
 
 number = Ast.Inte 42
 numTy  = Type.Number

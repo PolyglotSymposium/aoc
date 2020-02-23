@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module ConwayParser
+module Conway.Parser
        ( conway
        , twoDimensionalConwayInput
        , oneDimensionalConwayInput
        ) where
 
 import qualified Ast as Conway
-import qualified ConwayAst as Conway
+import qualified Conway.Ast as Conway
 import qualified Data.Map.Strict as M
 import           Data.Text hiding (zip, maximum, length)
 import qualified Parser as P

@@ -1,4 +1,4 @@
-module ListEvaluator
+module Evaluator
        ( EvalError(..)
        , eval
        , evalValue

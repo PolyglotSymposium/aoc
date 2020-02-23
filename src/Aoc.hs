@@ -5,15 +5,15 @@ module Aoc
        , SupportedDomainAst(..)
        ) where
 
-import qualified ConwayAst as ConwayProblem
-import qualified ConwayProblem
+import qualified Conway.Ast as ConwayProblem
+import qualified Conway.Problem as ConwayProblem
 import           Data.Functor (($>))
 import           Data.Text (pack)
-import qualified ListAst as ListProblem
-import           ListProblem
+import qualified List.Ast as ListProblem
+import           List.Problem as ListProblem
 import qualified Parser as P
-import qualified ProgramAst as ProgramProblem
-import qualified ProgramProblem
+import qualified Program.Ast as ProgramProblem
+import qualified Program.Problem as ProgramProblem
 import           Text.Megaparsec
 import qualified Type
 import qualified Value as V

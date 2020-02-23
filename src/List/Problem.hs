@@ -1,12 +1,12 @@
-module ListProblem
+module List.Problem
        ( runListProblem
        ) where
 
 import           Builtins (listContext)
 import           Data.Text
-import qualified ListAst as Ast
-import qualified ListEvaluator as Eval
-import qualified ListParser as Parse
+import qualified Evaluator as Eval
+import qualified List.Ast as Ast
+import qualified List.Parser as Parse
 import qualified Parser as Parse
 import qualified System.FilePath as Path
 import           Text.Megaparsec

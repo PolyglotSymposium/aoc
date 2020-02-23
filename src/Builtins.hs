@@ -9,13 +9,13 @@ module Builtins
        ) where
 
 import qualified Ast
-import qualified ConwayAst as Conway
+import qualified Conway.Ast as Conway
 import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import           Data.Text hiding (count, length, foldr, zip)
-import           ListEvaluator (evalValue, toBoolean)
-import qualified ProgramAst as Program
+import           Evaluator (evalValue, toBoolean)
+import qualified Program.Ast as Program
 import qualified Type
 import qualified Value as C
 import qualified Value
