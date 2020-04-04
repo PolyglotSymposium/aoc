@@ -542,11 +542,18 @@ turtleContext :: C.Context
 turtleContext =
   C.add core $
     C.fromList [
-      ("face",          (direction --> (turtle --> turtle), face))
-    , ("origin",        (pos,                               Value.Pos (0, 0)))
-    , ("up",            (direction,                         Value.Direction Turtle.Up))
-    -- TODO More types here
-    , ("stroll",        (turtle --> turtle,                 stroll))
-    , ("stroll*",       (turtle --> list pos,               strollSplat))
-    , ("distance_from", (pos --> (turtle -->  num),         distanceFrom))
+      ("face",                    (direction --> (turtle --> turtle), face))
+    , ("origin",                  (pos,                               Value.Pos (0, 0)))
+    , ("up",                      (direction,                         Value.Direction Turtle.Up))
+    , ("north",                   (direction,                         Value.Direction Turtle.Up))
+    , ("down",                    (direction,                         Value.Direction Turtle.Down))
+    , ("south",                   (direction,                         Value.Direction Turtle.Down))
+    , ("left",                    (direction,                         Value.Direction Turtle.Left))
+    , ("west",                    (direction,                         Value.Direction Turtle.Left))
+    , ("right",                   (direction,                         Value.Direction Turtle.Right))
+    , ("east",                    (direction,                         Value.Direction Turtle.Right))
+    , ("stroll",                  (turtle --> turtle,                 stroll))
+    , ("stroll*",                 (turtle --> list pos,               strollSplat))
+    , ("distance_from",           (pos --> (turtle -->  num),         distanceFrom))
+    , ("manhattan_distance_from", (pos --> (turtle -->  num),         distanceFrom))
     ]

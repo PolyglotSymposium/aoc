@@ -70,6 +70,8 @@ main = hspec $ do
 
     testPartWithBench "program" 2015 23 2 231
 
+    testPartWithBench "turtle" 2016 1 1 279
+
     testPartWithBench "conway" 2016 12 1 318020
 
     testPartWithBench "conway" 2016 12 2 9227674

@@ -40,23 +40,6 @@ turtleActions :: Turtle.Problem -> P.Parser [Turtle.Action]
 turtleActions Turtle.TurtleProblem{..} =
   concat <$> sepEndBy1 (action instructions) (() <$ P.lstr separator <|> eof)
 
-{-
-data ActionSpec
-  = ShouldFace Direction
-  | ShouldTurn Side
-  | ShouldTakeLiteralSteps Integer
-  | ShouldTakeStepsIn      Text
-  deriving (Show, Eq)
-
-data InstructionSpec
-  = InstParts
-  { terms :: [ParseTerm]
-  , actions :: [ActionSpec]
-  }
-  deriving (Show, Eq)
--}
-
-
 action :: [Turtle.InstructionSpec] -> P.Parser [Turtle.Action]
 action = choice . fmap op
   where
@@ -101,7 +84,15 @@ actionSpec :: P.Parser Turtle.ActionSpec
 actionSpec =
   Turtle.ShouldFace <$> (P.lstr "face" *> direction)
     <|> Turtle.ShouldTurn <$> (P.lstr "turn" *> side)
-    <|> Turtle.ShouldTakeLiteralSteps <$> (P.lstr "take" *> P.lexeme P.rawInteger <* steps)
+    <|> takeSteps
+
+takeSteps :: P.Parser Turtle.ActionSpec
+takeSteps =
+  P.lstr "take" *> (literalSteps <|> variableSteps) <* steps
+
+  where
+    literalSteps = Turtle.ShouldTakeLiteralSteps <$> P.lexeme P.rawInteger
+    variableSteps = Turtle.ShouldTakeStepsIn <$> P.ident
 
 steps :: P.Parser ()
 steps = () <$ P.lexeme (string "step" *> optional (char 's'))
