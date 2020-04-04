@@ -6,6 +6,8 @@ import           Test.Hspec
 import qualified Aoc
 import qualified Ast
 import           Builtins (listContext)
+import           Control.StopWatch
+import           System.Clock (toNanoSecs)
 import qualified Type
 import qualified TypeCheck
 import qualified Value as V
@@ -33,76 +35,62 @@ shouldBeUnificationFailureOf (Left (TypeCheck.UnificationFailure _ _ a b _)) (c,
 shouldBeUnificationFailureOf v _ =
   error $ "Expected unification failure, got " ++ show v
 
+testPartWithBench domain year day part expected = do
+  it ("solves (" ++ domain ++ ") " ++ show year ++ " D" ++ show day ++ " P" ++ show part) $ do
+    let path = "./examples/y" ++ show year ++ "d" ++ show day ++ "p" ++ show part ++ ".aoc"
+
+    (Just (_, _, V.I result, _), spec) <- stopWatch $ Aoc.solve path
+    result `shouldBe` expected
+    putStrLn $ ("EXAMPLE_OUTPUT " ++) $ concat
+      [
+        "{"
+      , "\"year\":", show year
+      , ",\"day\":", show day
+      , ",\"part\":", show part
+      , ",\"ns\":", show $ toNanoSecs spec
+      , ",\"source\":", show $ path
+      , ",\"domain\":", show $ domain
+      , "}"
+      ]
+
+  pure ()
+
 main :: IO ()
 main = hspec $ do
   describe "Aoc.solve" $ do
-    it "solves 2015 D1 P1" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2015d1p1.aoc"
-      result `shouldBe` 280
+    testPartWithBench "turtle" 2015 1 1 280
 
-    it "solves 2015 D1 P2 (Current)" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2015d1p2.aoc"
-      result `shouldBe` 1797
+    testPartWithBench "turtle" 2015 1 2 1797
 
-    it "solves 2015 D18 P1" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2015d18p1.aoc"
-      result `shouldBe` 821
+    testPartWithBench "conway" 2015 18 1 821
 
-    it "solves 2015 D18 P2" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2015d18p2.aoc"
-      result `shouldBe` 886
+    testPartWithBench "conway" 2015 18 2 886
 
-    it "solves 2015 D23 P1" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2015d23p1.aoc"
-      result `shouldBe` 184
+    testPartWithBench "program" 2015 23 1 184
 
-    it "solves 2015 D23 P2" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2015d23p2.aoc"
-      result `shouldBe` 231
+    testPartWithBench "program" 2015 23 2 231
 
-    it "solves 2016 D18 P1" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2016d18p1.aoc"
-      result `shouldBe` 1939
+    testPartWithBench "conway" 2016 12 1 318020
 
-    it "solves 2016 D12 P1" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2016d12p1.aoc"
-      result `shouldBe` 318020
+    testPartWithBench "conway" 2016 12 2 9227674
 
-    it "solves 2016 D12 P2" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2016d12p2.aoc"
-      result `shouldBe` 9227674
+    testPartWithBench "conway" 2016 18 1 1939
 
-    it "solves 2017 D8 P1" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2017d8p1.aoc"
-      result `shouldBe` 6828
+    testPartWithBench "program" 2017 8 1 6828
 
-    it "solves 2017 D8 P2" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2017d8p2.aoc"
-      result `shouldBe` 7234
+    testPartWithBench "program" 2017 8 2 7234
 
-    it "solves 2018 D1 P1" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2018d1p1.aoc"
-      result `shouldBe` 595
+    testPartWithBench "list" 2018 1 1 595
 
-    it "solves 2018 D1 P2" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2018d1p2.aoc"
-      result `shouldBe` 80598
+    testPartWithBench "list" 2018 1 2 80598
 
-    it "solves 2018 D18 P1" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2018d18p1.aoc"
-      result `shouldBe` 560091
+    testPartWithBench "conway" 2018 18 1 560091
 
-    it "solves 2019 D1 P1" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2019d1p1.aoc"
-      result `shouldBe` 3308377
+    testPartWithBench "list" 2019 1 1 3308377
 
-    it "solves 2019 D1 P2" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2019d1p2.aoc"
-      result `shouldBe` 4959709
+    testPartWithBench "list" 2019 1 2 4959709
 
-    it "solves 2019 D24 P1" $ do
-      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2019d24p1.aoc"
-      result `shouldBe` 18844281
+    testPartWithBench "conway" 2019 24 1 18844281
 
   describe "TypeCheck.ensureOneFreeOrIdentInEachStep" $ do
     it "finds the identifier in a simple &&" $

@@ -88,6 +88,8 @@ test-suite aoc-test
                      , aoc
                      , hspec
                      , QuickCheck
+                     , stopwatch
+                     , clock
                      
 
   ghc-options:         -Wall

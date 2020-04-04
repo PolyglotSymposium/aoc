@@ -32,8 +32,9 @@ somewhere in between the two aforementioned approaches.
 
 ## Domains This Language Can "Solve"
 
-See the [examples](./examples) directory for amalgamation of working solutions
-and examples of what I imagine other domains to look like.
+See the [EXAMPLES.md](./EXAMPLES.md) for working solutions.
+
+See the [examples](./examples) directory for future designs.
 
 To figure out what actually works, see the [tests](./test) as they actually
 solve real AoC problems for my inputs.
@@ -91,7 +92,6 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Application parsing is wonky (and it should be `(value value)`) not `(text value)`
    - [ ] Doc-gen of builtins.
    - [ ] Too many parens necessary in places.
-   - [ ] Benchmarks
    - [ ] Travis
    - [ ] Hlint
    - [ ] "One free" in solutions should only check when list is the type
