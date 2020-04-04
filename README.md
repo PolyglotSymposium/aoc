@@ -60,9 +60,9 @@ hadn't).
 
 ### Turtles
 
-You know, like in the [logo programming language](https://en.wikipedia.org/wiki/Logo_%28programming_language%29).
+Turtle domain solutions begin with `turtle`.
 
-This is a work in progress...
+You know, like in the [logo programming language](https://en.wikipedia.org/wiki/Logo_%28programming_language%29).
 
 ### Assembly Code
 
@@ -98,6 +98,7 @@ This may not even be distinct from the `Graph` domain.
    - [ ] "One free" in solutions should only check when list is the type
    - [ ] Better organization post-remedial-program
    - [ ] Syntactic sugar.
+   - [ ] Position literals
  - `conway`
    - [ ] Transitions should have context distinct from `grid`
    - [ ] Allow `any_state` in transitions "from"

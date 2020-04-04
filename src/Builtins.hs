@@ -387,8 +387,8 @@ stroll = Value.Func $ \_ trt ->
     stroll' p d (Turtle.Turn hs:rest) = stroll' p (turn d hs) rest
     stroll' p d (Turtle.TakeSteps ss:rest) = stroll' (steps d ss p) d rest
 
-    steps Turtle.Up n (x, y) = (x, y-n)
-    steps Turtle.Down n (x, y) = (x, y+n)
+    steps Turtle.Up n (x, y) = (x, y+n)
+    steps Turtle.Down n (x, y) = (x, y-n)
     steps Turtle.Left n (x, y) = (x-n, y)
     steps Turtle.Right n (x, y) = (x+n, y)
 
