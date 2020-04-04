@@ -89,7 +89,6 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Clean up *Problem.hs files
    - [ ] Comments
    - [ ] Application parsing is wonky (and it should be `(value value)`) not `(text value)`
-   - [ ] Multiplication
    - [ ] Doc-gen of builtins.
    - [ ] Too many parens necessary in places.
    - [ ] Benchmarks
@@ -98,7 +97,6 @@ This may not even be distinct from the `Graph` domain.
    - [ ] "One free" in solutions should only check when list is the type
    - [ ] Better organization post-remedial-program
    - [ ] Syntactic sugar.
-   - [ ] Position literals
  - `conway`
    - [ ] Transitions should have context distinct from `grid`
    - [ ] Allow `any_state` in transitions "from"

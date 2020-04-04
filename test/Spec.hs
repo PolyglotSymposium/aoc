@@ -3,7 +3,7 @@ module Main (main) where
 
 import           Test.Hspec
 
-import qualified Aoc as Aoc
+import qualified Aoc
 import qualified Ast
 import           Builtins (listContext)
 import qualified Type
@@ -25,7 +25,7 @@ ident = Ast.Identifier
 
 lam = Ast.FloatingLambda . Ast.Body
 
-a |> b = Ast.Pipe a b
+(|>) = Ast.Pipe
 
 shouldBeUnificationFailureOf (Left (TypeCheck.UnificationFailure _ _ a b _)) (c, d) =
   (a, b) `shouldBe` (c, d)
