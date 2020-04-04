@@ -66,10 +66,10 @@ even' = Value.Func $ \_ -> \case
                       Value.I v -> Just $ toBoolean $ even v
                       _ -> Nothing
 
-indexOf1 :: Value.Value
-indexOf1 = Value.Func $ \_ v -> Just $ Value.Func $ \_ vs ->
+indexOf0 :: Value.Value
+indexOf0 = Value.Func $ \_ v -> Just $ Value.Func $ \_ vs ->
   case vs of
-    Value.Vs items -> seekIndex 1 v items
+    Value.Vs items -> seekIndex 0 v items
     _ -> Nothing
 
   where
@@ -484,18 +484,18 @@ turtle = Type.Turtle
 baseIdentifiers :: [(Text, Type.Type, Value.Value)]
 baseIdentifiers =
   [
-    ("sum",               list num --> num,       makeFold 0 (+))
-  , ("count",             list a   --> num,       count)
-  , ("product",           list num --> num,       makeFold 1 (*))
-  , ("repeats",           list a --> list a,      repeats)
-  , ("true",              bool,                   Value.True)
-  , ("false",             bool,                   Value.False)
-  , ("first",             list a --> a,           first)
-  , ("dupe",              list a --> list a,      dupe)
-  , ("even",              num --> bool,           even')
-  , ("odd",               num --> bool,           odd')
-  , ("maximum",           list num --> num,       maximum')
-  , ("base_one_index_of", a --> (list a --> num), indexOf1)
+    ("sum",               list num --> num,        makeFold 0 (+))
+  , ("count",             list a   --> num,        count)
+  , ("product",           list num --> num,        makeFold 1 (*))
+  , ("repeats",           list a --> list a,       repeats)
+  , ("true",              bool,                    Value.True)
+  , ("false",             bool,                    Value.False)
+  , ("first",             list a --> a,            first)
+  , ("dupe",              list a --> list a,       dupe)
+  , ("even",              num --> bool,            even')
+  , ("odd",               num --> bool,            odd')
+  , ("maximum",           list num --> num,        maximum')
+  , ("base_zero_index_of", a --> (list a --> num), indexOf0)
   ]
 
 core :: C.Context

@@ -69,6 +69,19 @@ eval context (Value.Vs vs) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name)))
       results <- foldSteps step result vs'
       pure $ result:results
 
+eval context arg2 (Ast.FloatingLambda (Ast.Body (Ast.Application fn arg1))) = do
+  fnValue <- evalValue context Nothing (Ast.Identifier fn)
+  argValue <- evalValue context (Just arg2) arg1
+  case fnValue of
+    Value.Func f ->
+      case f context argValue of
+        Just (Value.Func g) ->
+          case g context arg2 of
+            Nothing -> Left $ UnexpectedError 9
+            Just v -> Right v
+        _ -> Left $ UnexpectedError 8
+    _ -> Left $ UnexpectedError 7
+
 eval context (Value.Vs vs) (Ast.FloatingLambda lambda) = do
   results <- sequence $ applyAndKeepOriginal <$> vs
   pure $ Value.Vs $ results >>= pick
@@ -108,19 +121,6 @@ eval context program@Value.Program{} (Ast.FloatingLambda (Ast.Body (Ast.Identifi
         Just v  -> Right v
 
     _ -> Left $ TypeMismatchAtRuntime (Text.pack ("Built-in " ++ Text.unpack name ++ " specified at the top level of program evaluation but it's not a program function" ))
-
-eval context arg2 (Ast.FloatingLambda (Ast.Body (Ast.Application fn arg1))) = do
-  fnValue <- evalValue context Nothing (Ast.Identifier fn)
-  argValue <- evalValue context (Just arg2) arg1
-  case fnValue of
-    Value.Func f ->
-      case f context argValue of
-        Just (Value.Func g) ->
-          case g context arg2 of
-            Nothing -> Left $ UnexpectedError 9
-            Just v -> Right v
-        _ -> Left $ UnexpectedError 8
-    _ -> Left $ UnexpectedError 7
 
 eval _ v (Ast.FloatingLambda (Ast.Body op)) = Left $ TypeMismatchAtRuntime (Text.pack ("When applying top level operation " ++ show op ++ " got " ++ show v ++ " which is not expected as a top-level input"))
 
