@@ -1,8 +1,8 @@
 turtle in 2 dimensions
   at ./y2016d1.txt
   separated by ', '
-  where 'R{N}' means turn right then take {N} steps and
-        'L{N}' means turn left then take {N} steps
+  where R{n:num} means turn right then take n steps and
+        L{n:num} means turn left then take n steps
 
 solution
   face north

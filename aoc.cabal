@@ -29,6 +29,9 @@ library
                      , Program.Ast
                      , Program.Parser
                      , Program.Problem
+                     , Turtle.Ast
+                     , Turtle.Parser
+                     , Turtle.Problem
                      , Type 
                      , TypeCheck 
                      , Value 

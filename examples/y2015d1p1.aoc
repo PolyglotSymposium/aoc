@@ -1,8 +1,8 @@
 turtle in 1 dimension
   at ./y2015d1.txt
   separated by ''
-  where '(' means face up then take 1 step and
-        ')' means face down then take 1 step
+  where ( means face up then take 1 step and
+        ) means face down then take 1 step
 
 solution
   face up

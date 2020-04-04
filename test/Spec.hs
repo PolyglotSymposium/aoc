@@ -37,6 +37,10 @@ shouldBeUnificationFailureOf v _ =
 main :: IO ()
 main = hspec $ do
   describe "Aoc.solve" $ do
+    it "solves 2015 D1 P1 (Current)" $ do
+      Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2015d1p1.aoc"
+      result `shouldBe` 1797
+
     it "solves 2015 D18 P1" $ do
       Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2015d18p1.aoc"
       result `shouldBe` 821
@@ -96,7 +100,6 @@ main = hspec $ do
     it "solves 2019 D24 P1" $ do
       Just (_, _, V.I result, _) <- Aoc.solve "./examples/y2019d24p1.aoc"
       result `shouldBe` 18844281
-
 
   describe "TypeCheck.ensureOneFreeOrIdentInEachStep" $ do
     it "finds the identifier in a simple &&" $ do
