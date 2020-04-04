@@ -19,6 +19,7 @@ import qualified Ast
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import           Data.Text
+import           Data.Tuple (swap)
 import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -102,8 +103,22 @@ valueTerm =
           <|> try application
           <|> Ast.Identifier <$> ident
           <|> Ast.List <$> between (char '[') (char ']') (sepBy value $ lexeme $ char ',')
+          <|> Ast.Pos <$> positionLiteral
           <|> Ast.Inte <$> L.decimal
          )
+
+positionLiteral :: Parser (Integer, Integer)
+positionLiteral =
+  between (lstr "{") (lstr "}") (keys "x" "y" <|> (swap <$> keys "y" "x"))
+
+  where
+    keys a b = do
+      a' <- key a
+      _ <- lstr ","
+      b' <- key b
+      pure (a', b')
+
+    key a = lstr a *> lstr "=" *> lexeme rawInteger
 
 application :: Parser Ast.Value
 application = Ast.Application <$> lexeme ident <*> lexeme value

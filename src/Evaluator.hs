@@ -195,6 +195,8 @@ evalValue context val (Ast.List vs) = do
 
 evalValue _ _ (Ast.Inte v) = Right $ Value.I v
 
+evalValue _ _ (Ast.Pos pos) = Right $ Value.Pos pos
+
 toBoolean :: Bool -> Value.Value
 toBoolean True = Value.True
 toBoolean False = Value.False

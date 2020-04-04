@@ -66,6 +66,22 @@ even' = Value.Func $ \_ -> \case
                       Value.I v -> Just $ toBoolean $ even v
                       _ -> Nothing
 
+indexOf1 :: Value.Value
+indexOf1 = Value.Func $ \_ v -> Just $ Value.Func $ \_ vs ->
+  case vs of
+    Value.Vs items -> seekIndex 1 v items
+    _ -> Nothing
+
+  where
+    seekIndex _ _ [] = Nothing
+    seekIndex idx v (v':_) | Value.toOrd v =?= Value.toOrd v' = Just $ Value.I idx
+    seekIndex idx v (_:rest) = seekIndex (idx+1) v rest
+
+(=?=) :: Eq a => Maybe a -> Maybe a -> Bool
+Nothing =?= _ = False
+_ =?= Nothing = False
+Just x =?= Just y = x == y
+
 odd' :: Value.Value
 odd' = Value.Func $ \_ -> \case
                       Value.I v -> Just $ toBoolean $ odd v
@@ -373,6 +389,43 @@ distanceFrom = Value.Func $ \_ source -> Just $ Value.Func $ \_ trt ->
     _ ->
       Nothing
 
+strollSplat :: Value.Value
+strollSplat = Value.Func $ \_ trt ->
+  case trt of
+    (Value.Turtle p d actions) ->
+      Just $ Value.Vs $ stroll' p d actions
+    _ ->
+      Nothing
+
+  where
+    stroll' p _ [] = [Value.Pos p]
+    stroll' p _ (Turtle.Face d:rest) = stroll' p d rest
+    stroll' p d (Turtle.Turn hs:rest) = stroll' p (turn d hs) rest
+    stroll' p d (Turtle.TakeSteps 0:rest) = stroll' p d rest
+    stroll' p d (Turtle.TakeSteps ss:rest) =
+      Value.Pos p:stroll' (step d ss p) d (Turtle.TakeSteps (approachZero ss):rest)
+
+    approachZero v | v > 0 = v - 1
+    approachZero v = v + 1
+
+    signOne v | v > 0 = 1
+    signOne _ = -1
+
+    step Turtle.Up n (x, y) = (x, y + signOne n)
+    step Turtle.Down n (x, y) = (x, y - signOne n)
+    step Turtle.Left n (x, y) = (x - signOne n, y)
+    step Turtle.Right n (x, y) = (x + signOne n, y)
+
+turn :: Turtle.Direction -> Turtle.Side -> Turtle.Direction
+turn Turtle.Up Turtle.Lefthand = Turtle.Left
+turn Turtle.Up Turtle.Righthand = Turtle.Right
+turn Turtle.Left Turtle.Lefthand = Turtle.Down
+turn Turtle.Left Turtle.Righthand = Turtle.Up
+turn Turtle.Down Turtle.Lefthand = Turtle.Right
+turn Turtle.Down Turtle.Righthand = Turtle.Left
+turn Turtle.Right Turtle.Lefthand = Turtle.Up
+turn Turtle.Right Turtle.Righthand = Turtle.Down
+
 stroll :: Value.Value
 stroll = Value.Func $ \_ trt ->
   case trt of
@@ -391,15 +444,6 @@ stroll = Value.Func $ \_ trt ->
     steps Turtle.Down n (x, y) = (x, y-n)
     steps Turtle.Left n (x, y) = (x-n, y)
     steps Turtle.Right n (x, y) = (x+n, y)
-
-    turn Turtle.Up Turtle.Lefthand = Turtle.Left
-    turn Turtle.Up Turtle.Righthand = Turtle.Right
-    turn Turtle.Left Turtle.Lefthand = Turtle.Down
-    turn Turtle.Left Turtle.Righthand = Turtle.Up
-    turn Turtle.Down Turtle.Lefthand = Turtle.Right
-    turn Turtle.Down Turtle.Righthand = Turtle.Left
-    turn Turtle.Right Turtle.Lefthand = Turtle.Up
-    turn Turtle.Right Turtle.Righthand = Turtle.Down
 
 (-->) :: Type.Type -> Type.Type -> Type.Type
 i --> o = Type.Arrow i o
@@ -440,17 +484,18 @@ turtle = Type.Turtle
 baseIdentifiers :: [(Text, Type.Type, Value.Value)]
 baseIdentifiers =
   [
-    ("sum",     list num --> num,      makeFold 0 (+))
-  , ("count",   list a   --> num,      count)
-  , ("product", list num --> num,      makeFold 1 (*))
-  , ("repeats", list a --> list a,     repeats)
-  , ("true",    bool,                  Value.True)
-  , ("false",   bool,                  Value.False)
-  , ("first",   list a --> a,          first)
-  , ("dupe",    list a --> list a,     dupe)
-  , ("even",    num --> bool,          even')
-  , ("odd",     num --> bool,          odd')
-  , ("maximum", list num --> num,      maximum')
+    ("sum",               list num --> num,       makeFold 0 (+))
+  , ("count",             list a   --> num,       count)
+  , ("product",           list num --> num,       makeFold 1 (*))
+  , ("repeats",           list a --> list a,      repeats)
+  , ("true",              bool,                   Value.True)
+  , ("false",             bool,                   Value.False)
+  , ("first",             list a --> a,           first)
+  , ("dupe",              list a --> list a,      dupe)
+  , ("even",              num --> bool,           even')
+  , ("odd",               num --> bool,           odd')
+  , ("maximum",           list num --> num,       maximum')
+  , ("base_one_index_of", a --> (list a --> num), indexOf1)
   ]
 
 core :: C.Context
@@ -497,10 +542,11 @@ turtleContext :: C.Context
 turtleContext =
   C.add core $
     C.fromList [
-      ("face",   (direction --> (turtle --> turtle), face))
-    , ("origin", (pos,                               Value.Pos (0, 0)))
-    , ("up",     (direction,                         Value.Direction Turtle.Up))
+      ("face",          (direction --> (turtle --> turtle), face))
+    , ("origin",        (pos,                               Value.Pos (0, 0)))
+    , ("up",            (direction,                         Value.Direction Turtle.Up))
     -- TODO More types here
-    , ("stroll", (turtle --> turtle,                 stroll))
-    , ("distance_from", (pos --> (turtle -->  num),  distanceFrom))
+    , ("stroll",        (turtle --> turtle,                 stroll))
+    , ("stroll*",       (turtle --> list pos,               strollSplat))
+    , ("distance_from", (pos --> (turtle -->  num),         distanceFrom))
     ]

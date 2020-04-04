@@ -37,6 +37,7 @@ data Value
   | Inte Integer
   | Application Text Value
   | List [Value]
+  | Pos (Integer, Integer)
   deriving (Show, Eq)
 
 substitute :: M.Map Text Value -> Value -> Value
@@ -54,6 +55,7 @@ substitute subs (Raised l r)         = Raised    (substitute subs l) (substitute
 substitute subs (Equals l r)         = Equals    (substitute subs l) (substitute subs r)
 substitute subs (NotEquals l r)      = NotEquals (substitute subs l) (substitute subs r)
 substitute _ num@(Inte _)            = num
+substitute _ pos@(Pos _)             = pos
 substitute subs (Application fn arg) = Application fn $ substitute subs arg
 substitute subs (List vs)            = List $ substitute subs <$> vs
 substitute subs (Identifier name) =

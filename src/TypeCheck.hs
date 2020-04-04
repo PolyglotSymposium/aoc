@@ -202,6 +202,7 @@ typeOf _ (Ast.Multiply _ _)    = Right Type.Number
 typeOf _ (Ast.Subtract _ _)    = Right Type.Number
 typeOf _ (Ast.Raised _ _)      = Right Type.Number
 typeOf _ (Ast.Add _ _)         = Right Type.Number
+typeOf _ (Ast.Pos _)           = Right Type.Position
 
 typeOf context ast@(Ast.List vs) = do
   types <- mapM (typeOf context) vs
@@ -264,6 +265,7 @@ frees context (Ast.Equals a b)      = S.union (frees context a) (frees context b
 frees context (Ast.NotEquals a b)   = S.union (frees context a) (frees context b)
 frees context (Ast.List vs)         = S.unions $ frees context <$> vs
 frees _       (Ast.Inte _)          = S.empty
+frees _       (Ast.Pos _)           = S.empty
 frees context (Ast.Identifier name) =
   case identType name context of
     Nothing -> S.singleton name
