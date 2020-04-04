@@ -53,11 +53,17 @@ unifySolution context (Ast.FloatingLambda lambda) Type.Grid = do
     Type.Arrow Type.Grid arrowOt -> pure arrowOt
     _ -> error "TODO non-unifying grid functions"
 
+unifySolution context (Ast.FloatingLambda lambda) Type.Turtle = do
+  ot <- unifyLambda context lambda Type.Direction
+  case ot of
+    Type.Arrow Type.Turtle arrowOt -> pure arrowOt
+    _ -> error "TODO non-unifying turtle functions"
+
 unifySolution context (Ast.FloatingLambda lambda) Type.Program = do
   ot <- unifyLambda context lambda Type.Register
   case ot of
     Type.Arrow Type.Program arrowOt -> pure arrowOt
-    _ -> error "TODO non-unifying grid functions"
+    _ -> error "TODO non-unifying program functions"
 
 unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
   ot <- unifyLambda context lambda it
@@ -76,6 +82,8 @@ unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
       pure $ Type.List b
     Type.Arrow Type.Grid Type.Grid ->
       pure Type.Grid
+    Type.Arrow Type.Turtle Type.Turtle ->
+      pure Type.Turtle
     Type.Arrow (Type.List finElem) fout ->
       if finElem == it || isVar finElem
       then pure fout

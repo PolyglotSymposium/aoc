@@ -6,10 +6,12 @@ module Builtins
        ( listContext
        , conwayContext
        , programContext
+       , turtleContext
        ) where
 
 import qualified Ast
 import qualified Conway.Ast as Conway
+import qualified Turtle.Ast as Turtle
 import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
@@ -385,6 +387,12 @@ cellState = Type.CellState
 pos :: Type.Type
 pos = Type.Position
 
+direction :: Type.Type
+direction = Type.Direction
+
+turtle :: Type.Type
+turtle = Type.Turtle
+
 baseIdentifiers :: [(Text, Type.Type, Value.Value)]
 baseIdentifiers =
   [
@@ -439,4 +447,16 @@ programContext =
     , ("increment_register",     (reg  --> (prog --> prog), incrementRegister))
     , ("register_values",        (prog --> list num,        registerValues))
     , ("traced_register_values", (prog --> list num,        tracedRegisterValues))
+    ]
+
+turtleContext :: C.Context
+turtleContext =
+  C.add core $
+    C.fromList [
+      ("face",   (direction --> (turtle --> turtle), run))
+    , ("origin", (pos,                               Value.Pos (0, 0)))
+    , ("up",     (direction,                         Value.Direction Turtle.Up))
+    -- TODO More types here
+    , ("stroll", (turtle --> turtle,                 undefined))
+    , ("distance_from", (pos --> (turtle -->  num),  undefined))
     ]

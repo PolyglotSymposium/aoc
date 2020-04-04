@@ -2,7 +2,7 @@ module Turtle.Problem
        ( runTurtleProblem
        ) where
 
-import           Builtins (listContext)
+import           Builtins (turtleContext)
 import           Data.Text
 import qualified Evaluator as Eval
 import qualified Turtle.Ast as Ast
@@ -30,9 +30,9 @@ runTurtleProblem (source, text) =
       let
         inputPath = Path.takeDirectory source Path.</> unpack (Ast.at ast)
         validations = do
-          _ <- TypeCheck.ensureOneFreeOrIdentInEachStep listContext $ Ast.solution ast
-          it <- TypeCheck.inferInputType listContext $ Ast.solution ast
-          ot <- TypeCheck.unifySolution listContext (Ast.solution ast) (Type.List it)
+          _ <- TypeCheck.ensureOneFreeOrIdentInEachStep turtleContext $ Ast.solution ast
+          it <- TypeCheck.inferInputType turtleContext $ Ast.solution ast
+          ot <- TypeCheck.unifySolution turtleContext (Ast.solution ast) Type.Turtle
           pure (it, ot)
       in
         case validations of
@@ -52,7 +52,7 @@ runTurtleProblem (source, text) =
                     putStrLn $ parseErrorPretty err
                     pure Nothing
                   Right input ->
-                    case Eval.eval listContext (V.Vs input) (Ast.solution ast) of
+                    case Eval.eval turtleContext (V.Vs input) (Ast.solution ast) of
                       Right result -> do
                         print result
                         pure $ Just (Type.List inputElementType, outputType, result, ast)

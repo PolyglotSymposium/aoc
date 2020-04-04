@@ -19,6 +19,7 @@ module Value
        ) where
 
 import qualified Conway.Ast as Conway
+import qualified Turtle.Ast as Turtle
 import qualified Data.List as L
 import qualified Data.Map.Strict as M
 import           Data.Text hiding (concat, empty, foldr)
@@ -60,6 +61,7 @@ data Value
   | Grid Conway.CellTransitions WidthHeight (M.Map (Integer, Integer) Char)
   | Register Text
   | Program Prog.IndexedProgram InstructionPointer Registers Traces
+  | Direction Turtle.Direction
 
 data OrdValue
   = OrdI Integer
@@ -70,6 +72,7 @@ data OrdValue
   | OrdPos (Integer, Integer)
   | OrdGrid (M.Map (Integer, Integer) Char)
   | OrdRegister Text
+  | OrdDirection Turtle.Direction
   deriving (Ord, Eq)
 
 toOrd :: Value -> Maybe OrdValue
@@ -81,6 +84,7 @@ toOrd (CellState s)    = Just $ OrdCellState s
 toOrd (Pos coords)     = Just $ OrdPos coords
 toOrd (Grid _ _ state) = Just $ OrdGrid state
 toOrd (Register name)  = Just $ OrdRegister name
+toOrd (Direction d)    = Just $ OrdDirection d
 toOrd Program{}        = Nothing
 toOrd (Fold _)         = Nothing
 toOrd (Func _)         = Nothing
@@ -101,6 +105,7 @@ instance Show Value where
      y <- [0..height-1]
      fmap (\x -> state M.! (x, y)) [0..width-1] ++ "\n"
   show Program{} = "<program...>"
+  show (Direction d) = show d
 
 type Context = M.Map Text (Type.Type, Value.Value)
 

@@ -26,7 +26,7 @@ data Direction
   | Down
   | Left
   | Right
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 data Side
   = Lefthand

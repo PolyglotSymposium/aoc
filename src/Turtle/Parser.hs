@@ -43,11 +43,6 @@ instructionsSpec = manyTill instructionSpec (P.lstr "solution")
 instructionSpec :: P.Parser Turtle.InstructionSpec
 instructionSpec = Turtle.InstParts <$> manyTill term (P.lstr "means") <*> actions
 
-{-
-( means face up then take 1 step and
-) means face down then take 1 step
--}
-
 actions :: P.Parser [Turtle.ActionSpec]
 actions = sepBy1 (try action) (P.lstr "then")
 

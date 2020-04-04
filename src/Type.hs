@@ -13,5 +13,7 @@ data Type
   | Position
   | Program
   | Register
+  | Turtle
+  | Direction
   deriving (Show, Eq)
 
