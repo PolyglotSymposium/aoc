@@ -82,6 +82,15 @@ eval context (Value.Vs vs) (Ast.FloatingLambda lambda) = do
         result <- applyLambda context v lambda
         pure (v, result)
 
+eval context grid@Value.Turtle{} (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
+  case identValue name context of
+    Just (Value.Func f) ->
+      case f context grid of
+        Nothing -> Left $ UnexpectedError 32
+        Just v  -> Right v
+
+    _ -> Left $ TypeMismatchAtRuntime (Text.pack ("Built-in " ++ Text.unpack name ++ " specified at the top level of turtle evaluation but it's not a turtle function" ))
+
 eval context grid@Value.Grid{} (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
   case identValue name context of
     Just (Value.Func f) ->

@@ -4,6 +4,7 @@ module Turtle.Ast
        , ParseTerm(..)
        , Direction(..)
        , Side(..)
+       , Action(..)
        , ActionSpec(..)
        , InstructionSpec(..)
        ) where
@@ -33,11 +34,17 @@ data Side
   | Righthand
   deriving (Show, Eq)
 
-data ActionSpec
+data Action
   = Face Direction
   | Turn Side
-  | TakeLiteralSteps Integer
-  | TakeStepsIn      Text
+  | TakeSteps Integer
+  deriving (Show, Eq)
+
+data ActionSpec
+  = ShouldFace Direction
+  | ShouldTurn Side
+  | ShouldTakeLiteralSteps Integer
+  | ShouldTakeStepsIn      Text
   deriving (Show, Eq)
 
 data InstructionSpec

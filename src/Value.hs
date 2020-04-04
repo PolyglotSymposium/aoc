@@ -62,6 +62,7 @@ data Value
   | Register Text
   | Program Prog.IndexedProgram InstructionPointer Registers Traces
   | Direction Turtle.Direction
+  | Turtle (Integer, Integer) Turtle.Direction [Turtle.Action]
 
 data OrdValue
   = OrdI Integer
@@ -73,6 +74,7 @@ data OrdValue
   | OrdGrid (M.Map (Integer, Integer) Char)
   | OrdRegister Text
   | OrdDirection Turtle.Direction
+  | OrdTurtle (Integer, Integer) Turtle.Direction
   deriving (Ord, Eq)
 
 toOrd :: Value -> Maybe OrdValue
@@ -85,6 +87,7 @@ toOrd (Pos coords)     = Just $ OrdPos coords
 toOrd (Grid _ _ state) = Just $ OrdGrid state
 toOrd (Register name)  = Just $ OrdRegister name
 toOrd (Direction d)    = Just $ OrdDirection d
+toOrd (Turtle pos d _) = Just $ OrdTurtle pos d
 toOrd Program{}        = Nothing
 toOrd (Fold _)         = Nothing
 toOrd (Func _)         = Nothing
@@ -100,6 +103,8 @@ instance Show Value where
   show (Func _) = "<function>"
   show (CellState c) = "{cell:" ++ [c] ++ "}"
   show (Pos (x, y)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ "}"
+  show (Turtle (x, y) d _) =
+    "{turtle:x=" ++ show x ++ ",y=" ++ show y ++ ",dir=" ++ show d ++ "}"
   show (Register r) = "{" ++ show r ++ ":reg}"
   show (Grid _ WidthHeight{ width, height } state) = do
      y <- [0..height-1]

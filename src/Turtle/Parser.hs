@@ -1,20 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Turtle.Parser
        ( turtleSpec
-       , listInput
+       , turtleActions
        ) where
 
-import           Data.Text
+import qualified Data.Map.Strict as M
+import           Data.Text hiding (concat)
 import qualified Parser as P
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import qualified Turtle.Ast as Turtle
-import qualified Value as V
-
-listInput :: Text -> P.Parser V.Value -> P.Parser [V.Value]
-listInput sep pValue = P.ws *> sepBy pValue (P.lstr sep) <* eof
 
 turtleSpec :: P.Parser Turtle.Problem
 turtleSpec = do
@@ -37,20 +35,73 @@ turtleSpec = do
     , Turtle.instructions = instructions
     }
 
+
+turtleActions :: Turtle.Problem -> P.Parser [Turtle.Action]
+turtleActions Turtle.TurtleProblem{..} =
+  concat <$> sepEndBy1 (action instructions) (() <$ P.lstr separator <|> eof)
+
+{-
+data ActionSpec
+  = ShouldFace Direction
+  | ShouldTurn Side
+  | ShouldTakeLiteralSteps Integer
+  | ShouldTakeStepsIn      Text
+  deriving (Show, Eq)
+
+data InstructionSpec
+  = InstParts
+  { terms :: [ParseTerm]
+  , actions :: [ActionSpec]
+  }
+  deriving (Show, Eq)
+-}
+
+
+action :: [Turtle.InstructionSpec] -> P.Parser [Turtle.Action]
+action = choice . fmap op
+  where
+    op :: Turtle.InstructionSpec -> P.Parser [Turtle.Action]
+    op spec = do
+      ns <- M.unions <$> try (sequence (numbers <$> Turtle.terms spec))
+      resolve (Turtle.actions spec) ns
+
+    numbers :: Turtle.ParseTerm -> P.Parser (M.Map Text Integer)
+    numbers (Turtle.Literal literal) = M.empty <$ P.lstr literal
+    numbers (Turtle.Number name) = do
+      value <- P.lexeme P.rawInteger
+      pure $ M.singleton name value
+
+    resolve :: [Turtle.ActionSpec] -> M.Map Text Integer -> P.Parser [Turtle.Action]
+    resolve [] _ = pure []
+    resolve (Turtle.ShouldFace d:rest) m = do
+      resolved <- resolve rest m
+      pure $ Turtle.Face d:resolved
+    resolve (Turtle.ShouldTurn s:rest) m = do
+      resolved <- resolve rest m
+      pure $ Turtle.Turn s:resolved
+    resolve (Turtle.ShouldTakeLiteralSteps s:rest) m = do
+      resolved <- resolve rest m
+      pure $ Turtle.TakeSteps s:resolved
+    resolve (Turtle.ShouldTakeStepsIn name:rest) m = do
+      resolved <- resolve rest m
+      case M.lookup name m of
+        Just s -> pure $ Turtle.TakeSteps s:resolved
+        Nothing -> fail $ "Name " ++ unpack name ++ " was referenced on the right side of a `means` but not defined on the left side."
+
 instructionsSpec :: P.Parser [Turtle.InstructionSpec]
-instructionsSpec = manyTill instructionSpec (P.lstr "solution")
+instructionsSpec = sepEndBy1 (try instructionSpec) (P.lstr "and" <|> P.lstr "solution")
 
 instructionSpec :: P.Parser Turtle.InstructionSpec
-instructionSpec = Turtle.InstParts <$> manyTill term (P.lstr "means") <*> actions
+instructionSpec = Turtle.InstParts <$> manyTill term (P.lstr "means") <*> actionsSpec
 
-actions :: P.Parser [Turtle.ActionSpec]
-actions = sepBy1 (try action) (P.lstr "then")
+actionsSpec :: P.Parser [Turtle.ActionSpec]
+actionsSpec = sepBy1 actionSpec (P.lstr "then")
 
-action :: P.Parser Turtle.ActionSpec
-action =
-  Turtle.Face <$> (P.lstr "face" *> direction)
-    <|> Turtle.Turn <$> (P.lstr "turn" *> side)
-    <|> Turtle.TakeLiteralSteps <$> (P.lstr "take" *> P.lexeme P.rawInteger <* steps)
+actionSpec :: P.Parser Turtle.ActionSpec
+actionSpec =
+  Turtle.ShouldFace <$> (P.lstr "face" *> direction)
+    <|> Turtle.ShouldTurn <$> (P.lstr "turn" *> side)
+    <|> Turtle.ShouldTakeLiteralSteps <$> (P.lstr "take" *> P.lexeme P.rawInteger <* steps)
 
 steps :: P.Parser ()
 steps = () <$ P.lexeme (string "step" *> optional (char 's'))

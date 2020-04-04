@@ -7,17 +7,12 @@ import           Data.Text
 import qualified Evaluator as Eval
 import qualified Turtle.Ast as Ast
 import qualified Turtle.Parser as Parse
-import qualified Parser as Parse
 import qualified System.FilePath as Path
 import           Text.Megaparsec
 import           Text.Megaparsec.Error (parseErrorPretty)
 import qualified Type
 import qualified TypeCheck
 import qualified Value as V
-
-getInputParser :: Type.Type -> Maybe (Parse.Parser V.Value)
-getInputParser Type.Number = Just Parse.integer
-getInputParser _ = Nothing
 
 runTurtleProblem :: (String, String) -> IO (Maybe (Type.Type, Type.Type, V.Value, Ast.Problem))
 runTurtleProblem (source, text) =
@@ -39,23 +34,18 @@ runTurtleProblem (source, text) =
           Left err -> do
             print err
             pure Nothing
-          Right (inputElementType, outputType) ->
-            case getInputParser inputElementType of
-              Nothing -> do
-                putStrLn $ "Inferred input to have element type " ++ show inputElementType ++ " (only list of integers are supported)"
+          Right (inputElementType, outputType) -> do
+            inputText <- readFile inputPath
+            case runParser (Parse.turtleActions ast) inputPath $ strip $ pack inputText of
+              Left err -> do
+                putStrLn "Error parsing input file:"
+                putStrLn $ parseErrorPretty err
                 pure Nothing
-              Just parseInput -> do
-                inputText <- readFile inputPath
-                case runParser (Parse.listInput (Ast.separator ast) parseInput) inputPath $ strip $ pack inputText of
+              Right input ->
+                case Eval.eval turtleContext (V.Turtle (0, 0) Ast.Up input) (Ast.solution ast) of
+                  Right result -> do
+                    print result
+                    pure $ Just (Type.List inputElementType, outputType, result, ast)
                   Left err -> do
-                    putStrLn "Error parsing input file:"
-                    putStrLn $ parseErrorPretty err
+                    print err
                     pure Nothing
-                  Right input ->
-                    case Eval.eval turtleContext (V.Vs input) (Ast.solution ast) of
-                      Right result -> do
-                        print result
-                        pure $ Just (Type.List inputElementType, outputType, result, ast)
-                      Left err -> do
-                        print err
-                        pure Nothing

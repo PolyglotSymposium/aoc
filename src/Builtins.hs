@@ -357,6 +357,50 @@ positions = Value.Func $ \_ cs -> Just $ Value.Func $ \_ grd ->
         M.filter (== c) state
     _ -> Nothing
 
+face :: Value.Value
+face = Value.Func $ \_ dir -> Just $ Value.Func $ \_ trt ->
+  case (dir, trt) of
+    (Value.Direction d, Value.Turtle p _ actions) ->
+      Just $ Value.Turtle p d actions
+    _ ->
+      Nothing
+
+distanceFrom :: Value.Value
+distanceFrom = Value.Func $ \_ source -> Just $ Value.Func $ \_ trt ->
+  case (source, trt) of
+    (Value.Pos (x0, y0), Value.Turtle (x1, y1) _ _) ->
+      Just $ Value.I $ abs (x0 - x1) + abs (y0 - y1)
+    _ ->
+      Nothing
+
+stroll :: Value.Value
+stroll = Value.Func $ \_ trt ->
+  case trt of
+    (Value.Turtle p d actions) ->
+      Just $ stroll' p d actions actions
+    _ ->
+      Nothing
+
+  where
+    stroll' p d [] = Value.Turtle p d
+    stroll' p _ (Turtle.Face d:rest) = stroll' p d rest
+    stroll' p d (Turtle.Turn hs:rest) = stroll' p (turn d hs) rest
+    stroll' p d (Turtle.TakeSteps ss:rest) = stroll' (steps d ss p) d rest
+
+    steps Turtle.Up n (x, y) = (x, y-n)
+    steps Turtle.Down n (x, y) = (x, y+n)
+    steps Turtle.Left n (x, y) = (x-n, y)
+    steps Turtle.Right n (x, y) = (x+n, y)
+
+    turn Turtle.Up Turtle.Lefthand = Turtle.Left
+    turn Turtle.Up Turtle.Righthand = Turtle.Right
+    turn Turtle.Left Turtle.Lefthand = Turtle.Down
+    turn Turtle.Left Turtle.Righthand = Turtle.Up
+    turn Turtle.Down Turtle.Lefthand = Turtle.Right
+    turn Turtle.Down Turtle.Righthand = Turtle.Left
+    turn Turtle.Right Turtle.Lefthand = Turtle.Up
+    turn Turtle.Right Turtle.Righthand = Turtle.Down
+
 (-->) :: Type.Type -> Type.Type -> Type.Type
 i --> o = Type.Arrow i o
 
@@ -453,10 +497,10 @@ turtleContext :: C.Context
 turtleContext =
   C.add core $
     C.fromList [
-      ("face",   (direction --> (turtle --> turtle), run))
+      ("face",   (direction --> (turtle --> turtle), face))
     , ("origin", (pos,                               Value.Pos (0, 0)))
     , ("up",     (direction,                         Value.Direction Turtle.Up))
     -- TODO More types here
-    , ("stroll", (turtle --> turtle,                 undefined))
-    , ("distance_from", (pos --> (turtle -->  num),  undefined))
+    , ("stroll", (turtle --> turtle,                 stroll))
+    , ("distance_from", (pos --> (turtle -->  num),  distanceFrom))
     ]
