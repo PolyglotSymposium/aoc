@@ -7,5 +7,5 @@ turtle in 1 dimension
 solution
   face up
     | stroll*
-    | position_of { y=-1 }
+    | position_of { x=0, y=-1 }
     | inc
