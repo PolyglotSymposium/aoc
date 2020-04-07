@@ -97,6 +97,7 @@ This may not even be distinct from the `Graph` domain.
    - [ ] "One free" in solutions should only check when list is the type
    - [ ] Better organization post-remedial-program
    - [ ] Syntactic sugar.
+   - [ ] Properly type check `&` composition
  - `conway`
    - [ ] Transitions should have context distinct from `grid`
    - [ ] Allow `any_state` in transitions "from"

@@ -38,6 +38,7 @@ data Value
   | Application Text Value
   | List [Value]
   | Pos (Integer, Integer)
+  | FlipCompose Value Value
   deriving (Show, Eq)
 
 substitute :: M.Map Text Value -> Value -> Value
@@ -58,5 +59,6 @@ substitute _ num@(Inte _)            = num
 substitute _ pos@(Pos _)             = pos
 substitute subs (Application fn arg) = Application fn $ substitute subs arg
 substitute subs (List vs)            = List $ substitute subs <$> vs
+substitute subs (FlipCompose f g)    = FlipCompose (substitute subs f) $ substitute subs g
 substitute subs (Identifier name) =
   fromMaybe (Identifier name) $ M.lookup name subs

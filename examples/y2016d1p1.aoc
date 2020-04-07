@@ -7,4 +7,4 @@ turtle in 2 dimensions
 solution
   face north
     | stroll
-    | manhattan_distance_from origin
+    @ manhattan_distance origin

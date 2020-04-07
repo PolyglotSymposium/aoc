@@ -69,7 +69,7 @@ code :: Parser Ast.Solution
 code = lexeme $ makeExprParser solutionTerm [[pipe]]
 
 pipe :: Operator Parser Ast.Solution
-pipe = InfixL (Ast.Pipe <$ lstr "|")
+pipe = InfixL (Ast.Pipe <$ try (lstr "|"))
 
 solutionTerm :: Parser Ast.Solution
 solutionTerm =
@@ -95,6 +95,7 @@ value = lexeme $ makeExprParser valueTerm [
   , [InfixL (Ast.Multiply <$ lstr "*"), InfixL (Ast.Divide <$ lstr "/")]
   , [InfixL (Ast.Add    <$ lstr "+")]
   , [InfixL (Ast.Subtract <$ lstr "-")]
+  , [InfixR (Ast.FlipCompose <$ lstr "@")]
   ]
 
 valueTerm :: Parser Ast.Value

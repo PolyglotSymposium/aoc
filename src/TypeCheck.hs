@@ -57,7 +57,7 @@ unifySolution context (Ast.FloatingLambda lambda) Type.Turtle = do
   ot <- unifyLambda context lambda Type.Direction
   case ot of
     Type.Arrow Type.Turtle arrowOt -> pure arrowOt
-    _ -> error "TODO non-unifying turtle functions"
+    v -> error $ "TODO non-unifying turtle functions " ++ show v
 
 unifySolution context (Ast.FloatingLambda lambda) Type.Program = do
   ot <- unifyLambda context lambda Type.Register
@@ -214,10 +214,35 @@ typeOf context (Ast.Identifier name) =
   case identType name context of
     Nothing -> Left $ IdentifierIsNotDefined name
     Just t  -> Right t
+
 typeOf context (Ast.Application name _) =
   case identType name context of
     Just (Type.Arrow _ ot) -> Right ot
     _ -> Left $ IdentifierIsNotDefined name
+
+typeOf context (Ast.FlipCompose f g) = do
+  fTy <- inputTypeOf context f
+  gTy <- outputTypeOf context g
+  pure $ fTy `Type.Arrow` gTy
+
+outputTypeOf :: Context -> Ast.Value -> Result Type.Type
+outputTypeOf context v =
+  case typeOf context v of
+    Right (Type.Arrow _ ot) -> Right $ innermostOutputType ot
+    Right t -> Left $ NotAFunction "lvalue" t
+    err -> err
+
+  where
+    innermostOutputType :: Type.Type -> Type.Type
+    innermostOutputType (Type.Arrow _ ot) = innermostOutputType ot
+    innermostOutputType ot = ot
+
+inputTypeOf :: Context -> Ast.Value -> Result Type.Type
+inputTypeOf context v =
+  case typeOf context v of
+    Right (Type.Arrow it _) -> Right it
+    Right t -> Left $ NotAFunction "lvalue" t
+    err -> err
 
 ensureOneFreeOrIdentInEachStep :: Context -> Ast.Solution -> Result ()
 ensureOneFreeOrIdentInEachStep context = go 1 . unpipe
@@ -235,6 +260,7 @@ ensureOneFreeOrIdentInEachStep context = go 1 . unpipe
     oneFreeOrIdent :: Context -> Int -> Ast.Value -> Result ()
     oneFreeOrIdent _ _ (Ast.Identifier _) = pure ()
     oneFreeOrIdent _ _ (Ast.Application _ _) = pure ()
+    oneFreeOrIdent _ _ (Ast.FlipCompose _ _) = pure ()
     oneFreeOrIdent ctx n ast =
       if S.size (frees ctx ast) /= 1
       then Left $ StepNMustBeIdentiferOrContainSingleFree n ast
@@ -266,6 +292,7 @@ frees context (Ast.NotEquals a b)   = S.union (frees context a) (frees context b
 frees context (Ast.List vs)         = S.unions $ frees context <$> vs
 frees _       (Ast.Inte _)          = S.empty
 frees _       (Ast.Pos _)           = S.empty
+frees context (Ast.FlipCompose f g) = S.union (frees context f) (frees context g)
 frees context (Ast.Identifier name) =
   case identType name context of
     Nothing -> S.singleton name

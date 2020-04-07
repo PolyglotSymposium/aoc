@@ -82,6 +82,9 @@ eval context arg2 (Ast.FloatingLambda (Ast.Body (Ast.Application fn arg1))) = do
         _ -> Left $ UnexpectedError 8
     _ -> Left $ UnexpectedError 7
 
+eval context val (Ast.FloatingLambda (Ast.Body fc@(Ast.FlipCompose _ _))) =
+  evalValue context (Just val) fc
+
 eval context (Value.Vs vs) (Ast.FloatingLambda lambda) = do
   results <- sequence $ applyAndKeepOriginal <$> vs
   pure $ Value.Vs $ results >>= pick
@@ -143,7 +146,7 @@ evalValue context val (Ast.Application fn arg) = do
   fnValue <- evalValue context val (Ast.Identifier fn)
   argValue <- evalValue context val arg
   case fnValue of
-    (Value.Func f) ->
+    Value.Func f ->
       case f context argValue of
         Nothing -> Left $ UnexpectedError 6
         Just v  -> Right v
@@ -196,6 +199,17 @@ evalValue context val (Ast.List vs) = do
 evalValue _ _ (Ast.Inte v) = Right $ Value.I v
 
 evalValue _ _ (Ast.Pos pos) = Right $ Value.Pos pos
+
+evalValue context val (Ast.FlipCompose f g) =
+  case (val, evalValue context Nothing f, evalValue context Nothing g) of
+    (Just val', Right (Value.Func f'), Right (Value.Func g')) ->
+      case f' context val' of
+        Nothing -> Left $ UnexpectedError 72
+        Just v  ->
+          case g' context v of
+            Nothing -> Left $ UnexpectedError 73
+            Just vOut -> Right vOut
+    _ -> Left $ UnexpectedError 99
 
 toBoolean :: Bool -> Value.Value
 toBoolean True = Value.True

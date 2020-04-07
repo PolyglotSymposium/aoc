@@ -39,10 +39,9 @@ repeats = Value.Func $ \_ v -> Value.Vs <$> go S.empty v
   where
     go _ (Value.Vs []) = Just []
     go seen (Value.Vs (v:vs)) = do
-      ord <- Value.toOrd v
-      let acc = [v | S.member ord seen]
-      rest <- go (S.insert ord seen) (Value.Vs vs)
-      pure $ acc ++ rest
+      ord  <- Value.toOrd v
+      rest <- go (S.insert ord seen) $ Value.Vs vs
+      pure $ [v | S.member ord seen] ++ rest
     go _ _ = Nothing
 
 first :: Value.Value
@@ -349,7 +348,7 @@ countCells' (Value.Vs vs) grd =
       let
         counts = go (Value.width size) (Value.height size) state $ M.fromList $ zip buckets (repeat 0)
       in
-        Just $ Value.Vs $ fmap (\b -> Value.I (counts M.! b)) buckets
+        Just $ Value.Vs $ fmap (\v -> Value.I (counts M.! v)) buckets
     _ -> Nothing
 
   where
@@ -381,10 +380,15 @@ face = Value.Func $ \_ dir -> Just $ Value.Func $ \_ trt ->
     _ ->
       Nothing
 
-distanceFrom :: Value.Value
-distanceFrom = Value.Func $ \_ source -> Just $ Value.Func $ \_ trt ->
-  case (source, trt) of
-    (Value.Pos (x0, y0), Value.Turtle (x1, y1) _ _) ->
+currentPosition :: Value.Value -> Maybe (Integer, Integer)
+currentPosition (Value.Turtle p _ _ ) = Just p
+currentPosition (Value.Pos p) = Just p
+currentPosition _ = Nothing
+
+manhattanDistance :: Value.Value
+manhattanDistance = Value.Func $ \_ source -> Just $ Value.Func $ \_ v ->
+  case (source, currentPosition v) of
+    (Value.Pos (x0, y0), Just (x1, y1)) ->
       Just $ Value.I $ abs (x0 - x1) + abs (y0 - y1)
     _ ->
       Nothing
@@ -484,18 +488,19 @@ turtle = Type.Turtle
 baseIdentifiers :: [(Text, Type.Type, Value.Value)]
 baseIdentifiers =
   [
-    ("sum",               list num --> num,        makeFold 0 (+))
-  , ("count",             list a   --> num,        count)
-  , ("product",           list num --> num,        makeFold 1 (*))
-  , ("repeats",           list a --> list a,       repeats)
-  , ("true",              bool,                    Value.True)
-  , ("false",             bool,                    Value.False)
-  , ("first",             list a --> a,            first)
-  , ("dupe",              list a --> list a,       dupe)
-  , ("even",              num --> bool,            even')
-  , ("odd",               num --> bool,            odd')
-  , ("maximum",           list num --> num,        maximum')
-  , ("base_zero_index_of", a --> (list a --> num), indexOf0)
+    ("sum",                list num --> num,               makeFold 0 (+))
+  , ("count",              list a   --> num,               count)
+  , ("product",            list num --> num,               makeFold 1 (*))
+  , ("repeats",            list a --> list a,              repeats)
+  , ("true",               bool,                           Value.True)
+  , ("false",              bool,                           Value.False)
+  , ("first",              list a --> a,                   first)
+  , ("dupe",               list a --> list a,              dupe)
+  , ("even",               num --> bool,                   even')
+  , ("odd",                num --> bool,                   odd')
+  , ("maximum",            list num --> num,               maximum')
+  , ("base_zero_index_of", a --> (list a --> num),         indexOf0)
+  , ("manhattan_distance", pos --> (pos --> num),          manhattanDistance)
   ]
 
 core :: C.Context
@@ -554,6 +559,5 @@ turtleContext =
     , ("east",                    (direction,                         Value.Direction Turtle.Right))
     , ("stroll",                  (turtle --> turtle,                 stroll))
     , ("stroll*",                 (turtle --> list pos,               strollSplat))
-    , ("distance_from",           (pos --> (turtle -->  num),         distanceFrom))
-    , ("manhattan_distance_from", (pos --> (turtle -->  num),         distanceFrom))
+    , ("distance_from",           (pos --> (turtle -->  num),         manhattanDistance))
     ]
