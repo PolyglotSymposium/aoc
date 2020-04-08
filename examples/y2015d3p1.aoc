@@ -1,1 +1,12 @@
-TODO, this should be a turtle in 2d 
+turtle in 2 dimensions
+  at ./y2015d3.txt
+  separated by ''
+  where > means face east then take 1 step and
+        < means face west then take 1 step and
+        ^ means face north then take 1 step and
+        v means face south then take 1 step
+
+solution
+  stroll*
+    | unique
+    | count

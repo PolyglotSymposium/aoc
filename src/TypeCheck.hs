@@ -89,7 +89,7 @@ unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
       then pure fout
       else Left $ FloatingLambdaCannotReturn 3 ot
 
-    _ -> Left $ FloatingLambdaCannotReturn 4 ot
+    _ -> error (show (lambda, it)) -- $ Left $ FloatingLambdaCannotReturn 4 ot
 
 unifySolution context (Ast.FloatingLambda (Ast.Body b)) t = do
   actual <- typeOf context b

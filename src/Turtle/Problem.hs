@@ -26,9 +26,8 @@ runTurtleProblem (source, text) =
         inputPath = Path.takeDirectory source Path.</> unpack (Ast.at ast)
         validations = do
           _ <- TypeCheck.ensureOneFreeOrIdentInEachStep turtleContext $ Ast.solution ast
-          it <- TypeCheck.inferInputType turtleContext $ Ast.solution ast
           ot <- TypeCheck.unifySolution turtleContext (Ast.solution ast) Type.Turtle
-          pure (it, ot)
+          pure (Type.Turtle, ot)
       in
         case validations of
           Left err -> do

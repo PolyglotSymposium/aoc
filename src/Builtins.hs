@@ -44,6 +44,16 @@ repeats = Value.Func $ \_ v -> Value.Vs <$> go S.empty v
       pure $ [v | S.member ord seen] ++ rest
     go _ _ = Nothing
 
+unique :: Value.Value
+unique = Value.Func $ \_ v -> Value.Vs <$> go S.empty v
+  where
+    go _ (Value.Vs []) = Just []
+    go seen (Value.Vs (v:vs)) = do
+      ord  <- Value.toOrd v
+      rest <- go (S.insert ord seen) $ Value.Vs vs
+      pure $ [v | not $ S.member ord seen] ++ rest
+    go _ _ = Nothing
+
 first :: Value.Value
 first = Value.Func $ \_ -> \case
                       Value.Vs (v:_) -> Just v
@@ -490,6 +500,7 @@ baseIdentifiers =
   [
     ("sum",                list num --> num,               makeFold 0 (+))
   , ("count",              list a   --> num,               count)
+  , ("unique",             list a --> list a,              unique)
   , ("product",            list num --> num,               makeFold 1 (*))
   , ("repeats",            list a --> list a,              repeats)
   , ("true",               bool,                           Value.True)
