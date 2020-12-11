@@ -35,9 +35,11 @@ shouldBeUnificationFailureOf (Left (TypeCheck.UnificationFailure _ _ a b _)) (c,
 shouldBeUnificationFailureOf v _ =
   error $ "Expected unification failure, got " ++ show v
 
-testPartWithBench domain year day part expected = do
-  it ("solves (" ++ domain ++ ") " ++ show year ++ " D" ++ show day ++ " P" ++ show part) $ do
+testPartWithBench year day part expected = do
+  it ("solves " ++ show year ++ " D" ++ show day ++ " P" ++ show part) $ do
     let path = "./examples/y" ++ show year ++ "d" ++ show day ++ "p" ++ show part ++ ".aoc"
+
+    (domain:_) <- words <$> readFile path
 
     (Just (_, _, V.I result, _), spec) <- stopWatch $ Aoc.solve path
     result `shouldBe` expected
@@ -58,47 +60,47 @@ testPartWithBench domain year day part expected = do
 main :: IO ()
 main = hspec $ do
   describe "Aoc.solve" $ do
-    testPartWithBench "turtle" 2015 1 1 280
+    testPartWithBench 2015 1 1 280
 
-    testPartWithBench "turtle" 2015 1 2 1797
+    testPartWithBench 2015 1 2 1797
 
-    testPartWithBench "turtle" 2015 3 1 2592
+    testPartWithBench 2015 3 1 2592
 
-    testPartWithBench "conway" 2015 18 1 821
+    testPartWithBench 2015 18 1 821
 
-    testPartWithBench "conway" 2015 18 2 886
+    testPartWithBench 2015 18 2 886
 
-    testPartWithBench "program" 2015 23 1 184
+    testPartWithBench 2015 23 1 184
 
-    testPartWithBench "program" 2015 23 2 231
+    testPartWithBench 2015 23 2 231
 
-    testPartWithBench "turtle" 2016 1 1 279
+    testPartWithBench 2016 1 1 279
 
-    testPartWithBench "turtle" 2016 1 2 163
+    testPartWithBench 2016 1 2 163
 
-    testPartWithBench "conway" 2016 12 1 318020
+    testPartWithBench 2016 12 1 318020
 
-    testPartWithBench "conway" 2016 12 2 9227674
+    testPartWithBench 2016 12 2 9227674
 
-    testPartWithBench "conway" 2016 18 1 1939
+    testPartWithBench 2016 18 1 1939
 
-    testPartWithBench "program" 2017 8 1 6828
+    testPartWithBench 2017 8 1 6828
 
-    testPartWithBench "program" 2017 8 2 7234
+    testPartWithBench 2017 8 2 7234
 
-    testPartWithBench "list" 2018 1 1 595
+    testPartWithBench 2018 1 1 595
 
-    testPartWithBench "list" 2018 1 2 80598
+    testPartWithBench 2018 1 2 80598
 
-    testPartWithBench "conway" 2018 18 1 560091
+    testPartWithBench 2018 18 1 560091
 
-    testPartWithBench "list" 2019 1 1 3308377
+    testPartWithBench 2019 1 1 3308377
 
-    testPartWithBench "list" 2019 1 2 4959709
+    testPartWithBench 2019 1 2 4959709
 
-    testPartWithBench "conway" 2019 24 1 18844281
+    testPartWithBench 2019 24 1 18844281
 
-    testPartWithBench "conway" 2020 11 1 2108
+    testPartWithBench 2020 11 1 2108
 
   describe "TypeCheck.ensureOneFreeOrIdentInEachStep" $ do
     it "finds the identifier in a simple &&" $

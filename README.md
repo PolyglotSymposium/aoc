@@ -105,6 +105,7 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Optimize (2015, d18 is kinda slow)
    - [ ] Faster structure (since we're not doing sparse and things have a fixed size, ATM)
    - [ ] Lumberyard part 2
+   - [ ] Add syntax to express "cell remains unchanged"
  - `program`
    - [ ] Check no repeated names in instruction specs.
    - [ ] Case (exhaustive/overlap) checking in instructions
