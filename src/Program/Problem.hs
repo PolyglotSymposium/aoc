@@ -23,18 +23,20 @@ import qualified TypeCheck
 import           Value (insert, Context)
 import qualified Value as V
 
-withRegisters :: Ast.IntermediateProgram -> Context -> Context
-withRegisters prog context =
-  foldr addToContext context $ Ast.allRegisters prog
+withRegisters :: S.Set Text -> Ast.IntermediateProgram -> Context -> Context
+withRegisters globalRegisters prog context =
+  foldr addToContext context $ (S.toList globalRegisters ++) $ Ast.allRegisters prog
 
   where
     addToContext reg = insert reg (Type.Register, V.Register reg)
 
-contextWith :: Ast.InstructionSpec -> Context
-contextWith Ast.InstParts{..} =
-  foldr insertNumeric programContext terms
+contextWith :: S.Set Text -> Ast.InstructionSpec -> Context
+contextWith globals Ast.InstParts{..} =
+  foldr insertReg (foldr insertNumeric programContext terms) globals
 
   where
+    insertReg = (`insert ` (Type.Number, V.I 0))
+
     insertNumeric (Ast.Number reg) context = insert reg (Type.Number, V.I 0) context
     insertNumeric (Ast.Register reg) context = insert reg (Type.Number, V.I 0) context
     insertNumeric (Ast.Val reg) context = insert reg (Type.Number, V.I 0) context
@@ -61,25 +63,26 @@ runProgramProblem (source, text) =
           let
             solution = Ast.solution programSpec
             context = programContext
-            executionContext = withRegisters programAst context
+            executionContext = withRegisters (Ast.globalRegisters programSpec) programAst context
             program =
               V.Program
-                (Ast.indexed $ Ast.inlineSpecs programAst)
+                (Ast.indexed $ Ast.inlineSpecs (Ast.globalRegisters programSpec) programAst)
                 (V.Ip 0)
-                (V.registersFrom $ (, Ast.initialRegisterValue programSpec) <$> Ast.allRegisters programAst)
+                (V.registersFrom $ (, Ast.initialRegisterValue programSpec) <$> (S.toList (Ast.globalRegisters programSpec) ++ Ast.allRegisters programAst))
                 (V.Traces
                  {
                    V.registerValues =
                      if S.member Ast.TraceRegisterValues (Ast.traces programSpec)
                      then Just $ V.RegHistory M.empty
                      else Nothing
+                 , V.instructionPointers = S.empty
                  }
                 )
             validations = do
               TypeCheck.ensureOneFreeOrIdentInEachStep executionContext solution
               ot <- TypeCheck.unifySolution executionContext solution Type.Program
               for_ (Ast.instructions programSpec) $ \instruction -> do
-                let contextWithInstruction = contextWith instruction
+                let contextWithInstruction = contextWith (Ast.globalRegisters programSpec) instruction
                 _ <- case Ast.condition instruction of
                   Just cond ->
                     TypeCheck.noFrees contextWithInstruction cond *>

@@ -23,6 +23,7 @@ programSpec = do
   instructions <- instructionsSpec
   registerStartValue <- initialRegisterValue
   traces <- traceRules
+  globalRegs <- globalRegisters
   _ <- P.lstr "solution"
   code <- P.code
   eof
@@ -33,7 +34,15 @@ programSpec = do
     , Program.initialRegisterValue = registerStartValue
     , Program.solution = code
     , Program.traces = traces
+    , Program.globalRegisters = globalRegs
     }
+
+-- global register named acc starting at 0
+globalRegisters :: P.Parser (S.Set Text)
+globalRegisters = fmap S.fromList $ many globalRegisterDeclaration
+  where
+    globalRegisterDeclaration =
+      P.lstr "global" *> P.lstr "register" *> P.lstr "named" *> P.lexeme P.ident
 
 traceRules :: P.Parser (S.Set Program.Trace)
 traceRules =
@@ -75,7 +84,7 @@ initialRegisterValue =
 
 instructionsSpec :: P.Parser [Program.InstructionSpec]
 instructionsSpec =
-  P.lstr "with" *> P.lstr "instructions" *> manyTill instructionSpec (P.lstr "registers")
+  P.lstr "with" *> P.lstr "instructions" *> manyTill instructionSpec (P.lstr "global" <|> P.lstr "registers")
 
 instructionSpec :: P.Parser Program.InstructionSpec
 instructionSpec = Program.InstParts <$> manyTill term (P.lstr "means") <*> meaning <*> optional condition
@@ -108,3 +117,4 @@ meaning = setOrJump
     setOrJump =
       Program.SetRegister <$> (P.lstr "set" *> P.ident) <*> (P.lstr "to" *> P.value)
         <|> Program.RelativeJump <$> (P.lstr "jump" *> P.ident <* P.lstr "away")
+        <|> Program.Noop <$ P.lstr "noop"

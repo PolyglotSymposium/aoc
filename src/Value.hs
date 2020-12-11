@@ -26,6 +26,7 @@ import           Data.Text hiding (concat, empty, foldr)
 import           Prelude hiding (True, False)
 import qualified Program.Ast as Prog
 import qualified Type
+import qualified Data.Set as S
 
 data WidthHeight
   = WidthHeight { width :: Integer, height :: Integer }
@@ -46,7 +47,10 @@ newtype RegisterHistory
 registersFrom :: [(Text, Integer)] -> Registers
 registersFrom = Regs . M.fromList
 
-data Traces = Traces { registerValues :: Maybe RegisterHistory }
+data Traces = Traces {
+    registerValues :: Maybe RegisterHistory
+  , instructionPointers :: S.Set Integer
+  }
 
 data Value
   = I Integer

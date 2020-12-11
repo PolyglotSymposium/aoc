@@ -1,0 +1,13 @@
+program at ./y2020d8.txt
+  with instructions
+    jmp {offset:num} means jump offset away
+    acc {amount:num} means set state to (state + amount)
+    nop {v:num} means noop
+
+  registers start at 0
+
+  global register named state
+
+solution
+  run_until_cycle
+    | register state

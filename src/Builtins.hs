@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Builtins
        ( listContext
@@ -283,12 +284,16 @@ countCells :: Value.Value
 countCells = Value.Func $ \_ vs -> Just $ Value.Func $ \_ grd -> countCells' vs grd
 
 traceRegisterValue :: Text -> Integer -> Value.Traces -> Value.Traces
-traceRegisterValue r value Value.Traces{registerValues=Just (Value.RegHistory rh) } =
-  Value.Traces $ Just $ Value.RegHistory $ M.alter (Just . (value :) . fromMaybe []) r rh
+traceRegisterValue r value Value.Traces{ registerValues=Just (Value.RegHistory rh), instructionPointers } =
+  Value.Traces (Just $ Value.RegHistory $ M.alter (Just . (value :) . fromMaybe []) r rh) instructionPointers
 traceRegisterValue _ _ ts = ts
 
-run :: Value.Value
-run = Value.Func $ \context program ->
+data TerminalCondition
+  = FallOffEnd
+  | Cycle
+
+runUntil :: TerminalCondition -> Value.Value
+runUntil terminateWhen = Value.Func $ \context program ->
   case program of
     Value.Program (Program.IndexedInstructions p) (Value.Ip ip) (Value.Regs regs) traces ->
       run' p ip regs context traces
@@ -296,7 +301,7 @@ run = Value.Func $ \context program ->
 
   where
     run' p ip regs context traces =
-      case M.lookup ip p of
+      case currentInstruction of
         Nothing -> Just $ Value.Program (Program.IndexedInstructions p) (Value.Ip ip) (Value.Regs regs) traces
         Just Program.Instruction{..} ->
           let
@@ -307,18 +312,34 @@ run = Value.Func $ \context program ->
                 Nothing -> True
           in
             if not shouldExecute
-            then run' p (ip+1) regs context traces
+            then run' p (ip+1) regs context traces'
             else
               case op of
                 Program.JumpAway v ->
                   case evalValue currentContext Nothing v of
-                    Right (Value.I offset) -> run' p (ip + offset) regs context traces
+                    Right (Value.I offset) -> run' p (ip + offset) regs context traces'
                     _ -> Nothing
                 Program.Set dest v ->
                   case evalValue currentContext Nothing v of
                     Right (Value.I result) ->
-                      run' p (ip + 1) (M.insert dest result regs) context $ traceRegisterValue dest result traces
+                      run' p (ip + 1) (M.insert dest result regs) context $ traceRegisterValue dest result traces'
                     _ -> Nothing
+                Program.DoNothing ->
+                  run' p (ip + 1) regs context traces'
+      where
+        currentInstruction =
+          case (M.lookup ip p, terminateWhen) of
+            (Nothing, _)            -> Nothing
+            (Just inst, FallOffEnd) -> Just inst
+            (Just inst, Cycle) ->
+              if S.member ip (C.instructionPointers traces)
+              then Nothing
+              else Just inst
+
+        traces' =
+          case terminateWhen of
+            FallOffEnd -> traces
+            Cycle -> traces{ C.instructionPointers=S.insert ip (C.instructionPointers traces) }
 
 register :: Value.Value
 register = Value.Func $ \_ r -> Just $ Value.Func $ \ _ program ->
@@ -550,7 +571,8 @@ programContext :: C.Context
 programContext =
   C.add core $
     C.fromList [
-      ("run",                    (prog --> prog,            run))
+      ("run",                    (prog --> prog,            runUntil FallOffEnd))
+    , ("run_until_cycle",        (prog --> prog,            runUntil Cycle))
     , ("register",               (reg  --> (prog --> prog), register))
     , ("increment_register",     (reg  --> (prog --> prog), incrementRegister))
     , ("register_values",        (prog --> list num,        registerValues))

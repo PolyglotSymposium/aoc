@@ -100,6 +100,8 @@ main = hspec $ do
 
     testPartWithBench 2019 24 1 18844281
 
+    testPartWithBench 2020 8 1 1766
+
     testPartWithBench 2020 11 1 2108
 
   describe "TypeCheck.ensureOneFreeOrIdentInEachStep" $ do

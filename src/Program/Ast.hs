@@ -33,6 +33,7 @@ data ParseTerm
 data Meaning
   = SetRegister Text Ast.Value
   | RelativeJump Text
+  | Noop
   deriving (Show, Eq)
 
 data InstructionSpec
@@ -54,6 +55,7 @@ data Problem =
   , initialRegisterValue :: Integer
   , solution :: Ast.Solution
   , traces :: S.Set Trace
+  , globalRegisters :: S.Set Text
   } deriving (Show, Eq)
 
 newtype IndexedProgram
@@ -66,6 +68,7 @@ indexed (Instructions is) = IndexedInstructions $ M.fromList $ zip [0..] is
 data Op
   = Set Text Ast.Value
   | JumpAway Ast.Value
+  | DoNothing
   deriving (Show, Eq)
 
 data Instruction =
@@ -101,8 +104,8 @@ data IntermediateInstruction =
   , specWhen  :: Maybe Ast.Value }
   deriving (Show, Eq)
 
-inlineSpecs :: IntermediateProgram -> Program
-inlineSpecs (IntermediateInstructions iis) =
+inlineSpecs :: S.Set Text -> IntermediateProgram -> Program
+inlineSpecs globalRegs (IntermediateInstructions iis) =
   Instructions $ inlineSpec <$> iis
 
   where
@@ -114,8 +117,14 @@ inlineSpecs (IntermediateInstructions iis) =
         Instruction
         { op =
             case specOp ii of
-              SetRegister dest op' -> Set (registers ii M.! SpecName dest) $ sub op'
-              RelativeJump name   -> JumpAway $ sub $ Ast.Identifier name
+              SetRegister dest op' ->
+                case (M.lookup (SpecName dest) (registers ii), S.member dest globalRegs) of
+                  (Just reg, _) -> Set reg $ sub op'
+                  (_, True) -> Set dest $ sub op'
+                  _ -> error "Could not find register in global registers or instruction"
+
+              RelativeJump name    -> JumpAway $ sub $ Ast.Identifier name
+              Noop                 -> DoNothing
         , when = sub <$> specWhen ii
         }
 
