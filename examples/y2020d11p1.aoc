@@ -6,9 +6,7 @@ conway of 2 dimensions
   cells transition
     from empty to occupied if (neighbors occupied) = 0
     from occupied to empty if (neighbors occupied) >= 4
-    from empty to empty if (true)
-    from occupied to occupied if (true)
-    otherwise a cell is floor
+    otherwise a cell is unchanged
 
 solution
   first_repeated_generation

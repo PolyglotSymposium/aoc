@@ -86,7 +86,7 @@ cellTransitions aliases = do
   _ <- P.lstr "cells" *> P.lstr "transition"
   transitions <- some cellTransition
   _ <- P.lstr "otherwise" *> P.lstr "a" *> P.lstr "cell" *> P.lstr "is"
-  cellDefault <- alias aliases
+  cellDefault <- Conway.Unchanged <$ try (P.lstr "unchanged") <|> Conway.DefaultCell <$> alias aliases
   pure $ Conway.CellTransitions
     { Conway.cases = transitions,
       Conway.otherwiseCellIs = cellDefault

@@ -250,9 +250,12 @@ nextGeneration' context grd@(Value.Grid ts@Conway.CellTransitions{ .. } size sta
   Just $ Value.Grid ts size $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grd) context)) state
     where
       transition ctx coords c =
-        fromMaybe (Conway.ident otherwiseCellIs) $
+        fromMaybe (otherwiseCell c otherwiseCellIs) $
           matching cases coords c $
           M.insert "$pos" (Type.Position, Value.Pos coords) ctx
+
+      otherwiseCell _ (Conway.DefaultCell def) = Conway.ident def
+      otherwiseCell c Conway.Unchanged = c
 
       matching [] _ _ _ = Nothing
       matching ((from, to, cond):cs) coords c ctx =

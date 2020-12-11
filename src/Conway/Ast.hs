@@ -8,6 +8,7 @@ module Conway.Ast
        , AnimationDirective(..)
        , CellIdent(..)
        , CellAlias(..)
+       , OtherwiseCell(..)
        , aliasName
        , ident
        , CellAliases
@@ -20,6 +21,11 @@ import qualified Ast
 
 newtype CellIdent = CellIdent Char deriving (Show, Eq)
 newtype CellAlias = CellAlias Text deriving (Show, Eq)
+
+data OtherwiseCell
+  = DefaultCell CellIdent
+  | Unchanged
+  deriving (Show, Eq)
 
 aliasName :: CellAlias -> Text
 aliasName (CellAlias name) = name
@@ -35,7 +41,7 @@ transitionCases (CellTransitions cs _) = trd <$> cs
 
 data CellTransitions = CellTransitions
   { cases :: [(CellIdent, CellIdent, Ast.Value)]
-  , otherwiseCellIs :: CellIdent
+  , otherwiseCellIs :: OtherwiseCell
   }
   deriving (Show, Eq)
 
