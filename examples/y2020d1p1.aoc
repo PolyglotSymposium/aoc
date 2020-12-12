@@ -1,0 +1,9 @@
+list
+  at ./y2020d1.txt
+  separated by '\n'
+
+solution
+  combinations 2
+    | (sum vs) = 2020
+    | first
+    | product

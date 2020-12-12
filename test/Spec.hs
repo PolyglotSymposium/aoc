@@ -100,6 +100,10 @@ main = hspec $ do
 
     testPartWithBench 2019 24 1 18844281
 
+    testPartWithBench 2020 1 1 1007104
+
+    testPartWithBench 2020 1 2 18847752
+
     testPartWithBench 2020 8 1 1766
 
     testPartWithBench 2020 11 1 2108

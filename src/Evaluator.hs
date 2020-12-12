@@ -145,13 +145,33 @@ evalValue context val (Ast.Identifier name) =
 evalValue context val (Ast.Application fn arg) = do
   fnValue <- evalValue context val (Ast.Identifier fn)
   argValue <- evalValue context val arg
-  case fnValue of
-    Value.Func f ->
+  case (fnValue, argValue) of
+    (Value.Func f, _) ->
       case f context argValue of
         Nothing -> Left $ UnexpectedError 6
         Just v  -> Right v
 
-    _ -> Left $ UnexpectedError 5
+    (Value.StepsOfFold (initial, step), Value.Vs vs) ->
+      Value.Vs <$> foldSteps step initial vs
+
+    (Value.Fold (initial, step), Value.Vs vs) ->
+      case foldr (\v acc -> acc >>= step v) (Just initial) vs of
+        Nothing -> Left $ UnexpectedError 1
+        Just v  -> Right v
+
+    _ -> Left $ UnexpectedError 66
+
+  where
+    apply step v acc =
+      case step v acc of
+        Just v' -> Right v'
+        Nothing -> Left $ UnexpectedError 3
+
+    foldSteps _ _ [] = Right []
+    foldSteps step acc (v:vs') = do
+      result <- apply step v acc
+      results <- foldSteps step result vs'
+      pure $ result:results
 
 evalValue context val (Ast.Gt a b) =
   binNumberOp context val (>) ">" a b toBoolean

@@ -85,11 +85,11 @@ unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
     Type.Arrow Type.Turtle Type.Turtle ->
       pure Type.Turtle
     Type.Arrow (Type.List finElem) fout ->
-      if finElem == it || isVar finElem
+      if finElem == it || isVar finElem || isVar it
       then pure fout
       else Left $ FloatingLambdaCannotReturn 3 ot
 
-    _ -> error (show (lambda, it)) -- $ Left $ FloatingLambdaCannotReturn 4 ot
+    _ -> error (show (lambda, it))
 
 unifySolution context (Ast.FloatingLambda (Ast.Body b)) t = do
   actual <- typeOf context b
@@ -159,7 +159,13 @@ unify context ast@(Ast.Identifier name) t env =
         Just t' ->
           if t == t'
           then Right (Just t)
-          else Left $ UnificationFailure 4 env t' t ast
+          else
+            case (t, t') of
+              (Type.List (Type.Var _), Type.List v) ->
+                Right $ Just v
+              (Type.List v, Type.List (Type.Var _)) ->
+                Right $ Just v
+              _ -> Left $ UnificationFailure 4 env t' t ast
 
 unify context ast@(Ast.Application fn arg) t env =
   case identType fn context of

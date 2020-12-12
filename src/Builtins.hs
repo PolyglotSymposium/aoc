@@ -12,11 +12,12 @@ module Builtins
 
 import qualified Ast
 import qualified Conway.Ast as Conway
+import           Control.Monad (replicateM)
 import qualified Turtle.Ast as Turtle
 import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
-import           Data.Text hiding (count, length, foldr, zip, maximum, concat)
+import           Data.Text hiding (count, length, foldr, zip, maximum, concat, filter)
 import           Evaluator (evalValue, toBoolean)
 import qualified Program.Ast as Program
 import qualified Type
@@ -75,6 +76,12 @@ even' :: Value.Value
 even' = Value.Func $ \_ -> \case
                       Value.I v -> Just $ toBoolean $ even v
                       _ -> Nothing
+
+combos :: Value.Value
+combos = Value.Func $ \_ v -> Just $ Value.Func $ \_ vs ->
+  case (v, vs) of
+    (Value.I n, Value.Vs items) -> Just $ Value.Vs $ Value.Vs <$> replicateM (fromIntegral n) items
+    _ -> Nothing
 
 indexOf0 :: Value.Value
 indexOf0 = Value.Func $ \_ v -> Just $ Value.Func $ \_ vs ->
@@ -525,20 +532,21 @@ turtle = Type.Turtle
 baseIdentifiers :: [(Text, Type.Type, Value.Value)]
 baseIdentifiers =
   [
-    ("sum",                list num --> num,               makeFold 0 (+))
-  , ("count",              list a   --> num,               count)
-  , ("unique",             list a --> list a,              unique)
-  , ("product",            list num --> num,               makeFold 1 (*))
-  , ("repeats",            list a --> list a,              repeats)
-  , ("true",               bool,                           Value.True)
-  , ("false",              bool,                           Value.False)
-  , ("first",              list a --> a,                   first)
-  , ("dupe",               list a --> list a,              dupe)
-  , ("even",               num --> bool,                   even')
-  , ("odd",                num --> bool,                   odd')
-  , ("maximum",            list num --> num,               maximum')
-  , ("base_zero_index_of", a --> (list a --> num),         indexOf0)
-  , ("manhattan_distance", pos --> (pos --> num),          manhattanDistance)
+    ("sum",                list num --> num,                   makeFold 0 (+))
+  , ("count",              list a   --> num,                   count)
+  , ("unique",             list a --> list a,                  unique)
+  , ("product",            list num --> num,                   makeFold 1 (*))
+  , ("repeats",            list a --> list a,                  repeats)
+  , ("true",               bool,                               Value.True)
+  , ("false",              bool,                               Value.False)
+  , ("first",              list a --> a,                       first)
+  , ("dupe",               list a --> list a,                  dupe)
+  , ("even",               num --> bool,                       even')
+  , ("odd",                num --> bool,                       odd')
+  , ("maximum",            list num --> num,                   maximum')
+  , ("base_zero_index_of", a --> (list a --> num),             indexOf0)
+  , ("manhattan_distance", pos --> (pos --> num),              manhattanDistance)
+  , ("combinations",       num --> (list a --> list (list a)), combos)
   ]
 
 core :: C.Context
