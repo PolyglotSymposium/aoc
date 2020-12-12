@@ -439,9 +439,11 @@ strollSplat = Value.Func $ \_ trt ->
     stroll' p _ [] = [Value.Pos p]
     stroll' p _ (Turtle.Face d:rest) = stroll' p d rest
     stroll' p d (Turtle.Turn hs:rest) = stroll' p (turn d hs) rest
-    stroll' p d (Turtle.TakeSteps 0:rest) = stroll' p d rest
-    stroll' p d (Turtle.TakeSteps ss:rest) =
-      Value.Pos p:stroll' (step d ss p) d (Turtle.TakeSteps (approachZero ss):rest)
+    stroll' p d (Turtle.TakeSteps 0 _:rest) = stroll' p d rest
+    stroll' p d (Turtle.TakeSteps ss Nothing:rest) =
+      Value.Pos p:stroll' (step d ss p) d (Turtle.TakeSteps (approachZero ss) Nothing:rest)
+    stroll' p d (Turtle.TakeSteps ss (Just d'):rest) =
+      Value.Pos p:stroll' (step d' ss p) d (Turtle.TakeSteps (approachZero ss) (Just d'):rest)
 
     approachZero v | v > 0 = v - 1
     approachZero v = v + 1
@@ -476,7 +478,8 @@ stroll = Value.Func $ \_ trt ->
     stroll' p d [] = Value.Turtle p d
     stroll' p _ (Turtle.Face d:rest) = stroll' p d rest
     stroll' p d (Turtle.Turn hs:rest) = stroll' p (turn d hs) rest
-    stroll' p d (Turtle.TakeSteps ss:rest) = stroll' (steps d ss p) d rest
+    stroll' p d (Turtle.TakeSteps ss Nothing:rest) = stroll' (steps d ss p) d rest
+    stroll' p d (Turtle.TakeSteps ss (Just d'):rest) = stroll' (steps d' ss p) d rest
 
     steps Turtle.Up n (x, y) = (x, y+n)
     steps Turtle.Down n (x, y) = (x, y-n)

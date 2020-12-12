@@ -37,14 +37,14 @@ data Side
 data Action
   = Face Direction
   | Turn Side
-  | TakeSteps Integer
+  | TakeSteps Integer (Maybe Direction)
   deriving (Show, Eq)
 
 data ActionSpec
   = ShouldFace Direction
   | ShouldTurn Side
-  | ShouldTakeLiteralSteps Integer
-  | ShouldTakeStepsIn      Text
+  | ShouldTakeLiteralSteps Integer (Maybe Direction)
+  | ShouldTakeStepsIn      Text (Maybe Direction)
   deriving (Show, Eq)
 
 data InstructionSpec

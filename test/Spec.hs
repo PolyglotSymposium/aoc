@@ -104,6 +104,8 @@ main = hspec $ do
 
     testPartWithBench 2020 11 1 2108
 
+    testPartWithBench 2020 12 1 1601
+
   describe "TypeCheck.ensureOneFreeOrIdentInEachStep" $ do
     it "finds the identifier in a simple &&" $
       TypeCheck.ensureOneFreeOrIdentInEachStep listContext (lam (number &&& ident "x")) `shouldBe` Right ()

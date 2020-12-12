@@ -62,13 +62,13 @@ action = choice . fmap op
     resolve (Turtle.ShouldTurn s:rest) m = do
       resolved <- resolve rest m
       pure $ Turtle.Turn s:resolved
-    resolve (Turtle.ShouldTakeLiteralSteps s:rest) m = do
+    resolve (Turtle.ShouldTakeLiteralSteps s d:rest) m = do
       resolved <- resolve rest m
-      pure $ Turtle.TakeSteps s:resolved
-    resolve (Turtle.ShouldTakeStepsIn name:rest) m = do
+      pure $ Turtle.TakeSteps s d:resolved
+    resolve (Turtle.ShouldTakeStepsIn name d:rest) m = do
       resolved <- resolve rest m
       case M.lookup name m of
-        Just s -> pure $ Turtle.TakeSteps s:resolved
+        Just s -> pure $ Turtle.TakeSteps s d:resolved
         Nothing -> fail $ "Name " ++ unpack name ++ " was referenced on the right side of a `means` but not defined on the left side."
 
 instructionsSpec :: P.Parser [Turtle.InstructionSpec]
@@ -87,8 +87,8 @@ actionSpec =
     <|> takeSteps
 
 takeSteps :: P.Parser Turtle.ActionSpec
-takeSteps =
-  P.lstr "take" *> (literalSteps <|> variableSteps) <* steps
+takeSteps = do
+  (P.lstr "take" *> (literalSteps <|> variableSteps) <* steps) <*> optional direction
 
   where
     literalSteps = Turtle.ShouldTakeLiteralSteps <$> P.lexeme P.rawInteger

@@ -1,0 +1,19 @@
+turtle in 2 dimensions
+  at ./y2020d12.txt
+  separated by ', '
+  where R90 means turn right and
+        R180 means turn right then turn right and
+        L180 means turn right then turn right and
+        L90 means turn left and
+        L270 means turn right and
+        R270 means turn left and
+        N{n:num} means take n steps north and
+        S{n:num} means take n steps south and
+        E{n:num} means take n steps east and
+        W{n:num} means take n steps west and
+        F{n:num} means take n steps
+
+solution
+  face east
+    | stroll
+    | distance_from origin
