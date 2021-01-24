@@ -59,6 +59,7 @@ data SolvableConwayDimensions
   = OneD
   | TwoD
   | ThreeD
+  | FourD
   deriving (Show, Eq, Ord)
 
 type CellAliases = [(CellIdent, CellAlias)]

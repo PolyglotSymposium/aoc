@@ -57,17 +57,20 @@ data Coord
   = D1 Integer
   | D2 Integer Integer
   | D3 Integer Integer Integer
+  | D4 Integer Integer Integer Integer
   deriving (Show, Eq, Ord)
 
 getX :: Coord -> Integer
 getX (D1 v) = v
 getX (D2 v _) = v
 getX (D3 v _ _) = v
+getX (D4 v _ _ _) = v
 
 getY :: Coord -> Integer
 getY (D1 _) = 0
 getY (D2 _ v) = v
 getY (D3 _ v _) = v
+getY (D4 _ v _ _) = v
 
 minMaxBy :: (a -> Integer) -> [a] -> (Integer, Integer)
 minMaxBy f = foldr (\v (min', max') -> (min min' $ f v, max max' $ f v)) (0, 0)
@@ -77,6 +80,7 @@ d2CellOrEmpty emptyCell (x, y) Conway.TwoD = M.findWithDefault emptyCell $ D2 x 
 d2CellOrEmpty emptyCell (x, 0) Conway.OneD = M.findWithDefault emptyCell $ D1 x
 d2CellOrEmpty emptyCell _ Conway.OneD = const emptyCell
 d2CellOrEmpty emptyCell (x, y) Conway.ThreeD = M.findWithDefault emptyCell $ D3 x y 0
+d2CellOrEmpty emptyCell (x, y) Conway.FourD = M.findWithDefault emptyCell $ D4 x y 0 0
 
 data Value
   = I Integer
@@ -142,6 +146,7 @@ instance Show Value where
   show (Coord (D1 x)) = "{pos:x=" ++ show x ++ "}"
   show (Coord (D2 x y)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ "}"
   show (Coord (D3 x y z)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ ",z=" ++ show z ++ "}"
+  show (Coord (D4 x y z w)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ ",z=" ++ show z ++ ",w=" ++ show w ++ "}"
   show (Turtle (x, y) d _) =
     "{turtle:x=" ++ show x ++ ",y=" ++ show y ++ ",dir=" ++ show d ++ "}"
   show (Register r) = "{" ++ show r ++ ":reg}"

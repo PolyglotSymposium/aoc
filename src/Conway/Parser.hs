@@ -54,7 +54,7 @@ generationDirective =
 
 outOfBoundsCells :: Conway.CellAliases -> P.Parser Conway.CellIdent
 outOfBoundsCells aliases =
-  P.lstr "an" *> P.lstr "out-of-bounds" *> P.lstr "cell" *> P.lstr "is" *> alias aliases
+  P.phrase ["an", "out-of-bounds", "cell", "is"] *> alias aliases
 
 singleLayerFiniteConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
 singleLayerFiniteConwayInput transitions aliases = do
@@ -92,6 +92,7 @@ singleLayerInfiniteConwayInput dim (Conway.CellIdent emptinessCell) transitions 
     toCoord Conway.OneD (x, _) = V.D1 x
     toCoord Conway.TwoD (x, y) = V.D2 x y
     toCoord Conway.ThreeD (x, y) = V.D3 x y 0
+    toCoord Conway.FourD (x, y) = V.D4 x y 0 0
 
     grid :: P.Parser [String]
     grid = endBy1 (some cellState) (P.ws <|> eof)
@@ -129,6 +130,7 @@ cellTransitions aliases = do
 
 dimensions :: P.Parser Conway.SolvableConwayDimensions
 dimensions =
+  ["4", "dimensions"] `P.phraseAs` Conway.FourD <|>
   ["3", "dimensions"] `P.phraseAs` Conway.ThreeD <|>
   ["2", "dimensions"] `P.phraseAs` Conway.TwoD <|>
   ["1", "dimension"] `P.phraseAs` Conway.OneD

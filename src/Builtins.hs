@@ -145,14 +145,16 @@ allAdjacentCoords Conway.ThreeD (Value.D3 x y z) = upDown ++ zAdjacent
   where
     upDown = Value.D3 x y <$> [z-1, z+1]
     zAdjacent = (\(x', y') -> Value.D3 x' y' z) <$> allAdjacent (x, y)
-allAdjacentCoords  d coord = error ("Got an out-of-dimension (" <> show d <> ") coordinate " <> show coord)
+allAdjacentCoords  d coord = error ("adjacent: Got an out-of-dimension (" <> show d <> ") coordinate " <> show coord)
 
 allSurroundingCoords :: Conway.SolvableConwayDimensions -> Value.Coord -> [Value.Coord]
 allSurroundingCoords Conway.OneD (Value.D1 x) = Value.D1 <$> [x-1, x+1]
 allSurroundingCoords Conway.TwoD (Value.D2 x y) = uncurry Value.D2 <$> allSurrounding (x, y)
 allSurroundingCoords Conway.ThreeD p@(Value.D3 x y z) = filter (/= p) $ Value.D3 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1]
-allSurroundingCoords d coord = error ("Got an out-of-dimension (" <> show d <> ") coordinate " <> show coord)
+allSurroundingCoords Conway.FourD p@(Value.D4 x y z w) = filter (/= p) $ Value.D4 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1] <*> [w-1..w+1]
+allSurroundingCoords d coord = error ("surrounding: Got an out-of-dimension (" <> show d <> ") coordinate " <> show coord)
 
+pickMatching :: (Ord k, Eq a) => a -> M.Map k a -> [k] -> Maybe Value.Value
 pickMatching c state =
   Just .
     Value.I .
@@ -293,7 +295,8 @@ nextGeneration' context grd@(Value.InfiniteGrid ts@Conway.CellTransitions{..} di
       around Conway.OneD (Value.D1 x) = Value.D1 <$> [x-1..x+1]
       around Conway.TwoD (Value.D2 x y) = Value.D2 <$> [x-1..x+1] <*> [y-1..y+1]
       around Conway.ThreeD (Value.D3 x y z) = Value.D3 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1]
-      around d coord = error ("Got an out-of-dimension (" <> show d <> ") coordinate " <> show coord)
+      around Conway.FourD (Value.D4 x y z w) = Value.D4 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1] <*> [w-1..w+1]
+      around d coord = error ("next generation: Got an out-of-dimension (" <> show d <> ") coordinate " <> show coord)
 
       transition ctx coords c =
         fromMaybe (otherwiseCell c otherwiseCellIs) $

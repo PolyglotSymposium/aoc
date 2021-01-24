@@ -1,0 +1,13 @@
+conway of 4 dimensions and infinite size
+  initial state at ./y2020d17.txt
+  where '.' represents emptiness
+  and   '#' means 'active'
+  cells transition
+    from active to active if (neighbors active) = 2 || (neighbors active) = 3
+    from emptiness to active if (neighbors active) = 3
+    otherwise a cell is emptiness
+
+solution
+  after_transitions 6
+    | positions active
+    | count
