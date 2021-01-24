@@ -1,16 +1,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Conway.Parser
        ( conway
-       , twoDimensionalConwayInput
-       , oneDimensionalConwayInput
+       , singleLayerFiniteConwayInput
+       , singleLayerInfiniteConwayInput
        ) where
 
 import qualified Ast as Conway
 import qualified Conway.Ast as Conway
 import qualified Data.Map.Strict as M
+import           Data.Maybe (mapMaybe, listToMaybe)
 import           Data.Text hiding (zip, maximum, length)
+import           Control.Monad (guard)
 import qualified Parser as P
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -20,8 +23,10 @@ conway :: P.Parser Conway.Problem
 conway = do
   _ <- P.ws *> P.lstr "conway" *> P.lstr "of"
   dim <- dimensions
+  isInf <- optional infiniteClause
   statePath <- initialStatePath
-  aliases <- cellAliases
+  (aliases, emptinessCell) <- cellAliases
+  infEmptyCell <- infiniteEmptinessCell isInf emptinessCell
   transitions <- cellTransitions aliases
   oob <- optional $ try $ outOfBoundsCells aliases
   directive <- generationDirective
@@ -33,7 +38,13 @@ conway = do
     , Conway.cellTransitions=transitions
     , Conway.solution=directive
     , Conway.outOfBoundsCellsAre=oob
+    , Conway.infiniteEmptinessCell=infEmptyCell
     }
+
+  where
+    infiniteEmptinessCell (Just _) Nothing =
+      fail "Infinite grids must have a cell representing emptiness"
+    infiniteEmptinessCell inf i = pure $ inf >> i
 
 generationDirective :: P.Parser Conway.GenerationDirective
 generationDirective =
@@ -45,18 +56,8 @@ outOfBoundsCells :: Conway.CellAliases -> P.Parser Conway.CellIdent
 outOfBoundsCells aliases =
   P.lstr "an" *> P.lstr "out-of-bounds" *> P.lstr "cell" *> P.lstr "is" *> alias aliases
 
-oneDimensionalConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
-oneDimensionalConwayInput transitions aliases = do
-  r <- some cellState
-  let cells = (\(x, v) -> ((x, 0), v)) <$> zip [0..] r
-  pure $ V.Grid transitions (V.WidthHeight{ V.width=toInteger $ length r, V.height=1 }) $ M.fromList cells
-
-  where
-    cellState :: P.Parser Char
-    cellState = choice ((\(Conway.CellIdent c, _) -> char c) <$> aliases)
-
-twoDimensionalConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
-twoDimensionalConwayInput transitions aliases = do
+singleLayerFiniteConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
+singleLayerFiniteConwayInput transitions aliases = do
   rows <- grid
   let cells = positionCells rows
   let width = maximum $ fmap ((+ 1) . fst . fst) cells
@@ -68,6 +69,29 @@ twoDimensionalConwayInput transitions aliases = do
       (y, line) <- zip [0..] rows
       (x, cell) <- zip [0..] line
       [((x, y), cell)]
+
+    grid :: P.Parser [String]
+    grid = endBy1 (some cellState) (P.ws <|> eof)
+
+    cellState :: P.Parser Char
+    cellState = choice ((\(Conway.CellIdent c, _) -> char c) <$> aliases)
+
+singleLayerInfiniteConwayInput :: Conway.SolvableConwayDimensions -> Conway.CellIdent -> Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
+singleLayerInfiniteConwayInput dim (Conway.CellIdent emptinessCell) transitions aliases = do
+  rows <- grid
+  let cells = positionCells rows
+  pure $ V.InfiniteGrid transitions dim emptinessCell $ M.fromList cells
+
+  where
+    positionCells rows = do
+      (y, line) <- zip [0..] rows
+      (x, cell) <- zip [0..] line
+      guard $ cell /= emptinessCell
+      [(toCoord dim (x, y), cell)]
+
+    toCoord Conway.OneD (x, _) = V.D1 x
+    toCoord Conway.TwoD (x, y) = V.D2 x y
+    toCoord Conway.ThreeD (x, y) = V.D3 x y 0
 
     grid :: P.Parser [String]
     grid = endBy1 (some cellState) (P.ws <|> eof)
@@ -105,20 +129,44 @@ cellTransitions aliases = do
 
 dimensions :: P.Parser Conway.SolvableConwayDimensions
 dimensions =
-  P.lstr "2" *> P.lstr "dimensions" *> pure Conway.TwoD <|>
-  P.lstr "1" *> P.lstr "dimension" *> pure Conway.OneD
+  ["3", "dimensions"] `P.phraseAs` Conway.ThreeD <|>
+  ["2", "dimensions"] `P.phraseAs` Conway.TwoD <|>
+  ["1", "dimension"] `P.phraseAs` Conway.OneD
+
+infiniteClause :: P.Parser ()
+infiniteClause = P.phrase ["and", "infinite", "size"]
 
 initialStatePath :: P.Parser Text
-initialStatePath =
-  P.lstr "initial" *> P.lstr "state" *> P.lstr "at" *> P.filePath
+initialStatePath = P.phrase ["initial", "state", "at"] *> P.filePath
 
-cellAliases :: P.Parser [(Conway.CellIdent, Conway.CellAlias)]
-cellAliases =
-  P.lstr "where" *> sepBy1 cellAlias (P.lstr "and")
+type AliasOrEmptiness = Either (Conway.CellIdent, Conway.CellAlias) Conway.CellIdent
 
-cellAlias :: P.Parser (Conway.CellIdent, Conway.CellAlias)
-cellAlias = P.lexeme $ do
+cellAliases :: P.Parser ([(Conway.CellIdent, Conway.CellAlias)], Maybe Conway.CellIdent)
+cellAliases = values
+  where
+    values = do
+      vs <- P.lstr "where" *> sepBy1 cellAliasOrEmptiness (P.lstr "and")
+      case (toAlias <$> vs, mapMaybe emptinessIdent vs) of
+        ([], _) -> fail "Must have at least one cell alias"
+        (_, _:_:_) -> fail "Must not have more than one cell representing emptiness"
+        (aliases, emptiness) -> pure (aliases, listToMaybe emptiness)
+
+    toAlias = \case
+      Left (i, a) -> (i, a)
+      Right i -> (i, Conway.CellAlias "emptiness")
+
+    emptinessIdent = either (const Nothing) Just
+
+cellAliasOrEmptiness :: P.Parser AliasOrEmptiness
+cellAliasOrEmptiness = P.lexeme $ do
   character <- Conway.CellIdent <$> P.lexeme (char '\'' *> asciiChar <* char '\'')
-  _ <- P.lexeme "means"
-  aliasAs <- Conway.CellAlias <$> P.simpleQuoted
-  pure (character, aliasAs)
+  alias' character <|> emptiness character
+
+  where
+    alias' character = do
+      _ <- P.lexeme "means"
+      aliasAs <- Conway.CellAlias <$> P.simpleQuoted
+      pure $ Left (character, aliasAs)
+
+    emptiness character =
+      ["represents", "emptiness"] `P.phraseAs` Right character

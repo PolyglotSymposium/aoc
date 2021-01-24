@@ -16,6 +16,7 @@ module Value
        , merge
        , Traces(..)
        , RegisterHistory(..)
+       , Coord(..)
        ) where
 
 import qualified Conway.Ast as Conway
@@ -52,6 +53,31 @@ data Traces = Traces {
   , instructionPointers :: S.Set Integer
   }
 
+data Coord
+  = D1 Integer
+  | D2 Integer Integer
+  | D3 Integer Integer Integer
+  deriving (Show, Eq, Ord)
+
+getX :: Coord -> Integer
+getX (D1 v) = v
+getX (D2 v _) = v
+getX (D3 v _ _) = v
+
+getY :: Coord -> Integer
+getY (D1 _) = 0
+getY (D2 _ v) = v
+getY (D3 _ v _) = v
+
+minMaxBy :: (a -> Integer) -> [a] -> (Integer, Integer)
+minMaxBy f = foldr (\v (min', max') -> (min min' $ f v, max max' $ f v)) (0, 0)
+
+d2CellOrEmpty :: Char -> (Integer, Integer) -> Conway.SolvableConwayDimensions -> M.Map Coord Char -> Char
+d2CellOrEmpty emptyCell (x, y) Conway.TwoD = M.findWithDefault emptyCell $ D2 x y
+d2CellOrEmpty emptyCell (x, 0) Conway.OneD = M.findWithDefault emptyCell $ D1 x
+d2CellOrEmpty emptyCell _ Conway.OneD = const emptyCell
+d2CellOrEmpty emptyCell (x, y) Conway.ThreeD = M.findWithDefault emptyCell $ D3 x y 0
+
 data Value
   = I Integer
   | Vs [Value]
@@ -62,7 +88,9 @@ data Value
   | StepsOfFold (Value, Value -> Value -> Maybe Value)
   | CellState Char
   | Pos (Integer, Integer)
+  | Coord Coord
   | Grid Conway.CellTransitions WidthHeight (M.Map (Integer, Integer) Char)
+  | InfiniteGrid Conway.CellTransitions Conway.SolvableConwayDimensions Char (M.Map Coord Char)
   | Register Text
   | Program Prog.IndexedProgram InstructionPointer Registers Traces
   | Direction Turtle.Direction
@@ -74,8 +102,10 @@ data OrdValue
   | OrdTrue
   | OrdFalse
   | OrdCellState Char
+  | OrdCoord Coord
   | OrdPos (Integer, Integer)
   | OrdGrid (M.Map (Integer, Integer) Char)
+  | OrdInfiniteGrid Conway.SolvableConwayDimensions Char (M.Map Coord Char)
   | OrdRegister Text
   | OrdDirection Turtle.Direction
   | OrdTurtle (Integer, Integer) Turtle.Direction
@@ -88,7 +118,9 @@ toOrd True             = Just OrdTrue
 toOrd False            = Just OrdFalse
 toOrd (CellState s)    = Just $ OrdCellState s
 toOrd (Pos coords)     = Just $ OrdPos coords
+toOrd (Coord coord)    = Just $ OrdCoord coord
 toOrd (Grid _ _ state) = Just $ OrdGrid state
+toOrd (InfiniteGrid _ dim cell state) = Just $ OrdInfiniteGrid dim cell state
 toOrd (Register name)  = Just $ OrdRegister name
 toOrd (Direction d)    = Just $ OrdDirection d
 toOrd (Turtle pos d _) = Just $ OrdTurtle pos d
@@ -107,12 +139,20 @@ instance Show Value where
   show (Func _) = "<function>"
   show (CellState c) = "{cell:" ++ [c] ++ "}"
   show (Pos (x, y)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ "}"
+  show (Coord (D1 x)) = "{pos:x=" ++ show x ++ "}"
+  show (Coord (D2 x y)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ "}"
+  show (Coord (D3 x y z)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ ",z=" ++ show z ++ "}"
   show (Turtle (x, y) d _) =
     "{turtle:x=" ++ show x ++ ",y=" ++ show y ++ ",dir=" ++ show d ++ "}"
   show (Register r) = "{" ++ show r ++ ":reg}"
   show (Grid _ WidthHeight{ width, height } state) = do
      y <- [0..height-1]
      fmap (\x -> state M.! (x, y)) [0..width-1] ++ "\n"
+  show (InfiniteGrid _ dim emptyCell state) = do
+     let (minY, maxY) = minMaxBy getY $ M.keys state
+     let (minX, maxX) = minMaxBy getX $ M.keys state
+     y <- [minY..maxY]
+     fmap (\x -> d2CellOrEmpty emptyCell (x, y) dim state) [minX..maxX] ++ "\n"
   show Program{} = "<program...>"
   show (Direction d) = show d
 

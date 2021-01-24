@@ -101,9 +101,10 @@ runConwayProblem (source, text) =
           Right outputType -> do
             let stateSource = Path.takeDirectory source Path.</> unpack (Ast.initialStateAt ast)
             initialStateText <- readFile stateSource
-            let parseState = case Ast.dimensions ast of
-                               Ast.OneD -> Parse.oneDimensionalConwayInput
-                               Ast.TwoD -> Parse.twoDimensionalConwayInput
+            let parseState = case Ast.infiniteEmptinessCell ast of
+                               Nothing -> Parse.singleLayerFiniteConwayInput
+                               Just cell -> Parse.singleLayerInfiniteConwayInput (Ast.dimensions ast) cell
+
             case runParser (parseState (Ast.cellTransitions ast) (Ast.cellAliases ast)) stateSource $ pack initialStateText of
               Left err -> do
                 putStrLn "Error parsing Conway initial state:"

@@ -2,6 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE TupleSections #-}
 
 module Builtins
        ( listContext
@@ -17,7 +18,7 @@ import qualified Turtle.Ast as Turtle
 import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
-import           Data.Text hiding (count, length, foldr, zip, maximum, concat, filter)
+import           Data.Text hiding (count, length, foldr, zip, maximum, concat, filter, concatMap)
 import           Evaluator (evalValue, toBoolean)
 import qualified Program.Ast as Program
 import qualified Type
@@ -137,32 +138,46 @@ allSurrounding (x, y) =
     (x-1, y-1)
   ]
 
+allAdjacentCoords :: Conway.SolvableConwayDimensions -> Value.Coord -> [Value.Coord]
+allAdjacentCoords Conway.OneD (Value.D1 x) = Value.D1 <$> [x-1, x+1]
+allAdjacentCoords Conway.TwoD (Value.D2 x y) = uncurry Value.D2 <$> allAdjacent (x, y)
+allAdjacentCoords Conway.ThreeD (Value.D3 x y z) = upDown ++ zAdjacent
+  where
+    upDown = Value.D3 x y <$> [z-1, z+1]
+    zAdjacent = (\(x', y') -> Value.D3 x' y' z) <$> allAdjacent (x, y)
+allAdjacentCoords  d coord = error ("Got an out-of-dimension (" <> show d <> ") coordinate " <> show coord)
+
+allSurroundingCoords :: Conway.SolvableConwayDimensions -> Value.Coord -> [Value.Coord]
+allSurroundingCoords Conway.OneD (Value.D1 x) = Value.D1 <$> [x-1, x+1]
+allSurroundingCoords Conway.TwoD (Value.D2 x y) = uncurry Value.D2 <$> allSurrounding (x, y)
+allSurroundingCoords Conway.ThreeD p@(Value.D3 x y z) = filter (/= p) $ Value.D3 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1]
+allSurroundingCoords d coord = error ("Got an out-of-dimension (" <> show d <> ") coordinate " <> show coord)
+
+pickMatching c state =
+  Just .
+    Value.I .
+    toInteger .
+    M.size .
+    M.filter (== c) .
+    M.restrictKeys state .
+    S.fromList
+
 adjacent :: Value.Value
 adjacent = Value.Func $ \context cell ->
   case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
     (Just (Value.Grid _ _ state), Just (Value.Pos coords), Value.CellState c) ->
-      Just $
-        Value.I $
-        toInteger $
-        M.size $
-        M.filter (== c) $
-        M.restrictKeys state $
-        S.fromList $
-        allAdjacent coords
+      pickMatching c state $ allAdjacent coords
+    (Just (Value.InfiniteGrid _ dim _ state), Just (Value.Coord coords), Value.CellState c) ->
+      pickMatching c state $ allAdjacentCoords dim coords
     _ -> Nothing
 
 neighbors :: Value.Value
 neighbors = Value.Func $ \context cell ->
   case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
     (Just (Value.Grid _ _ state), Just (Value.Pos coords), Value.CellState c) ->
-      Just $
-        Value.I $
-        toInteger $
-        M.size $
-        M.filter (== c) $
-        M.restrictKeys state $
-        S.fromList $
-        allSurrounding coords
+      pickMatching c state $ allSurrounding coords
+    (Just (Value.InfiniteGrid _ dim _ state), Just (Value.Coord coords), Value.CellState c) ->
+      pickMatching c state $ allSurroundingCoords dim coords
     _ -> Nothing
 
 left :: Value.Value
@@ -212,7 +227,7 @@ corner = Value.Func $ \ctx current ->
 firstRepeatedGeneration :: Value.Value
 firstRepeatedGeneration = Value.Func $ \context v -> go S.empty context v
   where
-    go seen context grd@Value.Grid{} = do
+    go seen context grd = do
       ord <- Value.toOrd grd
       if S.member ord seen
       then
@@ -220,7 +235,6 @@ firstRepeatedGeneration = Value.Func $ \context v -> go S.empty context v
       else do
         next <- nextGeneration' context grd
         go (S.insert ord seen) context next
-    go _ _ _ = Nothing
 
 afterTransitions :: Value.Value
 afterTransitions = Value.Func $ \ctx n -> Just $ Value.Func $ \_ grd -> go n ctx grd
@@ -261,6 +275,30 @@ nextGeneration' context grd@(Value.Grid ts@Conway.CellTransitions{ .. } size sta
         fromMaybe (otherwiseCell c otherwiseCellIs) $
           matching cases coords c $
           M.insert "$pos" (Type.Position, Value.Pos coords) ctx
+
+      otherwiseCell _ (Conway.DefaultCell def) = Conway.ident def
+      otherwiseCell c Conway.Unchanged = c
+
+      matching [] _ _ _ = Nothing
+      matching ((from, to, cond):cs) coords c ctx =
+        if Conway.ident from == c && evaluatesToTrue ctx cond
+        then Just $ Conway.ident to
+        else matching cs coords c ctx
+
+nextGeneration' context grd@(Value.InfiniteGrid ts@Conway.CellTransitions{..} dim emptyCell state) =
+  Just $ Value.InfiniteGrid ts dim emptyCell $ M.filter (/= emptyCell) $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grd) context)) searchSpace
+    where
+      searchSpace = M.union state $ M.fromList $ concatMap (fmap (,emptyCell) . around dim) $ M.keys state
+
+      around Conway.OneD (Value.D1 x) = Value.D1 <$> [x-1..x+1]
+      around Conway.TwoD (Value.D2 x y) = Value.D2 <$> [x-1..x+1] <*> [y-1..y+1]
+      around Conway.ThreeD (Value.D3 x y z) = Value.D3 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1]
+      around d coord = error ("Got an out-of-dimension (" <> show d <> ") coordinate " <> show coord)
+
+      transition ctx coords c =
+        fromMaybe (otherwiseCell c otherwiseCellIs) $
+          matching cases coords c $
+          M.insert "$pos" (Type.Position, Value.Coord coords) ctx
 
       otherwiseCell _ (Conway.DefaultCell def) = Conway.ident def
       otherwiseCell c Conway.Unchanged = c
@@ -405,13 +443,18 @@ getPos _ = Nothing
 positions :: Value.Value
 positions = Value.Func $ \_ cs -> Just $ Value.Func $ \_ grd ->
   case (cs, grd) of
-    (Value.CellState c, Value.Grid _ _ state) ->
+    (Value.CellState c, Value.Grid _ _ state) -> filterCells Value.Pos c state
+    (Value.CellState c, Value.InfiniteGrid _ _ emptyCell _) | c == emptyCell -> Nothing
+    (Value.CellState c, Value.InfiniteGrid _ _ _ state) -> filterCells Value.Coord c state
+    _ -> Nothing
+
+  where
+    filterCells f c state =
       Just $
         Value.Vs $
-        fmap Value.Pos $
+        fmap f $
         M.keys $
         M.filter (== c) state
-    _ -> Nothing
 
 face :: Value.Value
 face = Value.Func $ \_ dir -> Just $ Value.Func $ \_ trt ->

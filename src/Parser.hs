@@ -8,6 +8,8 @@ module Parser
        , rawInteger
        , ident
        , lstr
+       , phrase
+       , phraseAs
        , lexeme
        , filePath
        , simpleQuoted
@@ -16,6 +18,7 @@ module Parser
        ) where
 
 import qualified Ast
+import           Data.Foldable (traverse_)
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import           Data.Text
@@ -46,6 +49,12 @@ rawInteger = L.signed ws L.decimal
 
 lstr :: Text -> Parser Text
 lstr = lexeme . string
+
+phrase :: [Text] -> Parser ()
+phrase = traverse_ lstr
+
+phraseAs :: [Text] -> a -> Parser a
+phraseAs v r = pure r <* phrase v
 
 identStart :: S.Set Char
 identStart = S.fromList ("_$" ++ ['a'..'z'] ++ ['A'..'Z'])

@@ -19,7 +19,7 @@ module Conway.Ast
 import Data.Text
 import qualified Ast
 
-newtype CellIdent = CellIdent Char deriving (Show, Eq)
+newtype CellIdent = CellIdent Char deriving (Show, Eq, Ord)
 newtype CellAlias = CellAlias Text deriving (Show, Eq)
 
 data OtherwiseCell
@@ -56,9 +56,10 @@ data GenerationDirective
   deriving (Show, Eq)
 
 data SolvableConwayDimensions
-  = TwoD
-  | OneD
-  deriving (Show, Eq)
+  = OneD
+  | TwoD
+  | ThreeD
+  deriving (Show, Eq, Ord)
 
 type CellAliases = [(CellIdent, CellAlias)]
 
@@ -70,6 +71,7 @@ data Problem =
   , cellTransitions :: CellTransitions
   , outOfBoundsCellsAre :: Maybe CellIdent
   , solution :: GenerationDirective
+  , infiniteEmptinessCell :: Maybe CellIdent
   } deriving (Show, Eq)
 
 nextGenerationSolution :: Ast.Solution
