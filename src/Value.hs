@@ -2,6 +2,7 @@
 module Value
        ( Value(..)
        , WidthHeight(..)
+       , GridBounds(..)
        , InstructionPointer(..)
        , Registers(..)
        , registersFrom
@@ -17,6 +18,8 @@ module Value
        , Traces(..)
        , RegisterHistory(..)
        , Coord(..)
+       , getX
+       , getY
        ) where
 
 import qualified Conway.Ast as Conway
@@ -31,7 +34,12 @@ import qualified Data.Set as S
 
 data WidthHeight
   = WidthHeight { width :: Integer, height :: Integer }
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
+
+data GridBounds
+  = Infinite
+  | Finite WidthHeight
+  deriving (Show, Eq, Ord)
 
 newtype InstructionPointer
   = Ip Integer
@@ -93,8 +101,7 @@ data Value
   | CellState Char
   | Pos (Integer, Integer)
   | Coord Coord
-  | Grid Conway.CellTransitions WidthHeight (M.Map (Integer, Integer) Char)
-  | InfiniteGrid Conway.CellTransitions Conway.SolvableConwayDimensions Char (M.Map Coord Char)
+  | Grid Conway.CellTransitions GridBounds Conway.SolvableConwayDimensions (Maybe Char) (M.Map Coord Char)
   | Register Text
   | Program Prog.IndexedProgram InstructionPointer Registers Traces
   | Direction Turtle.Direction
@@ -108,7 +115,7 @@ data OrdValue
   | OrdCellState Char
   | OrdCoord Coord
   | OrdPos (Integer, Integer)
-  | OrdGrid (M.Map (Integer, Integer) Char)
+  | OrdGrid GridBounds Conway.SolvableConwayDimensions (Maybe Char) (M.Map Coord Char)
   | OrdInfiniteGrid Conway.SolvableConwayDimensions Char (M.Map Coord Char)
   | OrdRegister Text
   | OrdDirection Turtle.Direction
@@ -123,8 +130,7 @@ toOrd False            = Just OrdFalse
 toOrd (CellState s)    = Just $ OrdCellState s
 toOrd (Pos coords)     = Just $ OrdPos coords
 toOrd (Coord coord)    = Just $ OrdCoord coord
-toOrd (Grid _ _ state) = Just $ OrdGrid state
-toOrd (InfiniteGrid _ dim cell state) = Just $ OrdInfiniteGrid dim cell state
+toOrd (Grid _ bs dim ec st) = Just $ OrdGrid bs dim ec st
 toOrd (Register name)  = Just $ OrdRegister name
 toOrd (Direction d)    = Just $ OrdDirection d
 toOrd (Turtle pos d _) = Just $ OrdTurtle pos d
@@ -150,10 +156,11 @@ instance Show Value where
   show (Turtle (x, y) d _) =
     "{turtle:x=" ++ show x ++ ",y=" ++ show y ++ ",dir=" ++ show d ++ "}"
   show (Register r) = "{" ++ show r ++ ":reg}"
-  show (Grid _ WidthHeight{ width, height } state) = do
-     y <- [0..height-1]
-     fmap (\x -> state M.! (x, y)) [0..width-1] ++ "\n"
-  show (InfiniteGrid _ dim emptyCell state) = do
+  show (Grid _ _ dim cell state) = do
+     let emptyCell =
+           case cell of
+             Just ec -> ec
+             _ -> ' '
      let (minY, maxY) = minMaxBy getY $ M.keys state
      let (minX, maxX) = minMaxBy getX $ M.keys state
      y <- [minY..maxY]

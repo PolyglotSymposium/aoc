@@ -4,8 +4,7 @@
 
 module Conway.Parser
        ( conway
-       , singleLayerFiniteConwayInput
-       , singleLayerInfiniteConwayInput
+       , singleLayerConwayInput
        ) where
 
 import qualified Ast as Conway
@@ -38,7 +37,8 @@ conway = do
     , Conway.cellTransitions=transitions
     , Conway.solution=directive
     , Conway.outOfBoundsCellsAre=oob
-    , Conway.infiniteEmptinessCell=infEmptyCell
+    , Conway.emptinessCell=infEmptyCell
+    , Conway.gridIsInfinite=isInf == Just ()
     }
 
   where
@@ -56,37 +56,29 @@ outOfBoundsCells :: Conway.CellAliases -> P.Parser Conway.CellIdent
 outOfBoundsCells aliases =
   P.phrase ["an", "out-of-bounds", "cell", "is"] *> alias aliases
 
-singleLayerFiniteConwayInput :: Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
-singleLayerFiniteConwayInput transitions aliases = do
+singleLayerConwayInput :: Bool -> Conway.SolvableConwayDimensions -> Maybe Conway.CellIdent -> Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
+singleLayerConwayInput gridIsInfinite dim emptinessCell transitions aliases = do
   rows <- grid
   let cells = positionCells rows
-  let width = maximum $ fmap ((+ 1) . fst . fst) cells
-  let height = maximum $ fmap ((+ 1) . snd . fst) cells
-  pure $ V.Grid transitions (V.WidthHeight{ V.width=width, V.height=height }) $ M.fromList cells
+  pure $ V.Grid transitions (gridBounds cells) dim ec $ M.fromList cells
 
   where
+    ec = (\(Conway.CellIdent c) -> c) <$> emptinessCell
+
+    gridBounds cells =
+      if gridIsInfinite
+      then V.Infinite
+      else
+        let
+          width = maximum $ fmap ((+ 1) . V.getX . fst) cells
+          height = maximum $ fmap ((+ 1) . V.getY . fst) cells
+        in
+          V.Finite $ V.WidthHeight { V.width=width, V.height=height }
+
     positionCells rows = do
       (y, line) <- zip [0..] rows
       (x, cell) <- zip [0..] line
-      [((x, y), cell)]
-
-    grid :: P.Parser [String]
-    grid = endBy1 (some cellState) (P.ws <|> eof)
-
-    cellState :: P.Parser Char
-    cellState = choice ((\(Conway.CellIdent c, _) -> char c) <$> aliases)
-
-singleLayerInfiniteConwayInput :: Conway.SolvableConwayDimensions -> Conway.CellIdent -> Conway.CellTransitions -> Conway.CellAliases -> P.Parser V.Value
-singleLayerInfiniteConwayInput dim (Conway.CellIdent emptinessCell) transitions aliases = do
-  rows <- grid
-  let cells = positionCells rows
-  pure $ V.InfiniteGrid transitions dim emptinessCell $ M.fromList cells
-
-  where
-    positionCells rows = do
-      (y, line) <- zip [0..] rows
-      (x, cell) <- zip [0..] line
-      guard $ cell /= emptinessCell
+      guard $ Just cell /= ec
       [(toCoord dim (x, y), cell)]
 
     toCoord Conway.OneD (x, _) = V.D1 x

@@ -138,6 +138,11 @@ allSurrounding (x, y) =
     (x-1, y-1)
   ]
 
+modX :: Value.Coord -> (Integer -> Integer) -> Value.Coord
+modX (Value.D1 x) f = Value.D1 (f x)
+modX (Value.D2 x y) f = Value.D2 (f x) y
+modX (Value.D3 x y z) f = Value.D3 (f x) y z
+
 allAdjacentCoords :: Conway.SolvableConwayDimensions -> Value.Coord -> [Value.Coord]
 allAdjacentCoords Conway.OneD (Value.D1 x) = Value.D1 <$> [x-1, x+1]
 allAdjacentCoords Conway.TwoD (Value.D2 x y) = uncurry Value.D2 <$> allAdjacent (x, y)
@@ -167,26 +172,22 @@ pickMatching c state =
 adjacent :: Value.Value
 adjacent = Value.Func $ \context cell ->
   case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
-    (Just (Value.Grid _ _ state), Just (Value.Pos coords), Value.CellState c) ->
-      pickMatching c state $ allAdjacent coords
-    (Just (Value.InfiniteGrid _ dim _ state), Just (Value.Coord coords), Value.CellState c) ->
+    (Just (Value.Grid _ _ dim _ state), Just (Value.Coord coords), Value.CellState c) ->
       pickMatching c state $ allAdjacentCoords dim coords
     _ -> Nothing
 
 neighbors :: Value.Value
 neighbors = Value.Func $ \context cell ->
   case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
-    (Just (Value.Grid _ _ state), Just (Value.Pos coords), Value.CellState c) ->
-      pickMatching c state $ allSurrounding coords
-    (Just (Value.InfiniteGrid _ dim _ state), Just (Value.Coord coords), Value.CellState c) ->
+    (Just (Value.Grid _ _ dim _ state), Just (Value.Coord coords), Value.CellState c) ->
       pickMatching c state $ allSurroundingCoords dim coords
     _ -> Nothing
 
 left :: Value.Value
 left = Value.Func $ \context cell ->
   case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
-    (Just (Value.Grid _ _ state), Just (Value.Pos (x, y)), Value.CellState c) ->
-      case (M.lookup (x-1, y) state, C.identValue "$oob" context) of
+    (Just (Value.Grid _ _ _ _ state), Just (Value.Coord coord), Value.CellState c) ->
+      case (M.lookup (modX coord (\x -> x - 1)) state, C.identValue "$oob" context) of
         (Just c', _)                          -> Just $ toBoolean $ c' == c
         (Nothing, Just (Value.CellState oob)) -> Just $ toBoolean $ oob == c
         _                                     -> Nothing
@@ -196,8 +197,8 @@ left = Value.Func $ \context cell ->
 right :: Value.Value
 right = Value.Func $ \context cell ->
   case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
-    (Just (Value.Grid _ _ state), Just (Value.Pos (x, y)), Value.CellState c) ->
-      case (M.lookup (x+1, y) state, C.identValue "$oob" context) of
+    (Just (Value.Grid _ _ _ _ state), Just (Value.Coord coord), Value.CellState c) ->
+      case (M.lookup (modX coord (+ 1)) state, C.identValue "$oob" context) of
         (Just c', _)                          -> Just $ toBoolean $ c' == c
         (Nothing, Just (Value.CellState oob)) -> Just $ toBoolean $ oob == c
         _                                     -> Nothing
@@ -216,10 +217,12 @@ at = Value.Func $ \ctx arg ->
 corner :: Value.Value
 corner = Value.Func $ \ctx current ->
   case (C.identValue "$grid" ctx, current) of
-    (Just (Value.Grid _ size _), Value.Pos (x, y)) ->
+    (Just (Value.Grid _ (Value.Finite size) _ _ _), Value.Coord coord) ->
       let
         width = Value.width size
         height = Value.height size
+        x = Value.getX coord
+        y = Value.getY coord
       in
         Just $
           toBoolean $
@@ -250,53 +253,36 @@ afterTransitions = Value.Func $ \ctx n -> Just $ Value.Func $ \_ grd -> go n ctx
 to2dWithTransitions :: Value.Value
 to2dWithTransitions = Value.Func $ \ctx n -> Just $ Value.Func $ \_ grd -> go n 0 ctx grd
   where
-    go (Value.I n) y _ (Value.Grid ts size state) | y == n =
-      Just $ setY n ts (size { Value.height = 1 }) state
-    go (Value.I n) y ctx (Value.Grid ts size state) | y < n = do
+    go (Value.I n) y _ (Value.Grid ts (Value.Finite size) _ empty state) | y == n =
+      Just $ setY n ts (size { Value.height = 1 }) empty state
+    go (Value.I n) y ctx (Value.Grid ts (Value.Finite size) dim ec state) | y < n = do
       let myState = M.mapKeys (setY' y) state
-      next <- nextGeneration' ctx $ setY 0 ts size state
+      next <- nextGeneration' ctx $ setY 0 ts size ec state
       remainder <- go (Value.I n) (y + 1) ctx next
       case remainder of
-        Value.Grid _ remSize remState -> Just $ Value.Grid ts (remSize { Value.width=Value.width remSize + 1 }) $ M.union myState remState
+        Value.Grid _ (Value.Finite remSize) _ _ remState -> Just $ Value.Grid ts (Value.Finite (remSize { Value.width=Value.width remSize + 1 })) Conway.TwoD ec $ M.union myState remState
         _ -> Nothing
 
     go _ _ _ _ = Nothing
 
-    setY y ts size = Value.Grid ts size . M.mapKeys (setY' y)
+    setY y ts size ec = Value.Grid ts (Value.Finite size) Conway.TwoD ec . M.mapKeys (setY' y)
 
-    setY' y (x, _) = (x, y)
+    setY' y (Value.D1 x) = Value.D2 x y
+    setY' y (Value.D2 x _) = Value.D2 x y
+    setY' _ _ = error "Cannot convert dimensions above 2D to 2D"
 
 nextGeneration :: Value.Value
 nextGeneration = Value.Func nextGeneration'
 
-nextGeneration' :: C.Context -> Value.Value -> Maybe Value.Value
-nextGeneration' context grd@(Value.Grid ts@Conway.CellTransitions{ .. } size state) =
-  Just $ Value.Grid ts size $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grd) context)) state
+nextGeneration' context grd@(Value.Grid ts@Conway.CellTransitions{..} bounds dim emptyCell state) =
+  Just $ Value.Grid ts bounds dim emptyCell $ M.filter ((/= emptyCell) . Just) $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grd) context)) searchSpace
     where
-      transition ctx coords c =
-        fromMaybe (otherwiseCell c otherwiseCellIs) $
-          matching cases coords c $
-          M.insert "$pos" (Type.Position, Value.Pos coords) ctx
-
-      otherwiseCell _ (Conway.DefaultCell def) = Conway.ident def
-      otherwiseCell c Conway.Unchanged = c
-
-      matching [] _ _ _ = Nothing
-      matching ((from, to, cond):cs) coords c ctx =
-        if Conway.ident from == c && evaluatesToTrue ctx cond
-        then Just $ Conway.ident to
-        else matching cs coords c ctx
-
-nextGeneration' context grd@(Value.InfiniteGrid ts@Conway.CellTransitions{..} dim emptyCell state) =
-  Just $ Value.InfiniteGrid ts dim emptyCell $ M.filter (/= emptyCell) $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grd) context)) searchSpace
-    where
-      searchSpace = M.union state $ M.fromList $ concatMap (fmap (,emptyCell) . around dim) $ M.keys state
-
-      around Conway.OneD (Value.D1 x) = Value.D1 <$> [x-1..x+1]
-      around Conway.TwoD (Value.D2 x y) = Value.D2 <$> [x-1..x+1] <*> [y-1..y+1]
-      around Conway.ThreeD (Value.D3 x y z) = Value.D3 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1]
-      around Conway.FourD (Value.D4 x y z w) = Value.D4 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1] <*> [w-1..w+1]
-      around d coord = error ("next generation: Got an out-of-dimension (" <> show d <> ") coordinate " <> show coord)
+      searchSpace =
+        case emptyCell of
+          Just ec ->
+            M.union state $ M.fromList $ concatMap (fmap (,ec) . around dim) $ M.keys state
+          Nothing ->
+            state
 
       transition ctx coords c =
         fromMaybe (otherwiseCell c otherwiseCellIs) $
@@ -312,6 +298,22 @@ nextGeneration' context grd@(Value.InfiniteGrid ts@Conway.CellTransitions{..} di
         then Just $ Conway.ident to
         else matching cs coords c ctx
 
+      around dim coord = filter (withinBounds bounds) $ justAround dim coord
+
+        where
+          withinBounds Value.Infinite _ = True
+          withinBounds (Value.Finite Value.WidthHeight{width}) (Value.D1 x) = 0 <= x && x < width
+          withinBounds (Value.Finite Value.WidthHeight{width, height}) (Value.D2 x y) =
+            0 <= x && x < width && 0 <= y && y < height
+          withinBounds bounds coord =
+            error $ "Could not perform bounds check for position withing bounds " <> show coord <> ", " <> show bounds
+
+          justAround Conway.OneD (Value.D1 x) = Value.D1 <$> [x-1..x+1]
+          justAround Conway.TwoD (Value.D2 x y) = Value.D2 <$> [x-1..x+1] <*> [y-1..y+1]
+          justAround Conway.ThreeD (Value.D3 x y z) = Value.D3 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1]
+          justAround Conway.FourD (Value.D4 x y z w) = Value.D4 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1] <*> [w-1..w+1]
+          justAround d c = error ("next generation: Got an out-of-dimension (" <> show d <> ") coordinate " <> show c)
+
 nextGeneration' _ _ = Nothing
 
 readingOrder :: Value.Value
@@ -321,7 +323,7 @@ readingOrder' :: C.Context -> Value.Value -> Maybe Value.Value
 readingOrder' context ps =
   -- TODO generation_0 is not the best thing to use here since grids _can_ change
   case (C.identValue "$generation_0" context, ps) of
-    (Just (Value.Grid _ size _), Value.Vs vs) ->
+    (Just (Value.Grid _ (Value.Finite size) _ _ _), Value.Vs vs) ->
       Value.Vs <$> mapM (fmap (readingIndex (Value.width size)) . getPos) vs
     _ -> Nothing
 
@@ -426,29 +428,29 @@ getCellState _ = Nothing
 countCells' :: Value.Value -> Value.Value -> Maybe Value.Value
 countCells' (Value.Vs vs) grd =
   case (grd, sequence $ getCellState <$> vs) of
-    (Value.Grid _ size state, Just buckets) ->
+    (Value.Grid _ (Value.Finite size) _ _ state, Just buckets) ->
       let
-        counts = go (Value.width size) (Value.height size) state $ M.fromList $ zip buckets (repeat 0)
+        counts = go (M.elems state) $ M.fromList $ zip buckets (repeat 0)
       in
         Just $ Value.Vs $ fmap (\v -> Value.I (counts M.! v)) buckets
     _ -> Nothing
 
   where
-    go width height state buckets =
-      foldr (M.adjust (+ 1)) buckets [state M.! (x, y) | x <- [0..width-1], y <- [0..height-1]]
+    go values buckets =
+      foldr (M.adjust (+ 1)) buckets values
 
 countCells' _ _ = Nothing
 
 getPos :: Value.Value -> Maybe (Integer, Integer)
-getPos (Value.Pos coord) = Just coord
+getPos (Value.Coord (Value.D1 x)) = Just (x, 0)
+getPos (Value.Coord (Value.D2 x y)) = Just (x, y)
 getPos _ = Nothing
 
 positions :: Value.Value
 positions = Value.Func $ \_ cs -> Just $ Value.Func $ \_ grd ->
   case (cs, grd) of
-    (Value.CellState c, Value.Grid _ _ state) -> filterCells Value.Pos c state
-    (Value.CellState c, Value.InfiniteGrid _ _ emptyCell _) | c == emptyCell -> Nothing
-    (Value.CellState c, Value.InfiniteGrid _ _ _ state) -> filterCells Value.Coord c state
+    (Value.CellState c, Value.Grid _ _ _ emptyCell _) | Just c == emptyCell -> Nothing
+    (Value.CellState c, Value.Grid _ _ _ _ state) -> filterCells Value.Coord c state
     _ -> Nothing
 
   where

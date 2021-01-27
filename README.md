@@ -89,21 +89,24 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Error formatting
    - [ ] Clean up *Problem.hs files
    - [ ] Comments
-   - [ ] Application parsing is wonky (and it should be `(value value)`) not `(text value)`
+   - [ ] Application parsing is wonky (and it should be `(value value)` not `(text value)`)
    - [ ] Doc-gen of builtins.
    - [ ] Too many parens necessary in places.
-   - [ ] Travis
+   - [ ] Github actions
    - [ ] Hlint
    - [ ] "One free" in solutions should only check when list is the type
    - [ ] Better organization post-remedial-program
    - [ ] Syntactic sugar.
    - [ ] Properly type check `&` composition
+   - [ ] Add appropriate error-on-warn settings
+   - [ ] Syntax highlighting (emacs)
+ - `list`
+   - [ ] Allow for more complex input parsing
  - `conway`
    - [ ] Transitions should have context distinct from `grid`
    - [ ] Allow `any_state` in transitions "from"
    - [ ] `Grid` should store what generation it is 
    - [ ] Optimize (2015, d18 is kinda slow)
-   - [ ] Faster structure (since we're not doing sparse and things have a fixed size, ATM)
    - [ ] Lumberyard part 2
  - `program`
    - [ ] Check no repeated names in instruction specs.

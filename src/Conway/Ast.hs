@@ -72,7 +72,8 @@ data Problem =
   , cellTransitions :: CellTransitions
   , outOfBoundsCellsAre :: Maybe CellIdent
   , solution :: GenerationDirective
-  , infiniteEmptinessCell :: Maybe CellIdent
+  , emptinessCell :: Maybe CellIdent
+  , gridIsInfinite :: Bool
   } deriving (Show, Eq)
 
 nextGenerationSolution :: Ast.Solution
