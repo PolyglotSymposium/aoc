@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
-          curl -sSL https://get.haskellstack.org/ | sh
+          stack upgrade
           ./scripts/gen_example_grid.py
           git config user.name update-benchmarks-gilli-bot
           git config user.email gilli-bot@example.com
