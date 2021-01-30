@@ -1,0 +1,18 @@
+name: Update Benchmarks
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: |
+          stack upgrade
+          ./scripts/gen_example_grid.py
+          git config user.name update-benchmarks-gilli-bot
+          git config user.email gilli-bot@example.com
+          git add .
+          git commit -m "Update benchmarks"
+          git push
