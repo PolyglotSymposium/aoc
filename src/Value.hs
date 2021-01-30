@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
 module Value
        ( Value(..)
        , WidthHeight(..)
@@ -106,6 +105,7 @@ data Value
   | Program Prog.IndexedProgram InstructionPointer Registers Traces
   | Direction Turtle.Direction
   | Turtle (Integer, Integer) Turtle.Direction [Turtle.Action]
+  | ParsedLine (M.Map Text Value)
 
 data OrdValue
   = OrdI Integer
@@ -120,11 +120,12 @@ data OrdValue
   | OrdRegister Text
   | OrdDirection Turtle.Direction
   | OrdTurtle (Integer, Integer) Turtle.Direction
+  | OrdParsedLine (M.Map Text OrdValue)
   deriving (Ord, Eq)
 
 toOrd :: Value -> Maybe OrdValue
 toOrd (I v)            = Just $ OrdI v
-toOrd (Vs vs)          = OrdVs <$> sequence (toOrd <$> vs)
+toOrd (Vs vs)          = OrdVs <$> traverse toOrd vs
 toOrd True             = Just OrdTrue
 toOrd False            = Just OrdFalse
 toOrd (CellState s)    = Just $ OrdCellState s
@@ -134,6 +135,7 @@ toOrd (Grid _ bs dim ec st) = Just $ OrdGrid bs dim ec st
 toOrd (Register name)  = Just $ OrdRegister name
 toOrd (Direction d)    = Just $ OrdDirection d
 toOrd (Turtle pos d _) = Just $ OrdTurtle pos d
+toOrd (ParsedLine vs)  = OrdParsedLine <$> traverse toOrd vs
 toOrd Program{}        = Nothing
 toOrd (Fold _)         = Nothing
 toOrd (Func _)         = Nothing
@@ -167,6 +169,8 @@ instance Show Value where
      fmap (\x -> d2CellOrEmpty emptyCell (x, y) dim state) [minX..maxX] ++ "\n"
   show Program{} = "<program...>"
   show (Direction d) = show d
+  show (ParsedLine vs) =
+    "{" <> L.intercalate ", " ((\(k, v) -> unpack k <> "=" <> show v) <$> M.toList vs) <> "}"
 
 type Context = M.Map Text (Type.Type, Value.Value)
 

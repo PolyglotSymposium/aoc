@@ -15,5 +15,6 @@ data Type
   | Register
   | Turtle
   | Direction
+  | ParsedLine
   deriving (Show, Eq)
 

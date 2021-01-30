@@ -64,6 +64,8 @@ main = hspec $ do
 
     testPartWithBench 2015 1 2 1797
 
+    testPartWithBench 2015 2 1 1598415
+
     testPartWithBench 2015 3 1 2592
 
     testPartWithBench 2015 18 1 821

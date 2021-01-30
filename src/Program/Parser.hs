@@ -37,16 +37,15 @@ programSpec = do
     , Program.globalRegisters = globalRegs
     }
 
--- global register named acc starting at 0
 globalRegisters :: P.Parser (S.Set Text)
 globalRegisters = fmap S.fromList $ many globalRegisterDeclaration
   where
     globalRegisterDeclaration =
-      P.lstr "global" *> P.lstr "register" *> P.lstr "named" *> P.lexeme P.ident
+      P.phrase ["global", "register", "named"] *> P.lexeme P.ident
 
 traceRules :: P.Parser (S.Set Program.Trace)
 traceRules =
-  fromMaybe S.empty <$> optional (S.singleton Program.TraceRegisterValues <$ P.lstr "trace" <* P.lstr "register" <* P.lstr "values")
+  fromMaybe S.empty <$> optional (S.singleton Program.TraceRegisterValues <$ P.phrase ["trace", "register", "values"])
 
 program :: Program.Problem -> P.Parser Program.IntermediateProgram
 program spec = Program.IntermediateInstructions <$> manyTill (instruction $ Program.instructions spec) eof

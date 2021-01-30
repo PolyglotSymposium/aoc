@@ -6,6 +6,7 @@
 
 module Builtins
        ( listContext
+       , numberFromParsedLine
        , conwayContext
        , programContext
        , turtleContext
@@ -18,7 +19,7 @@ import qualified Turtle.Ast as Turtle
 import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
-import           Data.Text hiding (count, length, foldr, zip, maximum, concat, filter, concatMap)
+import           Data.Text hiding (count, length, foldr, zip, maximum, concat, filter, concatMap, minimum)
 import           Evaluator (evalValue, toBoolean)
 import qualified Program.Ast as Program
 import qualified Type
@@ -73,6 +74,17 @@ maximum' = Value.Func $ \_ -> \case
       pure $ i:others
     extractIntegers _ = Nothing
 
+minimum' :: Value.Value
+minimum' = Value.Func $ \_ -> \case
+                      Value.Vs vs -> Value.I . minimum  <$> extractIntegers vs
+                      _ -> Nothing
+  where
+    extractIntegers [] = Just []
+    extractIntegers (Value.I i:rest) = do
+      others <- extractIntegers rest
+      pure $ i:others
+    extractIntegers _ = Nothing
+
 even' :: Value.Value
 even' = Value.Func $ \_ -> \case
                       Value.I v -> Just $ toBoolean $ even v
@@ -109,6 +121,12 @@ dupe :: Value.Value
 dupe = Value.Func $ \_ -> \case
                       Value.Vs vs -> Just (Value.Vs (vs ++ vs))
                       _ -> Nothing
+
+numberFromParsedLine :: Text -> Value.Value
+numberFromParsedLine name =
+  Value.Func $ \_ -> \case
+    Value.ParsedLine values -> Just $ values M.! name
+    _ -> Nothing
 
 evaluatesToTrue :: Value.Context -> Ast.Value -> Bool
 evaluatesToTrue context ast =
@@ -592,6 +610,7 @@ baseIdentifiers =
   , ("even",               num --> bool,                       even')
   , ("odd",                num --> bool,                       odd')
   , ("maximum",            list num --> num,                   maximum')
+  , ("minimum",            list num --> num,                   minimum')
   , ("base_zero_index_of", a --> (list a --> num),             indexOf0)
   , ("manhattan_distance", pos --> (pos --> num),              manhattanDistance)
   , ("combinations",       num --> (list a --> list (list a)), combos)
