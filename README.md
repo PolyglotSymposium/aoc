@@ -5,10 +5,11 @@ puzzles.
 
 ## Why?
 
-At the time of writing this, Advent of Code has had 5 events, for a total of a
-little less than 250 problems. These problems, in my observation, span a
-plethora of "domains" many of which are well known or reside in the sphere of
-classical computer science problems (e.g. cellular automaton, graphs, etc...).
+At the time of writing this, Advent of Code has had [6 events][events], for a
+total of a little less than 250 problems. These problems, in my observation,
+span a plethora of "domains" many of which are well known or reside in the
+sphere of classical computer science problems (e.g. cellular automaton, graphs,
+etc...).
 
 I have found Advent of Code to be a great learning tool, and I love writing toy
 programming languages so I figured, "Why not try tackle some of these domains?"
@@ -119,3 +120,6 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Are types in instruction spec really necessary?
  - `turtle`
    - [ ] Dimensions probably don't matter.
+
+
+ [events]: https://adventofcode.com/2020/events
