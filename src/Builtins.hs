@@ -17,7 +17,7 @@ import qualified Conway.Ast as Conway
 import           Control.Monad (replicateM)
 import qualified Turtle.Ast as Turtle
 import qualified Data.Map.Strict as M
-import           Data.Maybe (fromMaybe)
+import           Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Set as S
 import           Data.Text hiding (count, length, foldr, zip, maximum, concat, filter, concatMap, minimum)
 import           Evaluator (evalValue, toBoolean)
@@ -33,74 +33,62 @@ makeFold i f = Value.Fold (Value.I i, \v1 v2 ->
     _                        -> Nothing)
 
 count :: Value.Value
-count = Value.Func $ \_ v ->
-  case v of
-    Value.Vs vs -> Just $ Value.I $ toInteger $ length vs
-    _ -> Nothing
+count = funcOfList $ Just . Value.I . toInteger . length
 
 repeats :: Value.Value
-repeats = Value.Func $ \_ v -> Value.Vs <$> go S.empty v
+repeats = funcOfList $ fmap Value.Vs . go S.empty
   where
-    go _ (Value.Vs []) = Just []
-    go seen (Value.Vs (v:vs)) = do
+    go _ [] = Just []
+    go seen (v:vs) = do
       ord  <- Value.toOrd v
-      rest <- go (S.insert ord seen) $ Value.Vs vs
+      rest <- go (S.insert ord seen) vs
       pure $ [v | S.member ord seen] ++ rest
-    go _ _ = Nothing
 
 unique :: Value.Value
-unique = Value.Func $ \_ v -> Value.Vs <$> go S.empty v
+unique = funcOfList $ fmap Value.Vs . go S.empty
   where
-    go _ (Value.Vs []) = Just []
-    go seen (Value.Vs (v:vs)) = do
+    go _ [] = Just []
+    go seen (v:vs) = do
       ord  <- Value.toOrd v
-      rest <- go (S.insert ord seen) $ Value.Vs vs
+      rest <- go (S.insert ord seen) vs
       pure $ [v | not $ S.member ord seen] ++ rest
-    go _ _ = Nothing
 
 first :: Value.Value
-first = Value.Func $ \_ -> \case
-                      Value.Vs (v:_) -> Just v
+first = funcOfList listToMaybe
+
+listFunctionOverIntegers :: ([Integer] -> Value.Value) -> Value.Value
+listFunctionOverIntegers f =
+  funcOfList $ fmap f . extractIntegers
+
+  where
+    extractIntegers [] = Just []
+    extractIntegers (Value.I i:rest) = do
+      others <- extractIntegers rest
+      pure $ i:others
+    extractIntegers _ = Nothing
+
+funcOfList :: ([Value.Value] -> Maybe Value.Value) -> Value.Value
+funcOfList f = Value.Func $ \_ -> \case
+                      Value.Vs vs -> f vs
+                      _ -> Nothing
+
+funcOfNumber :: (Integer -> Maybe Value.Value) -> Value.Value
+funcOfNumber f = Value.Func $ \_ -> \case
+                      Value.I v -> f v
                       _ -> Nothing
 
 maximum' :: Value.Value
-maximum' = Value.Func $ \_ -> \case
-                      Value.Vs vs -> Value.I . maximum <$> extractIntegers vs
-                      _ -> Nothing
-  where
-    extractIntegers [] = Just []
-    extractIntegers (Value.I i:rest) = do
-      others <- extractIntegers rest
-      pure $ i:others
-    extractIntegers _ = Nothing
+maximum' = listFunctionOverIntegers $ Value.I . maximum
 
 minimum' :: Value.Value
-minimum' = Value.Func $ \_ -> \case
-                      Value.Vs vs -> Value.I . minimum  <$> extractIntegers vs
-                      _ -> Nothing
-  where
-    extractIntegers [] = Just []
-    extractIntegers (Value.I i:rest) = do
-      others <- extractIntegers rest
-      pure $ i:others
-    extractIntegers _ = Nothing
-
-even' :: Value.Value
-even' = Value.Func $ \_ -> \case
-                      Value.I v -> Just $ toBoolean $ even v
-                      _ -> Nothing
+minimum' = listFunctionOverIntegers $ Value.I . minimum
 
 combos :: Value.Value
-combos = Value.Func $ \_ v -> Just $ Value.Func $ \_ vs ->
-  case (v, vs) of
-    (Value.I n, Value.Vs items) -> Just $ Value.Vs $ Value.Vs <$> replicateM (fromIntegral n) items
-    _ -> Nothing
+combos = funcOfNumber $ \n -> Just $ funcOfList $ \items ->
+  Just $ Value.Vs $ Value.Vs <$> replicateM (fromIntegral n) items
 
 indexOf0 :: Value.Value
-indexOf0 = Value.Func $ \_ v -> Just $ Value.Func $ \_ vs ->
-  case vs of
-    Value.Vs items -> seekIndex 0 v items
-    _ -> Nothing
+indexOf0 = Value.Func $ \_ v -> Just $ funcOfList $ seekIndex 0 v
 
   where
     seekIndex _ _ [] = Nothing
@@ -112,15 +100,14 @@ Nothing =?= _ = False
 _ =?= Nothing = False
 Just x =?= Just y = x == y
 
+even' :: Value.Value
+even' = funcOfNumber $ Just . toBoolean . even
+
 odd' :: Value.Value
-odd' = Value.Func $ \_ -> \case
-                      Value.I v -> Just $ toBoolean $ odd v
-                      _ -> Nothing
+odd' = funcOfNumber $ Just . toBoolean . odd
 
 dupe :: Value.Value
-dupe = Value.Func $ \_ -> \case
-                      Value.Vs vs -> Just (Value.Vs (vs ++ vs))
-                      _ -> Nothing
+dupe = funcOfList $ \vs -> Just (Value.Vs (vs ++ vs))
 
 numberFromParsedLine :: Text -> Value.Value
 numberFromParsedLine name =
@@ -469,7 +456,7 @@ getPos _ = Nothing
 positions :: Value.Value
 positions = Value.Func $ \_ cs -> Just $ Value.Func $ \_ grd ->
   case (cs, grd) of
-    (Value.CellState c, Value.Grid _ _ _ emptyCell _) | Just c == emptyCell -> Nothing
+    (Value.CellState c, Value.Grid _ _ _ (Just emptyCell) _) | c == emptyCell -> Nothing
     (Value.CellState c, Value.Grid _ _ _ _ state) -> filterCells Value.Coord c state
     _ -> Nothing
 

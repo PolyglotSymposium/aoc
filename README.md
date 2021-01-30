@@ -102,8 +102,6 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Add appropriate error-on-warn settings
    - [ ] Syntax highlighting (emacs)
    - [ ] Pretty printing (currently we just do AST dumps)
- - `list`
-   - [ ] Allow for more complex input parsing
  - `conway`
    - [ ] Transitions should have context distinct from `grid`
    - [ ] Allow `any_state` in transitions "from"
