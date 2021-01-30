@@ -1,0 +1,9 @@
+list
+  at ./y2015d2.txt
+  separated by '\n'
+  where each parses as
+    {l:num}x{w:num}x{h:num}
+
+solution
+  (minimum [2 * (l x) + 2 * (w x), 2 * (w x) + 2 * (h x), 2 * (h x) + 2 * (l x)]) + (l x) * (w x) * (h x)
+    | sum
