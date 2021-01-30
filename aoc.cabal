@@ -27,8 +27,6 @@ library
                      , List.Problem 
                      , Parser
                      , Program.Ast
-                     , Program.Backend
-                     , Program.Backend.C
                      , Program.Parser
                      , Program.Problem
                      , Turtle.Ast

@@ -160,6 +160,7 @@ modX :: Value.Coord -> (Integer -> Integer) -> Value.Coord
 modX (Value.D1 x) f = Value.D1 (f x)
 modX (Value.D2 x y) f = Value.D2 (f x) y
 modX (Value.D3 x y z) f = Value.D3 (f x) y z
+modX (Value.D4 x y z w) f = Value.D4 (f x) y z w
 
 allAdjacentCoords :: Conway.SolvableConwayDimensions -> Value.Coord -> [Value.Coord]
 allAdjacentCoords Conway.OneD (Value.D1 x) = Value.D1 <$> [x-1, x+1]
@@ -271,9 +272,9 @@ afterTransitions = Value.Func $ \ctx n -> Just $ Value.Func $ \_ grd -> go n ctx
 to2dWithTransitions :: Value.Value
 to2dWithTransitions = Value.Func $ \ctx n -> Just $ Value.Func $ \_ grd -> go n 0 ctx grd
   where
-    go (Value.I n) y _ (Value.Grid ts (Value.Finite size) _ empty state) | y == n =
-      Just $ setY n ts (size { Value.height = 1 }) empty state
-    go (Value.I n) y ctx (Value.Grid ts (Value.Finite size) dim ec state) | y < n = do
+    go (Value.I n) y _ (Value.Grid ts (Value.Finite size) _ emptyCell state) | y == n =
+      Just $ setY n ts (size { Value.height = 1 }) emptyCell state
+    go (Value.I n) y ctx (Value.Grid ts (Value.Finite size) _ ec state) | y < n = do
       let myState = M.mapKeys (setY' y) state
       next <- nextGeneration' ctx $ setY 0 ts size ec state
       remainder <- go (Value.I n) (y + 1) ctx next
@@ -292,6 +293,7 @@ to2dWithTransitions = Value.Func $ \ctx n -> Just $ Value.Func $ \_ grd -> go n 
 nextGeneration :: Value.Value
 nextGeneration = Value.Func nextGeneration'
 
+nextGeneration' :: Value.Context -> Value.Value -> Maybe Value.Value
 nextGeneration' context grd@(Value.Grid ts@Conway.CellTransitions{..} bounds dim emptyCell state) =
   Just $ Value.Grid ts bounds dim emptyCell $ M.filter ((/= emptyCell) . Just) $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grd) context)) searchSpace
     where
@@ -316,15 +318,15 @@ nextGeneration' context grd@(Value.Grid ts@Conway.CellTransitions{..} bounds dim
         then Just $ Conway.ident to
         else matching cs coords c ctx
 
-      around dim coord = filter (withinBounds bounds) $ justAround dim coord
+      around dimension = filter (withinBounds bounds) . justAround dimension
 
         where
           withinBounds Value.Infinite _ = True
           withinBounds (Value.Finite Value.WidthHeight{width}) (Value.D1 x) = 0 <= x && x < width
           withinBounds (Value.Finite Value.WidthHeight{width, height}) (Value.D2 x y) =
             0 <= x && x < width && 0 <= y && y < height
-          withinBounds bounds coord =
-            error $ "Could not perform bounds check for position withing bounds " <> show coord <> ", " <> show bounds
+          withinBounds boundaries coord =
+            error $ "Could not perform bounds check for position withing bounds " <> show coord <> ", " <> show boundaries
 
           justAround Conway.OneD (Value.D1 x) = Value.D1 <$> [x-1..x+1]
           justAround Conway.TwoD (Value.D2 x y) = Value.D2 <$> [x-1..x+1] <*> [y-1..y+1]
@@ -446,7 +448,7 @@ getCellState _ = Nothing
 countCells' :: Value.Value -> Value.Value -> Maybe Value.Value
 countCells' (Value.Vs vs) grd =
   case (grd, sequence $ getCellState <$> vs) of
-    (Value.Grid _ (Value.Finite size) _ _ state, Just buckets) ->
+    (Value.Grid _ (Value.Finite _) _ _ state, Just buckets) ->
       let
         counts = go (M.elems state) $ M.fromList $ zip buckets (repeat 0)
       in

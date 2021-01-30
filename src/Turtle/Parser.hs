@@ -17,7 +17,7 @@ import qualified Turtle.Ast as Turtle
 turtleSpec :: P.Parser Turtle.Problem
 turtleSpec = do
   _ <- P.ws *> P.lstr "turtle" *> P.lstr "in"
-  dim <- dimensions
+  dim <- dimensions'
   _ <- P.lstr "at"
   file <- P.filePath
   _ <- P.lstr "separated" *> P.lstr "by"
@@ -130,7 +130,7 @@ term = P.lexeme (
         "num" -> pure $ Turtle.Number ident
         _     -> fail ("Unexpected type in turtle spec: " ++ show ty)
 
-dimensions :: P.Parser Turtle.SolvableDimensions
-dimensions =
+dimensions' :: P.Parser Turtle.SolvableDimensions
+dimensions' =
   P.lstr "2" *> P.lstr "dimensions" *> pure Turtle.TwoD <|>
   P.lstr "1" *> P.lstr "dimension" *> pure Turtle.OneD

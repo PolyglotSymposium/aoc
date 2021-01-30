@@ -93,7 +93,7 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Application parsing is wonky (and it should be `(value value)` not `(text value)`)
    - [ ] Doc-gen of builtins.
    - [ ] Too many parens necessary in places.
-   - [ ] Github actions
+   - [X] Github actions
    - [ ] Hlint
    - [ ] "One free" in solutions should only check when list is the type
    - [ ] Better organization post-remedial-program
@@ -101,6 +101,7 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Properly type check `&` composition
    - [ ] Add appropriate error-on-warn settings
    - [ ] Syntax highlighting (emacs)
+   - [ ] Pretty printing (currently we just do AST dumps)
  - `list`
    - [ ] Allow for more complex input parsing
  - `conway`
