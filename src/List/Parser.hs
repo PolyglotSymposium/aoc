@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
 
 module List.Parser
        ( list
@@ -8,7 +9,9 @@ module List.Parser
        ) where
 
 import           Data.Text
-import qualified Data.Map as M
+import qualified Data.Text as T
+import qualified Data.Map.Strict as M
+import qualified Data.Set as S
 import           Data.Maybe (fromMaybe, maybe, catMaybes)
 import qualified List.Ast as List
 import qualified Parser as P
@@ -40,30 +43,45 @@ list = do
 parseTerms :: P.Parser [List.ParseTerm]
 parseTerms = P.phrase ["where", "each", "parses", "as"] *> manyTill term (P.lstr "solution")
 
+nonIdentifiers :: S.Set Char
+nonIdentifiers = S.fromList $ ['!'..'/'] ++ [':'..'@'] ++ ['['..'`'] ++ ['|'..'~']
+
 term :: P.Parser List.ParseTerm
 term = P.lexeme (
    between (char '{') (char '}') typedName
      <|> List.Literal <$> P.ident
-     <|> List.Literal . pack <$> some (punctuationChar <|> symbolChar)
+     <|> List.Literal . pack <$> some nonIdentifierExceptCurly
    )
 
   where
+    nonIdentifierExceptCurly :: P.Parser Char
+    nonIdentifierExceptCurly =
+      oneOf nonIdentifiers
+
     typedName :: P.Parser List.ParseTerm
     typedName = do
       ident <- P.ident
       _ <- char ':'
-      ty <- choice [P.lstr "num"]
+      ty <- choice [P.lstr "num", P.lstr "char", P.lstr "text"]
       case ty of
         "num" -> pure $ List.Number ident
+        "char" -> pure $ List.Char ident
+        "text" -> pure $ List.Text ident
         _     -> fail ("Unexpected type in line parse spec: " ++ show ty)
 
-parsedLine :: [List.ParseTerm] -> P.Parser V.Value
-parsedLine terms = V.ParsedLine . M.fromList <$> line
+parsedLine :: Text -> [List.ParseTerm] -> P.Parser V.Value
+parsedLine sep terms = V.ParsedLine . M.fromList <$> line
   where
     line = catMaybes <$> traverse termParser terms
 
     termParser :: List.ParseTerm -> P.Parser (Maybe (Text, V.Value))
     termParser (List.Literal str) = string str *> pure Nothing
-    termParser (List.Number name) = do
-      v <- P.integer
-      pure $ Just (name, v)
+    termParser (List.Char name) = Just . (name,) . V.Ch <$> (P.ws *> (alphaNumChar <|> punctuationChar <|> symbolChar) <* P.ws)
+    -- I'm so sorry, future me
+    termParser (List.Text name) = Just . (name,) . V.Txt . T.concat <$> (P.ws *> (manyTill charText $ lookAhead ((P.lstr sep >> pure ()) <|> eof)))
+    termParser (List.Number name) = Just . (name,) <$> P.integer
+
+    charText :: P.Parser Text
+    charText = do
+      c <- asciiChar
+      pure $ pack [c]

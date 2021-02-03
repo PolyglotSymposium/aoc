@@ -1,0 +1,9 @@
+list
+  at ./y2020d2.txt
+  separated by '\n'
+  where each parses as
+    {min:num}-{max:num} {c:char}: {phrase:text}
+
+solution
+  (min x) + (max x)
+    | sum

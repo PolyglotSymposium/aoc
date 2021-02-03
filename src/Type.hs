@@ -8,6 +8,7 @@ data Type
   | List Type
   | Arrow Type Type
   | Var Char
+  | Char
   | Grid
   | CellState
   | Position

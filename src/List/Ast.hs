@@ -6,10 +6,11 @@ module List.Ast
 import qualified Ast
 import           Data.Text
 
--- TODO: Unify with parse terms from program domain
 data ParseTerm
   = Literal Text
   | Number Text
+  | Char Text
+  | Text Text
   deriving (Show, Eq)
 
 data Problem =

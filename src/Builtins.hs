@@ -6,7 +6,7 @@
 
 module Builtins
        ( listContext
-       , numberFromParsedLine
+       , valueFromParsedLine
        , conwayContext
        , programContext
        , turtleContext
@@ -109,8 +109,8 @@ odd' = funcOfNumber $ Just . toBoolean . odd
 dupe :: Value.Value
 dupe = funcOfList $ \vs -> Just (Value.Vs (vs ++ vs))
 
-numberFromParsedLine :: Text -> Value.Value
-numberFromParsedLine name =
+valueFromParsedLine :: Text -> Value.Value
+valueFromParsedLine name =
   Value.Func $ \_ -> \case
     Value.ParsedLine values -> Just $ values M.! name
     _ -> Nothing

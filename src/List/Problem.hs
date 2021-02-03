@@ -2,7 +2,7 @@ module List.Problem
        ( runListProblem
        ) where
 
-import           Builtins (listContext, numberFromParsedLine)
+import           Builtins (listContext, valueFromParsedLine)
 import           Data.Text hiding (foldr)
 import qualified Evaluator as Eval
 import qualified List.Ast as Ast
@@ -15,15 +15,21 @@ import qualified Type
 import qualified TypeCheck
 import qualified Value as V
 
-getInputParser :: [Ast.ParseTerm] -> (Parse.Parser V.Value, Type.Type)
-getInputParser [] = (Parse.integer, Type.Number)
-getInputParser terms = (Parse.parsedLine terms, Type.ParsedLine)
+import Debug.Trace
+
+getInputParser :: Text -> [Ast.ParseTerm] -> (Parse.Parser V.Value, Type.Type)
+getInputParser _ [] = (Parse.integer, Type.Number)
+getInputParser sep terms = (Parse.parsedLine sep terms, Type.ParsedLine)
 
 listContextWithParseTerms :: [Ast.ParseTerm] -> V.Context
 listContextWithParseTerms = foldr extend listContext
   where
-    extend (Ast.Literal _) ctxt = ctxt
-    extend (Ast.Number name) ctxt =  V.insert name (Type.ParsedLine `Type.Arrow` Type.Number, numberFromParsedLine name) ctxt
+    extend (Ast.Literal _) = id
+    extend (Ast.Number name) = addLookup name
+    extend (Ast.Char name) = addLookup name
+    extend (Ast.Text name) = addLookup name
+
+    addLookup name = V.insert name (Type.ParsedLine `Type.Arrow` Type.Number, valueFromParsedLine name)
 
 runListProblem :: (String, String) -> IO (Maybe (Type.Type, Type.Type, V.Value, Ast.Problem))
 runListProblem (source, text) =
@@ -35,7 +41,7 @@ runListProblem (source, text) =
     Right ast ->
       let
         inputPath = Path.takeDirectory source Path.</> unpack (Ast.at ast)
-        context = listContextWithParseTerms $ Ast.parseTerms ast
+        context = listContextWithParseTerms $ traceShow (Ast.parseTerms ast) $ Ast.parseTerms ast
         validations = do
           _ <- TypeCheck.ensureOneFreeOrIdentInEachStep context $ Ast.solution ast
           it <- TypeCheck.inferInputType context $ Ast.solution ast
@@ -48,7 +54,7 @@ runListProblem (source, text) =
             pure Nothing
           Right (_, outputType) ->
             let
-              (parseInput, inputElementType) = getInputParser $ Ast.parseTerms ast
+              (parseInput, inputElementType) = getInputParser (Ast.separator ast) $ Ast.parseTerms ast
             in do
                 inputText <- readFile inputPath
                 case runParser (Parse.listInput (Ast.separator ast) parseInput) inputPath $ strip $ pack inputText of

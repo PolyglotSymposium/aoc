@@ -91,6 +91,8 @@ d2CellOrEmpty emptyCell (x, y) Conway.FourD = M.findWithDefault emptyCell $ D4 x
 
 data Value
   = I Integer
+  | Ch Char
+  | Txt Text
   | Vs [Value]
   | True
   | False
@@ -109,6 +111,8 @@ data Value
 
 data OrdValue
   = OrdI Integer
+  | OrdCh Char
+  | OrdTxt Text
   | OrdVs [OrdValue]
   | OrdTrue
   | OrdFalse
@@ -125,6 +129,8 @@ data OrdValue
 
 toOrd :: Value -> Maybe OrdValue
 toOrd (I v)            = Just $ OrdI v
+toOrd (Ch ch)          = Just $ OrdCh ch
+toOrd (Txt txt)        = Just $ OrdTxt txt
 toOrd (Vs vs)          = OrdVs <$> traverse toOrd vs
 toOrd True             = Just OrdTrue
 toOrd False            = Just OrdFalse
@@ -143,6 +149,8 @@ toOrd (StepsOfFold _)  = Nothing
 
 instance Show Value where
   show (I v) = show v
+  show (Ch ch) = [ch]
+  show (Txt txt) = unpack txt
   show (Vs vs) = "[" ++ L.intercalate "," (show <$> vs) ++ "]"
   show True = "true"
   show False = "false"
