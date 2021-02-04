@@ -42,7 +42,6 @@ library
                      , text
                      , filepath
                      , ansi-terminal
-                     , parser-combinators
                      
 
   ghc-options:         -Wall

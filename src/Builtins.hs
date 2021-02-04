@@ -102,6 +102,10 @@ countChar :: Value.Value
 countChar = funcOfChar $ \c -> Just $ funcOfText $ \txt ->
   Just $ Value.I $ fromIntegral $ T.count (T.singleton c) $ txt
 
+charAt1 :: Value.Value
+charAt1 = funcOfNumber $ \i -> Just $ funcOfText $ \txt ->
+  Just $ Value.Ch $ T.index txt $ subtract 1 $ fromIntegral i
+
 indexOf0 :: Value.Value
 indexOf0 = Value.Func $ \_ v -> Just $ funcOfList $ seekIndex 0 v
 
@@ -625,6 +629,7 @@ baseIdentifiers =
   , ("manhattan_distance", pos --> (pos --> num),              manhattanDistance)
   , ("combinations",       num --> (list a --> list (list a)), combos)
   , ("count_char",         char --> (text --> num),            countChar)
+  , ("base_one_char_at",   num --> (text --> char),            charAt1)
   ]
 
 core :: C.Context

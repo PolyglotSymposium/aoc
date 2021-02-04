@@ -8,6 +8,7 @@ module Evaluator
 import qualified Ast
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as Text
+import qualified Data.Bits as Bits
 import qualified Value
 import           Value (Context, identValue)
 
@@ -79,8 +80,8 @@ eval context freeArg (Ast.FloatingLambda (Ast.Body (Ast.Application fn args))) =
         Value.Func g ->
           case g context freeArg of
             Nothing -> Left $ UnexpectedError 9
-            Just v -> Right v
-        v -> pure v
+            Just v' -> Right v'
+        v' -> pure v'
     _ -> Left $ UnexpectedError 7
 
     where
@@ -88,7 +89,7 @@ eval context freeArg (Ast.FloatingLambda (Ast.Body (Ast.Application fn args))) =
         argValue <- evalValue context (Just freeArg) unappliedArg
         case f context argValue of
           Just f' -> applyAll f' unappliedArgs
-          _ -> Left $ UnexpectedError 4242
+          _ -> error (Text.unpack fn)
 
       applyAll v [] = pure v
       applyAll _ _ = Left $ UnexpectedError 5423
@@ -175,7 +176,7 @@ evalValue context val (Ast.Application fn args@(arg NE.:| _)) = do
       argValue <- evalValue context val unappliedArg
       case f context argValue of
         Just f' -> applyAll f' unappliedArgs
-        _ -> Left $ UnexpectedError 4242
+        _ -> error (Text.unpack fn <> " " <> show argValue)
 
     applyAll v [] = pure v
     applyAll _ _ = Left $ UnexpectedError 5423
@@ -221,11 +222,14 @@ evalValue context val (Ast.Raised a b) =
 evalValue context val (Ast.And a b) =
   binBooleanOp context val (&&) "&&" a b toBoolean
 
+evalValue context val (Ast.Xor a b) =
+  binBooleanOp context val Bits.xor ".^." a b toBoolean
+
 evalValue context val (Ast.Or a b) =
   binBooleanOp context val (||) "||" a b toBoolean
 
 evalValue context val (Ast.Equals a b) =
-  binNumberOp context val (==) "=" a b toBoolean
+  checkEqual context val a b
 
 evalValue context val (Ast.NotEquals a b) =
   binNumberOp context val (/=) "/=" a b toBoolean
@@ -274,3 +278,13 @@ binBooleanOp context val op opName a b toValue = do
     (Just a'', Just b'') -> Right $ toValue $ op a'' b''
     _                -> Left $ TypeMismatchAtRuntime (Text.pack ("When applying `" ++ opName ++ "` got " ++ show (a', b') ++ " but expected booleans"))
 
+
+checkEqual :: Context -> Maybe Value.Value -> Ast.Value -> Ast.Value -> Result Value.Value
+checkEqual context val a b = do
+  a' <- evalValue context val a
+  b' <- evalValue context val b
+  case (a', b') of
+    (Value.I a'', Value.I b'') -> Right $ toBoolean $ a'' == b''
+    (Value.Ch a'', Value.Ch b'') -> Right $ toBoolean $ a'' == b''
+    (Value.Txt a'', Value.Txt b'') -> Right $ toBoolean $ a'' == b''
+    _                          -> Left $ TypeMismatchAtRuntime (Text.pack ("When applying `=` got " ++ show (a', b') ++ " but expected matching types"))

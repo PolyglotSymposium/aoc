@@ -5,5 +5,5 @@ list
     {min:num}-{max:num} {c:char}: {phrase:text}
 
 solution
-  (min x) <= (count_char (c x) (phrase x)) && (count_char (c x) (phrase x)) <= max x
-    | count
+  ((base_one_char_at (min x) (phrase x)) = c x) .^. ((base_one_char_at (max x) (phrase x)) = c x)
+   | count

@@ -27,6 +27,7 @@ data Value
   | Lt Value Value
   | And Value Value
   | Or Value Value
+  | Xor Value Value
   | Divide Value Value
   | Multiply Value Value
   | Add Value Value
@@ -48,6 +49,7 @@ substitute subs (Geq l r)            = Geq       (substitute subs l) (substitute
 substitute subs (Leq l r)            = Leq       (substitute subs l) (substitute subs r)
 substitute subs (Lt l r)             = Lt        (substitute subs l) (substitute subs r)
 substitute subs (And l r)            = And       (substitute subs l) (substitute subs r)
+substitute subs (Xor l r)            = Xor       (substitute subs l) (substitute subs r)
 substitute subs (Or l r)             = Or        (substitute subs l) (substitute subs r)
 substitute subs (Divide l r)         = Divide    (substitute subs l) (substitute subs r)
 substitute subs (Multiply l r)       = Multiply  (substitute subs l) (substitute subs r)

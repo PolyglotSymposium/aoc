@@ -98,7 +98,8 @@ lambda = lexeme $ Ast.Body <$> value
 
 value :: Parser Ast.Value
 value = lexeme $ makeExprParser valueTerm [
-    [InfixL (Ast.Equals <$ lstr "="), InfixL (Ast.NotEquals <$ lstr "/=")]
+    [InfixL (Ast.Xor <$ lstr ".^.")]
+  , [InfixL (Ast.Equals <$ lstr "="), InfixL (Ast.NotEquals <$ lstr "/=")]
   , [InfixL (Ast.Geq <$ lstr ">="), InfixL (Ast.Leq <$ lstr "<="), InfixL (Ast.Gt <$ lstr ">"), InfixL (Ast.Lt <$ lstr "<")]
   , [InfixL (Ast.And <$ lstr "&&"), InfixL (Ast.Or <$ lstr "||")]
   , [InfixL (Ast.Raised <$ lstr "^")]
