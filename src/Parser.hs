@@ -22,6 +22,7 @@ import           Data.Foldable (traverse_)
 import           Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import           Data.Text
+import           Data.List.NonEmpty as NE
 import           Data.Tuple (swap)
 import           Data.Void
 import           Text.Megaparsec
@@ -78,7 +79,7 @@ code :: Parser Ast.Solution
 code = lexeme $ makeExprParser solutionTerm [[pipe]]
 
 pipe :: Operator Parser Ast.Solution
-pipe = InfixL (Ast.Pipe <$ try (lstr "|"))
+pipe = InfixL (Ast.Pipe <$ lstr "|")
 
 solutionTerm :: Parser Ast.Solution
 solutionTerm =
@@ -110,12 +111,18 @@ value = lexeme $ makeExprParser valueTerm [
 valueTerm :: Parser Ast.Value
 valueTerm =
   lexeme (between (char '(') (char ')') value
-          <|> try application
-          <|> Ast.Identifier <$> ident
+          <|> try applicationOrIdent
           <|> Ast.List <$> between (char '[') (char ']') (sepBy value $ lexeme $ char ',')
           <|> Ast.Pos <$> positionLiteral
           <|> Ast.Inte <$> L.decimal
          )
+  where
+    applicationOrIdent = do
+      ident' <- ident
+      args <- many (try $ lexeme value)
+      pure $ case args of
+        [] -> Ast.Identifier ident'
+        (v:vs) -> Ast.Application ident' $ v NE.:| vs
 
 positionLiteral :: Parser (Integer, Integer)
 positionLiteral =
@@ -129,9 +136,6 @@ positionLiteral =
       pure (a', b')
 
     key a = lstr a *> lstr "=" *> lexeme rawInteger
-
-application :: Parser Ast.Value
-application = Ast.Application <$> lexeme ident <*> lexeme value
 
 floatingLambda :: Parser Ast.Solution
 floatingLambda = lexeme $ Ast.FloatingLambda <$> lambda

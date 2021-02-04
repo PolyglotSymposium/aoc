@@ -5,6 +5,7 @@ module Ast
   , substitute
   ) where
 
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe)
 import           Data.Text
@@ -35,7 +36,7 @@ data Value
   | NotEquals Value Value
   | Identifier Text
   | Inte Integer
-  | Application Text Value
+  | Application Text (NE.NonEmpty Value)
   | List [Value]
   | Pos (Integer, Integer)
   | FlipCompose Value Value
@@ -57,7 +58,7 @@ substitute subs (Equals l r)         = Equals    (substitute subs l) (substitute
 substitute subs (NotEquals l r)      = NotEquals (substitute subs l) (substitute subs r)
 substitute _ num@(Inte _)            = num
 substitute _ pos@(Pos _)             = pos
-substitute subs (Application fn arg) = Application fn $ substitute subs arg
+substitute subs (Application fn args) = Application fn $ substitute subs <$> args
 substitute subs (List vs)            = List $ substitute subs <$> vs
 substitute subs (FlipCompose f g)    = FlipCompose (substitute subs f) $ substitute subs g
 substitute subs (Identifier name) =

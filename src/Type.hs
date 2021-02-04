@@ -9,6 +9,7 @@ data Type
   | Arrow Type Type
   | Var Char
   | Char
+  | Text
   | Grid
   | CellState
   | Position

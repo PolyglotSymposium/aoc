@@ -6,9 +6,10 @@ module Evaluator
        ) where
 
 import qualified Ast
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Text as Text
-import           Value (Context, identValue)
 import qualified Value
+import           Value (Context, identValue)
 
 data EvalError
   = UnexpectedError Int
@@ -69,18 +70,28 @@ eval context (Value.Vs vs) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name)))
       results <- foldSteps step result vs'
       pure $ result:results
 
-eval context arg2 (Ast.FloatingLambda (Ast.Body (Ast.Application fn arg1))) = do
+eval context freeArg (Ast.FloatingLambda (Ast.Body (Ast.Application fn args))) = do
   fnValue <- evalValue context Nothing (Ast.Identifier fn)
-  argValue <- evalValue context (Just arg2) arg1
   case fnValue of
-    Value.Func f ->
-      case f context argValue of
-        Just (Value.Func g) ->
-          case g context arg2 of
+    Value.Func f -> do
+      v <- applyAll (Value.Func f) $ NE.toList args
+      case v of
+        Value.Func g ->
+          case g context freeArg of
             Nothing -> Left $ UnexpectedError 9
             Just v -> Right v
-        _ -> Left $ UnexpectedError 8
+        v -> pure v
     _ -> Left $ UnexpectedError 7
+
+    where
+      applyAll (Value.Func f) (unappliedArg:unappliedArgs) = do
+        argValue <- evalValue context (Just freeArg) unappliedArg
+        case f context argValue of
+          Just f' -> applyAll f' unappliedArgs
+          _ -> Left $ UnexpectedError 4242
+
+      applyAll v [] = pure v
+      applyAll _ _ = Left $ UnexpectedError 5423
 
 eval context val (Ast.FloatingLambda (Ast.Body fc@(Ast.FlipCompose _ _))) =
   evalValue context (Just val) fc
@@ -142,14 +153,12 @@ evalValue context val (Ast.Identifier name) =
         Nothing -> Left $ UnexpectedError 4
         Just v  -> Right v
 
-evalValue context val (Ast.Application fn arg) = do
+evalValue context val (Ast.Application fn args@(arg NE.:| _)) = do
   fnValue <- evalValue context val (Ast.Identifier fn)
   argValue <- evalValue context val arg
   case (fnValue, argValue) of
     (Value.Func f, _) ->
-      case f context argValue of
-        Nothing -> Left $ UnexpectedError 6
-        Just v  -> Right v
+      applyAll (Value.Func f) $ NE.toList args
 
     (Value.StepsOfFold (initial, step), Value.Vs vs) ->
       Value.Vs <$> foldSteps step initial vs
@@ -162,6 +171,15 @@ evalValue context val (Ast.Application fn arg) = do
     _ -> Left $ UnexpectedError 66
 
   where
+    applyAll (Value.Func f) (unappliedArg:unappliedArgs) = do
+      argValue <- evalValue context val unappliedArg
+      case f context argValue of
+        Just f' -> applyAll f' unappliedArgs
+        _ -> Left $ UnexpectedError 4242
+
+    applyAll v [] = pure v
+    applyAll _ _ = Left $ UnexpectedError 5423
+
     apply step v acc =
       case step v acc of
         Just v' -> Right v'

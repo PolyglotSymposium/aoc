@@ -11,6 +11,7 @@ module TypeCheck
 
 import qualified Ast
 import           Data.List (nub)
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Set as S
 import           Data.Text
 import qualified Type
@@ -23,6 +24,8 @@ data TypeError
   | FloatingLambdaCannotReturn Int Type.Type
   | IdentifierNotAFunctionOfAList Text Text Type.Type
   | NotAFunction Text Type.Type
+  | ValueNotAFunction Type.Type
+  | FunctionAppliedToTooManyArgs Type.Type
   | CouldNotInferTypeOfFreeVariableInputIn Ast.Value
   | NoFreesAllowed Ast.Value
   | StepNMustBeIdentiferOrContainSingleFree Int Ast.Value
@@ -57,7 +60,7 @@ unifySolution context (Ast.FloatingLambda lambda) Type.Turtle = do
   ot <- unifyLambda context lambda Type.Direction
   case ot of
     Type.Arrow Type.Turtle arrowOt -> pure arrowOt
-    v -> error $ "TODO non-unifying turtle functions " ++ show v
+    v -> error $ "args non-unifying turtle functions " ++ show v
 
 unifySolution context (Ast.FloatingLambda lambda) Type.Program = do
   ot <- unifyLambda context lambda Type.Register
@@ -167,17 +170,27 @@ unify context ast@(Ast.Identifier name) t env =
                 Right $ Just v
               _ -> Left $ UnificationFailure 4 env t' t ast
 
-unify context ast@(Ast.Application fn arg) t env =
+unify context ast@(Ast.Application fn arguments) t env =
   case identType fn context of
-    Just (Type.Arrow it ot) -> do
-      _ <- unify context arg it env
-      if ot == t || isVar t
-      then pure (Just ot)
-      else Left $ UnificationFailure 7 env ot t ast
-    Just t' ->
-      Left $ NotAFunction fn t'
+    Just v ->
+      unifyEachArg v $ NE.toList arguments
     Nothing ->
       Left $ IdentifierIsNotDefined fn
+
+  where
+    unifyEachArg (Type.Arrow it ot) (arg:args) = do
+      _ <- unify context arg it env
+      if not (ot == t || isVar t)
+      then Left $ UnificationFailure 7 env ot t ast
+      else
+        case ot of
+          f@(Type.Arrow _ _) -> unifyEachArg f args
+          _ -> Right $ Just ot
+
+    -- Mmmm, this is probably not exactly right
+    unifyEachArg ot [] = Right $ Just ot
+
+    unifyEachArg ot (_:_) = Left $ ValueNotAFunction ot
 
 unify context ast (Type.Var _) _ = do
   t <- typeOf context ast
@@ -304,8 +317,8 @@ frees context (Ast.Identifier name) =
     Nothing -> S.singleton name
     Just _ -> S.empty
 
-frees context (Ast.Application fn arg) =
-  S.union (frees context (Ast.Identifier fn)) (frees context arg)
+frees context (Ast.Application fn args) =
+  S.union (frees context (Ast.Identifier fn)) (S.unions $ NE.toList $ (frees context <$> args))
 
 inferInputType :: Context -> Ast.Solution -> Result Type.Type
 inferInputType context s = unifySolution context s (Type.List Type.Number)

@@ -20,6 +20,7 @@ import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Set as S
 import           Data.Text hiding (count, length, foldr, zip, maximum, concat, filter, concatMap, minimum)
+import qualified Data.Text as T
 import           Evaluator (evalValue, toBoolean)
 import qualified Program.Ast as Program
 import qualified Type
@@ -77,6 +78,16 @@ funcOfNumber f = Value.Func $ \_ -> \case
                       Value.I v -> f v
                       _ -> Nothing
 
+funcOfChar :: (Char -> Maybe Value.Value) -> Value.Value
+funcOfChar f = Value.Func $ \_ -> \case
+                      Value.Ch c -> f c
+                      _ -> Nothing
+
+funcOfText :: (Text -> Maybe Value.Value) -> Value.Value
+funcOfText f = Value.Func $ \_ -> \case
+                      Value.Txt c -> f c
+                      _ -> Nothing
+
 maximum' :: Value.Value
 maximum' = listFunctionOverIntegers $ Value.I . maximum
 
@@ -86,6 +97,10 @@ minimum' = listFunctionOverIntegers $ Value.I . minimum
 combos :: Value.Value
 combos = funcOfNumber $ \n -> Just $ funcOfList $ \items ->
   Just $ Value.Vs $ Value.Vs <$> replicateM (fromIntegral n) items
+
+countChar :: Value.Value
+countChar = funcOfChar $ \c -> Just $ funcOfText $ \txt ->
+  Just $ Value.I $ fromIntegral $ T.count (T.singleton c) $ txt
 
 indexOf0 :: Value.Value
 indexOf0 = Value.Func $ \_ v -> Just $ funcOfList $ seekIndex 0 v
@@ -560,6 +575,12 @@ a = Type.Var 'a'
 num :: Type.Type
 num = Type.Number
 
+text :: Type.Type
+text = Type.Text
+
+char :: Type.Type
+char = Type.Char
+
 bool :: Type.Type
 bool = Type.Boolean
 
@@ -603,6 +624,7 @@ baseIdentifiers =
   , ("base_zero_index_of", a --> (list a --> num),             indexOf0)
   , ("manhattan_distance", pos --> (pos --> num),              manhattanDistance)
   , ("combinations",       num --> (list a --> list (list a)), combos)
+  , ("count_char",         char --> (text --> num),            countChar)
   ]
 
 core :: C.Context
