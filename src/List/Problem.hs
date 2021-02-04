@@ -15,8 +15,6 @@ import qualified Type
 import qualified TypeCheck
 import qualified Value as V
 
-import Debug.Trace
-
 getInputParser :: Text -> [Ast.ParseTerm] -> (Parse.Parser V.Value, Type.Type)
 getInputParser _ [] = (Parse.integer, Type.Number)
 getInputParser sep terms = (Parse.parsedLine sep terms, Type.ParsedLine)
@@ -41,7 +39,7 @@ runListProblem (source, text) =
     Right ast ->
       let
         inputPath = Path.takeDirectory source Path.</> unpack (Ast.at ast)
-        context = listContextWithParseTerms $ traceShow (Ast.parseTerms ast) $ Ast.parseTerms ast
+        context = listContextWithParseTerms $ Ast.parseTerms ast
         validations = do
           _ <- TypeCheck.ensureOneFreeOrIdentInEachStep context $ Ast.solution ast
           it <- TypeCheck.inferInputType context $ Ast.solution ast
