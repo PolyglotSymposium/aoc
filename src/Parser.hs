@@ -115,6 +115,7 @@ valueTerm =
           <|> try applicationOrIdent
           <|> Ast.List <$> between (char '[') (char ']') (sepBy value $ lexeme $ char ',')
           <|> Ast.Pos <$> positionLiteral
+          <|> Ast.Text . pack <$> between (char '"') (char '"') (some (satisfy (/= '"')))
           <|> Ast.Inte <$> L.decimal
          )
   where

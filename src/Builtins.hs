@@ -106,6 +106,9 @@ charAt1 :: Value.Value
 charAt1 = funcOfNumber $ \i -> Just $ funcOfText $ \txt ->
   Just $ Value.Ch $ T.index txt $ subtract 1 $ fromIntegral i
 
+isInfixOf' :: Value.Value
+isInfixOf' = funcOfText $ \ifx -> Just $ funcOfText $ Just . toBoolean . T.isInfixOf ifx
+
 indexOf0 :: Value.Value
 indexOf0 = Value.Func $ \_ v -> Just $ funcOfList $ seekIndex 0 v
 
@@ -630,6 +633,7 @@ baseIdentifiers =
   , ("combinations",       num --> (list a --> list (list a)), combos)
   , ("count_char",         char --> (text --> num),            countChar)
   , ("base_one_char_at",   num --> (text --> char),            charAt1)
+  , ("is_infix_of",        text --> (text --> bool),           isInfixOf')
   ]
 
 core :: C.Context

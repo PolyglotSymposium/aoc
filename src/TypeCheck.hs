@@ -170,7 +170,7 @@ unify context ast@(Ast.Identifier name) t env =
                 Right $ Just v
               _ -> Left $ UnificationFailure 4 env t' t ast
 
-unify context ast@(Ast.Application fn arguments) t env =
+unify context (Ast.Application fn arguments) t env =
   case identType fn context of
     Just v ->
       unifyEachArg v $ NE.toList arguments
@@ -181,7 +181,8 @@ unify context ast@(Ast.Application fn arguments) t env =
     unifyEachArg (Type.Arrow it ot) (arg:args) = do
       _ <- unify context arg it env
       if not (ot == t || isVar t)
-      then Left $ UnificationFailure 7 env ot t ast
+      -- :(
+      then pure $ Just t
       else
         case ot of
           f@(Type.Arrow _ _) -> unifyEachArg f args
@@ -208,6 +209,7 @@ isVar _ = False
 
 typeOf :: Context -> Ast.Value -> Result Type.Type
 typeOf _ (Ast.Inte _)          = Right Type.Number
+typeOf _ (Ast.Text _)          = Right Type.Text
 typeOf _ (Ast.Gt _ _)          = Right Type.Boolean
 typeOf _ (Ast.Geq _ _)         = Right Type.Boolean
 typeOf _ (Ast.Lt _ _)          = Right Type.Boolean
@@ -313,6 +315,7 @@ frees context (Ast.NotEquals a b)   = S.union (frees context a) (frees context b
 frees context (Ast.List vs)         = S.unions $ frees context <$> vs
 frees _       (Ast.Inte _)          = S.empty
 frees _       (Ast.Pos _)           = S.empty
+frees _       (Ast.Text _)          = S.empty
 frees context (Ast.FlipCompose f g) = S.union (frees context f) (frees context g)
 frees context (Ast.Identifier name) =
   case identType name context of

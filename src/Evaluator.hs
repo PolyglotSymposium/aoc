@@ -242,6 +242,8 @@ evalValue _ _ (Ast.Inte v) = Right $ Value.I v
 
 evalValue _ _ (Ast.Pos pos) = Right $ Value.Pos pos
 
+evalValue _ _ (Ast.Text t) = Right $ Value.Txt t
+
 evalValue context val (Ast.FlipCompose f g) =
   case (val, evalValue context Nothing f, evalValue context Nothing g) of
     (Just val', Right (Value.Func f'), Right (Value.Func g')) ->

@@ -37,6 +37,7 @@ data Value
   | NotEquals Value Value
   | Identifier Text
   | Inte Integer
+  | Text Text
   | Application Text (NE.NonEmpty Value)
   | List [Value]
   | Pos (Integer, Integer)
@@ -60,6 +61,7 @@ substitute subs (Equals l r)         = Equals    (substitute subs l) (substitute
 substitute subs (NotEquals l r)      = NotEquals (substitute subs l) (substitute subs r)
 substitute _ num@(Inte _)            = num
 substitute _ pos@(Pos _)             = pos
+substitute _ txt@(Text _)            = txt
 substitute subs (Application fn args) = Application fn $ substitute subs <$> args
 substitute subs (List vs)            = List $ substitute subs <$> vs
 substitute subs (FlipCompose f g)    = FlipCompose (substitute subs f) $ substitute subs g

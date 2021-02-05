@@ -1,0 +1,15 @@
+list
+  at ./y2020d4.txt
+  separated by '\n\n'
+  where each parses as
+    {passport:text}
+
+solution
+  (is_infix_of "byr:" (passport x)) &&
+  (is_infix_of "iyr:" (passport x)) &&
+  (is_infix_of "eyr:" (passport x)) &&
+  (is_infix_of "hgt:" (passport x)) &&
+  (is_infix_of "hcl:" (passport x)) &&
+  (is_infix_of "ecl:" (passport x)) &&
+  (is_infix_of "pid:" (passport x))
+    | count
