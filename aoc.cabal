@@ -21,6 +21,9 @@ library
                      , Conway.Ast
                      , Conway.Parser
                      , Conway.Problem
+                     , Graph.Ast
+                     , Graph.Parser
+                     , Graph.Problem
                      , Evaluator 
                      , List.Ast 
                      , List.Parser 

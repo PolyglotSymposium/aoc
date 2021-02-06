@@ -9,14 +9,16 @@ import qualified Conway.Ast as ConwayProblem
 import qualified Conway.Problem as ConwayProblem
 import           Data.Functor (($>))
 import           Data.Text (pack)
+import qualified Graph.Ast as GraphProblem
+import           Graph.Problem as GraphProblem
 import qualified List.Ast as ListProblem
 import           List.Problem as ListProblem
 import qualified Parser as P
 import qualified Program.Ast as ProgramProblem
 import qualified Program.Problem as ProgramProblem
+import           Text.Megaparsec
 import qualified Turtle.Ast as TurtleProblem
 import qualified Turtle.Problem as TurtleProblem
-import           Text.Megaparsec
 import qualified Type
 import qualified Value as V
 
@@ -25,6 +27,7 @@ data SupportedDomainAst
   | Conway ConwayProblem.Problem
   | Program ProgramProblem.Problem
   | Turtle TurtleProblem.Problem
+  | Graph GraphProblem.Problem
 
 type Solver a = (String, String) -> IO (Maybe (Type.Type, Type.Type, V.Value, a))
 
@@ -41,6 +44,7 @@ solver =
     <|> P.lstr "list" $> toDomain List ListProblem.runListProblem
     <|> P.lstr "program" $> toDomain Program ProgramProblem.runProgramProblem
     <|> P.lstr "turtle" $> toDomain Turtle TurtleProblem.runTurtleProblem
+    <|> P.lstr "graph" $> toDomain Graph GraphProblem.runGraphProblem
 
 solve :: String -> IO (Maybe (Type.Type, Type.Type, V.Value, SupportedDomainAst))
 solve source = do

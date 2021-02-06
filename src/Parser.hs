@@ -15,6 +15,7 @@ module Parser
        , simpleQuoted
        , code
        , value
+       , textLiteral 
        ) where
 
 import qualified Ast
@@ -109,13 +110,17 @@ value = lexeme $ makeExprParser valueTerm [
   , [InfixR (Ast.FlipCompose <$ lstr "@")]
   ]
 
+textLiteral :: Parser Text
+textLiteral =
+  pack <$> between (char '"') (char '"') (some (satisfy (/= '"')))
+
 valueTerm :: Parser Ast.Value
 valueTerm =
   lexeme (between (char '(') (char ')') value
           <|> try applicationOrIdent
           <|> Ast.List <$> between (char '[') (char ']') (sepBy value $ lexeme $ char ',')
           <|> Ast.Pos <$> positionLiteral
-          <|> Ast.Text . pack <$> between (char '"') (char '"') (some (satisfy (/= '"')))
+          <|> Ast.Text <$> textLiteral
           <|> Ast.Inte <$> L.decimal
          )
   where

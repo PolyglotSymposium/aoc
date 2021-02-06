@@ -1,0 +1,15 @@
+graph at ./y2020d7.txt
+  preprocess
+    strip "bags"
+    strip "bag"
+    strip "."
+    strip "no other"
+  where each line parses as
+    {bm:word} {b:word} contain [|many_sep_by "," {amount:num} {sm:word} {s:word}|]
+  builds graph
+    from (concat [sm, " ", s]) to (concat [bm, " ", b])
+
+solution
+  reachable_from "shiny gold"
+    | count
+    @ subtract 1
