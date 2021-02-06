@@ -4,10 +4,12 @@ graph at ./y2020d7.txt
     strip "bag"
     strip "."
     strip "no other"
-  where each line parses as
-    {bm:word} {b:word} contain [|many_sep_by "," {amount:num} {sm:word} {s:word}|]
+  where
+    edges are denoted by "contain"
+    left node parses as {bigger:text}
+    right nodes are separated by "," and parse as {amount:num} {smaller:text}
   builds graph
-    from (concat [sm, " ", s]) to (concat [bm, " ", b])
+    from smaller to bigger
 
 solution
   reachable_from "shiny gold"

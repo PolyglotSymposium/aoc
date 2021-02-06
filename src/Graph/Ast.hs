@@ -2,6 +2,7 @@ module Graph.Ast
        ( Problem(..)
        , ParseTerm(..)
        , PreprocessingStep(..)
+       , NodeTerms(..)
        ) where
 
 import qualified Ast
@@ -12,20 +13,25 @@ data ParseTerm
   | Number Text
   | Char Text
   | Text Text
-  | Word Text
-  | ManySepBy Text [ParseTerm]
   deriving (Show, Eq)
 
 data PreprocessingStep
   = Strip Text
   deriving (Show, Eq)
 
+data NodeTerms
+  = SingleNode [ParseTerm]
+  | ManyNodesSepBy Text [ParseTerm]
+  deriving (Show, Eq)
+
 data Problem =
   GraphProblem
   { at :: Text
   , preprocessing :: [PreprocessingStep]
+  , edgeDesignator :: Text
+  , leftTerms :: NodeTerms
+  , rightTerms :: NodeTerms
+  , fromNode :: Text
+  , toNode :: Text
   , solution :: Ast.Solution
-  , parseTerms :: [ParseTerm]
-  , fromEdge :: Ast.Value
-  , toEdge :: Ast.Value
   } deriving (Show, Eq)

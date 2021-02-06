@@ -27,22 +27,41 @@ list = do
   _ <- P.ws *> P.lstr "graph" *> P.lstr "at"
   file <- P.filePath
   preprocessing <- optional preprocessingSteps
-  terms <- parseTerms
-  fromGraph <- P.value
+  _ <- P.lstr "where"
+  edgeDesignator <- P.lexeme $ P.phrase ["edges", "are", "denoted", "by"] *> P.textLiteral
+  leftNode <- nodeTerms "left"
+  rightNode <- nodeTerms "right"
+  _ <- P.phrase ["builds", "graph", "from"]
+  fromNode <- P.ident
   _ <- P.lstr "to"
-  toGraph <- P.value
+  toNode <- P.ident
   _ <- P.lstr "solution"
   code <- P.code
   eof
   pure $
     Graph.GraphProblem {
-      Graph.at            = file
-    , Graph.preprocessing = fromMaybe [] preprocessing
-    , Graph.solution      = code
-    , Graph.parseTerms    = terms
-    , Graph.fromEdge      = fromGraph
-    , Graph.toEdge        = toGraph
+      Graph.at             = file
+    , Graph.preprocessing  = fromMaybe [] preprocessing
+    , Graph.edgeDesignator = edgeDesignator
+    , Graph.leftTerms      = leftNode
+    , Graph.rightTerms     = rightNode
+    , Graph.fromNode       = fromNode
+    , Graph.toNode         = toNode
+    , Graph.solution       = code
     }
+
+nodeTerms :: Text -> P.Parser Graph.NodeTerms
+nodeTerms side = P.lstr side *> (try multiple <|> single)
+
+  where
+    multiple = do
+      _ <- P.phrase ["nodes", "are", "separated", "by"]
+      sep <- P.lexeme P.textLiteral
+      _ <- P.phrase ["and", "parse", "as"]
+      terms <- parseTerms
+      pure $ Graph.ManyNodesSepBy sep terms
+
+    single = Graph.SingleNode <$> (P.phrase ["node", "parses", "as"] *> parseTerms)
 
 preprocessingSteps :: P.Parser [Graph.PreprocessingStep]
 preprocessingSteps = P.lstr "preprocess" *> manyTill preprocessingStep (lookAhead $ P.lstr "where")
@@ -50,7 +69,7 @@ preprocessingSteps = P.lstr "preprocess" *> manyTill preprocessingStep (lookAhea
     preprocessingStep = Graph.Strip <$> (P.lstr "strip" *> P.lexeme P.textLiteral)
 
 parseTerms :: P.Parser [Graph.ParseTerm]
-parseTerms = P.phrase ["where", "each", "line", "parses", "as"] *> manyTill term (P.phrase ["builds", "graph", "from"])
+parseTerms = manyTill term $ lookAhead (P.lstr "left" <|> P.lstr "builds" <|> P.lstr "right")
 
 nonIdentifiers :: S.Set Char
 nonIdentifiers = S.fromList $ ['!'..'/'] ++ [':'..'@'] ++ ['['..'`'] ++ ['|'..'~']
@@ -58,7 +77,6 @@ nonIdentifiers = S.fromList $ ['!'..'/'] ++ [':'..'@'] ++ ['['..'`'] ++ ['|'..'~
 term :: P.Parser Graph.ParseTerm
 term = P.lexeme (
    between (char '{') (char '}') typedName
-     <|> P.lstr "[|many_sep_by" *> (Graph.ManySepBy <$> P.lexeme P.textLiteral <*> manyTill term (P.lstr "|]"))
      <|> Graph.Literal <$> P.ident
      <|> Graph.Literal . pack <$> some nonIdentifierExceptCurly
    )
@@ -77,7 +95,6 @@ term = P.lexeme (
         "num" -> pure $ Graph.Number ident
         "char" -> pure $ Graph.Char ident
         "text" -> pure $ Graph.Text ident
-        "word" -> pure $ Graph.Word ident
         _     -> fail ("Unexpected type in line parse spec: " ++ show ty)
 
 parsedLine :: Text -> [Graph.ParseTerm] -> P.Parser V.Value
