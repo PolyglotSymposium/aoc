@@ -60,7 +60,14 @@ unifySolution context (Ast.FloatingLambda lambda) Type.Graph = do
   ot <- unifyLambda context lambda Type.Graph
   case ot of
     Type.Arrow Type.Graph arrowOt -> pure arrowOt
-    _ -> error "TODO non-unifying graph functions"
+    Type.DijkstraOutputs -> pure Type.DijkstraOutputs
+    _ -> error ("TODO non-unifying graph functions " <> show ot)
+
+unifySolution context (Ast.FloatingLambda lambda) Type.DijkstraOutputs = do
+  ot <- unifyLambda context lambda Type.DijkstraOutputs
+  case ot of
+    Type.Arrow Type.DijkstraOutputs arrowOt -> pure arrowOt
+    _ -> error ("TODO non-unifying Dijkstra functions " <> show ot)
 
 unifySolution context (Ast.FloatingLambda lambda) Type.Turtle = do
   ot <- unifyLambda context lambda Type.Direction

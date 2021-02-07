@@ -12,6 +12,7 @@ data Type
   | Text
   | Grid
   | Graph
+  | DijkstraOutputs
   | CellState
   | Position
   | Program

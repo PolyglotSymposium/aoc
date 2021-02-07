@@ -75,7 +75,10 @@ problems but that would certainly be a challenge.
 
 ### Graph
 
-This is a work in progress...
+Graph domain solutions begin with `graph`.
+
+My hunch is that these problems will be a lot of parsing details followed by
+a short algorithm plug. Fun!
 
 ### Maze
 

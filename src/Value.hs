@@ -110,6 +110,7 @@ data Value
   | Turtle (Integer, Integer) Turtle.Direction [Turtle.Action]
   | ParsedLine (M.Map Text Value)
   | Graph (Graph.EqualMapGraph Text)
+  | DijkstraOutputs (Graph.Distances Text, Graph.Prevs Text)
 
 data OrdValue
   = OrdI Integer
@@ -146,6 +147,7 @@ toOrd (Direction d)    = Just $ OrdDirection d
 toOrd (Turtle pos d _) = Just $ OrdTurtle pos d
 toOrd (ParsedLine vs)  = OrdParsedLine <$> traverse toOrd vs
 toOrd (Graph (Graph.EquallyWeighted' mp)) = Just $ OrdGraph $ unVertex mp
+toOrd (DijkstraOutputs _) = Nothing
 toOrd Program{}        = Nothing
 toOrd (Fold _)         = Nothing
 toOrd (Func _)         = Nothing
@@ -185,6 +187,8 @@ instance Show Value where
   show Program{} = "<program...>"
   show (Direction d) = show d
   show (Graph (Graph.EquallyWeighted' mp)) = show $ unVertex mp
+  show (DijkstraOutputs (dists, prevs)) =
+    "distances=" <> show dists <> "\nprevs=" <> show prevs
   show (ParsedLine vs) =
     "{" <> L.intercalate ", " ((\(k, v) -> unpack k <> "=" <> show v) <$> M.toList vs) <> "}"
 

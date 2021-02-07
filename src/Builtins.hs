@@ -95,9 +95,21 @@ funcOfGraph f = Value.Func $ \_ -> \case
                       Value.Graph c -> f c
                       _ -> Nothing
 
+funcOfDijkstra :: ((G.Distances Text, G.Prevs Text) -> Maybe Value.Value) -> Value.Value
+funcOfDijkstra f = Value.Func $ \_ -> \case
+                      Value.DijkstraOutputs c -> f c
+                      _ -> Nothing
+
 reachableFrom :: Value.Value
 reachableFrom = funcOfText $ \edge -> Just $ funcOfGraph $ \g ->
-  Just $ Value.Vs $ fmap Value.Txt $ S.toList $ (S.\\ S.singleton edge) $ S.map G.unVertex $ G.subGraph g (G.Keyed edge)
+  Just $ Value.Vs $ fmap Value.Txt $ S.toList $ (S.\\ S.singleton edge) $ S.map G.unVertex $ G.subGraph g $ G.Keyed edge
+
+dijkstraFrom :: Value.Value
+dijkstraFrom = funcOfText $ \edge -> Just $ funcOfGraph $ \g ->
+  Just $ Value.DijkstraOutputs $ G.dijkstra g $ G.Keyed edge
+
+rawDistances :: Value.Value
+rawDistances = funcOfDijkstra $ Just . Value.Vs . fmap (Value.I . fromIntegral) . M.elems . fst
 
 maximum' :: Value.Value
 maximum' = listFunctionOverIntegers $ Value.I . maximum
@@ -612,6 +624,9 @@ grid = Type.Grid
 graph :: Type.Type
 graph = Type.Graph
 
+dijkstra :: Type.Type
+dijkstra = Type.DijkstraOutputs
+
 prog :: Type.Type
 prog = Type.Program
 
@@ -689,6 +704,8 @@ graphContext =
   C.add core $
     C.fromList [
       ("reachable_from", (text --> (graph --> list text), reachableFrom))
+    , ("dijkstra_from",  (text --> dijkstra,              dijkstraFrom))
+    , ("raw_distances",  (dijkstra --> list num,          rawDistances))
     ]
 
 programContext :: C.Context

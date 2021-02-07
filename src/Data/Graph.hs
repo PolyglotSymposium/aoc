@@ -1,6 +1,8 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TupleSections #-}
+
 module Data.Graph where
 
 import qualified Data.Map.Strict as M
@@ -38,6 +40,10 @@ instance Vertices MapGraph where
 
 newtype ListGraph a = EquallyWeighted { toList :: [(Vertex a, Vertex a)] }
 
+instance Graph EqualMapGraph where
+  neighbors (EquallyWeighted' m) v =
+    S.map (1,) $ M.findWithDefault S.empty v m
+
 instance EquallyWeightedGraph EqualMapGraph where
   equalNeighbors (EquallyWeighted' m) v =
     M.findWithDefault S.empty v m
@@ -71,7 +77,7 @@ instance Vertices ListGraph where
     S.union (S.fromList $ map fst vs) (S.fromList $ map snd vs)
 
 dijkstra :: (Graph g, Ord a) => g a -> Vertex a -> (Distances a, Prevs a)
-dijkstra graph source = 
+dijkstra graph source =
   aux (vertices graph) (M.singleton source 0) M.empty
 
   where
