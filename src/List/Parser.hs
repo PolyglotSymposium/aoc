@@ -79,7 +79,7 @@ parsedLine sep terms = V.ParsedLine . M.fromList <$> line
     termParser (List.Char name) = Just . (name,) . V.Ch <$> (P.ws *> (alphaNumChar <|> punctuationChar <|> symbolChar) <* P.ws)
     -- I'm so sorry, future me
     termParser (List.Text name) = Just . (name,) . V.Txt . T.concat <$> (P.ws *> (manyTill charText $ lookAhead ((P.lstr sep >> pure ()) <|> eof)))
-    termParser (List.Number name) = Just . (name,) <$> P.integer
+    termParser (List.Number name) = Just . (name,) <$> (P.ws *> P.integer)
 
     charText :: P.Parser Text
     charText = do

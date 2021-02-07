@@ -44,13 +44,13 @@ runListProblem (source, text) =
         validations = do
           _ <- TypeCheck.ensureOneFreeOrIdentInEachStep context $ Ast.solution ast
           ot <- TypeCheck.unifySolution context (Ast.solution ast) (Type.List inputElementType)
-          pure (inputElementType, ot)
+          pure ot
       in
         case validations of
           Left err -> do
             print err
             pure Nothing
-          Right (_, outputType) -> do
+          Right outputType -> do
             inputText <- readFile inputPath
             case runParser (Parse.listInput (Ast.separator ast) parseInput) inputPath $ strip $ pack inputText of
               Left err -> do

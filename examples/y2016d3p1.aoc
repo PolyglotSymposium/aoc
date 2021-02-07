@@ -1,0 +1,9 @@
+list
+  at ./y2016d3.txt
+  separated by '\n'
+  where each parses as
+    {a:num} {b:num} {c:num}
+
+solution
+  ((a x) + (b x)) > (c x) && ((c x) + (b x)) > (a x) && ((c x) + (a x)) > (b x)
+    | count

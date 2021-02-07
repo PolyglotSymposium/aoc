@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module TypeCheck
-       ( inferInputType
-       , ensureOneFreeOrIdentInEachStep
+       ( ensureOneFreeOrIdentInEachStep
        , unifySolution
        , unify
        , noFrees
@@ -147,6 +146,9 @@ unify context (Ast.Gt a b) Type.Boolean env =
 unify context (Ast.Geq a b) Type.Boolean env =
   unifyBinOp context a Type.Number b Type.Number env
 
+unify context (Ast.Add a b) Type.Number env =
+  unifyBinOp context a Type.Number b Type.Number env
+
 unify context (Ast.Divide a b) Type.Number env =
   unifyBinOp context a Type.Number b Type.Number env
 
@@ -193,8 +195,7 @@ unify context (Ast.Application fn arguments) t env =
       Left $ IdentifierIsNotDefined fn
 
   where
-    unifyEachArg (Type.Arrow it ot) (arg:args) = do
-      _ <- unify context arg it env
+    unifyEachArg (Type.Arrow _ ot) (_:args) = do
       if not (ot == t || isVar t)
       -- :(
       then pure $ Just t
@@ -339,6 +340,3 @@ frees context (Ast.Identifier name) =
 
 frees context (Ast.Application fn args) =
   S.union (frees context (Ast.Identifier fn)) (S.unions $ NE.toList $ (frees context <$> args))
-
-inferInputType :: Context -> Ast.Solution -> Result Type.Type
-inferInputType context s = unifySolution context s (Type.List Type.Number)

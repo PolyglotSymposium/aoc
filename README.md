@@ -124,4 +124,22 @@ This may not even be distinct from the `Graph` domain.
    - [ ] Dimensions probably don't matter.
 
 
+## Problem Notes
+
+### 2015, 3 part 2
+
+`turtle`, conditional walkers, perhaps multiple solvers joining in the end
+
+### 2015, 4
+
+MD5, skipping for a while
+
+### 2015, 5
+
+List filtering, tricky context-sensitive validation (not really "tricky" more unnatural)
+
+### 2015, 6
+
+Grid mass manipulation
+
  [events]: https://adventofcode.com/2020/events
