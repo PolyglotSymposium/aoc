@@ -15,7 +15,7 @@ import           Data.Bifunctor
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import           Data.List (foldl')
-import           Data.Maybe (fromMaybe, maybe, catMaybes)
+import           Data.Maybe (fromMaybe, maybe, catMaybes, isJust)
 import           Data.Void (Void(..))
 import qualified Graph.Ast as Graph
 import qualified Parser as P
@@ -36,19 +36,21 @@ list = do
   fromNode <- P.ident
   _ <- P.lstr "to"
   toNode <- P.ident
+  bidirectional <- optional $ P.phrase ["and", "vice", "versa"]
   _ <- P.lstr "solution"
   code <- P.code
   eof
   pure $
     Graph.GraphProblem {
-      Graph.at             = file
-    , Graph.preprocessing  = fromMaybe [] preprocessing
-    , Graph.edgeDesignator = edgeDesignator
-    , Graph.leftTerms      = leftNode
-    , Graph.rightTerms     = rightNode
-    , Graph.fromNode       = fromNode
-    , Graph.toNode         = toNode
-    , Graph.solution       = code
+      Graph.at              = file
+    , Graph.preprocessing   = fromMaybe [] preprocessing
+    , Graph.edgeDesignator  = edgeDesignator
+    , Graph.leftTerms       = leftNode
+    , Graph.rightTerms      = rightNode
+    , Graph.fromNode        = fromNode
+    , Graph.toNode          = toNode
+    , Graph.isBidirectional = isJust bidirectional
+    , Graph.solution        = code
     }
 
 nodeTerms :: Text -> P.Parser Graph.NodeTerms
@@ -111,10 +113,14 @@ inputGraph  Graph.GraphProblem{..} raw =
       (lineNumber, (lhss, rhss)) <- zip [1..] sides
       lhs <- filter (not . T.null) lhss
       rhs <- filter (not . T.null) rhss
-      pure $ do
+      directionality $ do
         leftMap <- runParser (parsedTerms (Graph.terms leftTerms)) ("Left-hand side:" <> show lineNumber) lhs
         rightMap <- runParser (parsedTerms (Graph.terms rightTerms)) ("Right-hand side:" <> show lineNumber) rhs
         toEdge lineNumber $ M.union leftMap rightMap
+
+    directionality (Right (a, b)) | isBidirectional = [Right (a, b), Right (b, a)]
+    directionality (Right (a, b)) = [Right (a, b)]
+    directionality err = [err]
 
     toEdge lineNumber mp =
       case (M.lookup fromNode mp, M.lookup toNode mp) of

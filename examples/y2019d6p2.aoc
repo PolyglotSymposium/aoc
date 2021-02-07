@@ -1,0 +1,12 @@
+graph at ./y2019d6.txt
+  where
+    edges are denoted by ")"
+    left node parses as {object:text}
+    right node parses as {orbiter:text}
+  builds graph
+    from object to orbiter and vice versa
+
+solution
+  dijkstra_from "SAN"
+    | (distance_to "YOU")
+    @ subtract 2

@@ -38,5 +38,6 @@ data Problem =
   , rightTerms :: NodeTerms
   , fromNode :: Text
   , toNode :: Text
+  , isBidirectional :: Bool
   , solution :: Ast.Solution
   } deriving (Show, Eq)

@@ -111,6 +111,10 @@ dijkstraFrom = funcOfText $ \edge -> Just $ funcOfGraph $ \g ->
 rawDistances :: Value.Value
 rawDistances = funcOfDijkstra $ Just . Value.Vs . fmap (Value.I . fromIntegral) . M.elems . fst
 
+distanceTo :: Value.Value
+distanceTo = funcOfText $ \edge -> Just $ funcOfDijkstra $ \(dists, _) ->
+  Just $ Value.I $ fromIntegral $ M.findWithDefault maxBound (G.Keyed edge) dists
+
 maximum' :: Value.Value
 maximum' = listFunctionOverIntegers $ Value.I . maximum
 
@@ -706,6 +710,7 @@ graphContext =
       ("reachable_from", (text --> (graph --> list text), reachableFrom))
     , ("dijkstra_from",  (text --> dijkstra,              dijkstraFrom))
     , ("raw_distances",  (dijkstra --> list num,          rawDistances))
+    , ("distance_to",    (text --> (dijkstra --> num),    distanceTo))
     ]
 
 programContext :: C.Context
