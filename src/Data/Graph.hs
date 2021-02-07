@@ -23,6 +23,8 @@ class Vertices g where
 class Vertices g => Graph g where
   neighbors :: Ord a => g a -> Vertex a -> S.Set (Int, Vertex a)
 
+  removeEdge :: Ord a => g a -> (Vertex a, Vertex a) -> g a
+
 class Vertices g => EquallyWeightedGraph g where
   equalNeighbors :: Ord a => g a -> Vertex a -> S.Set (Vertex a)
 
@@ -34,6 +36,18 @@ instance Graph MapGraph where
   neighbors (Weighted m) v =
     M.findWithDefault S.empty v m
 
+  removeEdge (Weighted m) (src, dest) =
+    Weighted $ M.update (remove dest) src m
+
+    where
+      remove v set =
+        let
+          set' = S.filter ((/=) v . snd) set
+        in
+          if S.null set'
+          then Nothing
+          else Just set'
+
 instance Vertices MapGraph where
   vertices (Weighted m) =
     S.union (M.keysSet m) $ S.unions $ map (S.map snd) $ map snd $ M.toList m
@@ -43,6 +57,18 @@ newtype ListGraph a = EquallyWeighted { toList :: [(Vertex a, Vertex a)] }
 instance Graph EqualMapGraph where
   neighbors (EquallyWeighted' m) v =
     S.map (1,) $ M.findWithDefault S.empty v m
+
+  removeEdge (EquallyWeighted' m) (src, dest) =
+    EquallyWeighted' $ M.update (remove dest) src m
+
+    where
+      remove v set =
+        let
+          set' = S.filter ((/=) v) set
+        in
+          if S.null set'
+          then Nothing
+          else Just set'
 
 instance EquallyWeightedGraph EqualMapGraph where
   equalNeighbors (EquallyWeighted' m) v =
@@ -141,3 +167,27 @@ subGraph graph source =
   case walk graph source $ const False of
     (Just (), visited) -> visited
     (Nothing, visited) -> visited
+
+topologicalSort  :: (Graph g, Ord a) => g a -> [a]
+topologicalSort graph = go nodesWithoutIncomingEdge graph
+  where
+
+    go s graph' =
+      case S.minView s of
+        Nothing -> []
+        Just (n, s') ->
+          let
+            ms = neighbors graph' n
+            graph'' = foldr (\(_, m) g -> removeEdge g (n, m)) graph' ms
+            additionalSs = S.map snd $ S.filter (not . hasIncomingEdges graph'' . snd) ms
+          in
+            unVertex n:go (S.union additionalSs s') graph''
+
+    hasIncomingEdges g v =
+      any (S.member v . S.map snd . neighbors g) $ vertices g
+
+    nodesWithoutIncomingEdge =
+      let
+        vs = vertices graph
+      in
+        vs S.\\ (S.unions $ S.toList $ S.map (S.map snd . neighbors graph) vs)

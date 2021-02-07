@@ -35,14 +35,14 @@ shouldBeUnificationFailureOf (Left (TypeCheck.UnificationFailure _ _ a b _)) (c,
 shouldBeUnificationFailureOf v _ =
   error $ "Expected unification failure, got " ++ show v
 
-testPartWithBench year day part expected = do
+testPartWithBenchGen unsafeGetValue year day part expected = do
   it ("solves " ++ show year ++ " D" ++ show day ++ " P" ++ show part) $ do
     let path = "./examples/y" ++ show year ++ "d" ++ show day ++ "p" ++ show part ++ ".aoc"
 
     (domain:_) <- words <$> readFile path
 
-    (Just (_, _, V.I result, _), spec) <- stopWatch $ Aoc.solve path
-    result `shouldBe` expected
+    (Just (_, _, result, _), spec) <- stopWatch $ Aoc.solve path
+    unsafeGetValue result `shouldBe` expected
     putStrLn $ ("EXAMPLE_OUTPUT " ++) $ concat
       [
         "{"
@@ -56,6 +56,12 @@ testPartWithBench year day part expected = do
       ]
 
   pure ()
+
+testPartWithBench =
+  testPartWithBenchGen $ \(V.I v) -> v
+
+testPartWithBenchText =
+  testPartWithBenchGen $ \(V.Txt v) -> v
 
 main :: IO ()
 main = hspec $ do
@@ -96,6 +102,8 @@ main = hspec $ do
 
     testPartWithBench 2018 1 2 80598
 
+    testPartWithBenchText 2018 7 1 "OVXCKZBDEHINPFSTJLUYRWGAMQ"
+
     testPartWithBench 2018 18 1 560091
 
     testPartWithBench 2019 1 1 3308377
@@ -103,6 +111,8 @@ main = hspec $ do
     testPartWithBench 2019 1 2 4959709
 
     testPartWithBench 2019 6 1 154386
+
+    testPartWithBench 2019 6 2 346
 
     testPartWithBench 2019 24 1 18844281
 

@@ -59,6 +59,17 @@ unique = funcOfList $ fmap Value.Vs . go S.empty
 first :: Value.Value
 first = funcOfList listToMaybe
 
+listFunctionOverText :: ([Text] -> Value.Value) -> Value.Value
+listFunctionOverText f =
+  funcOfList $ fmap f . extractText
+
+  where
+    extractText [] = Just []
+    extractText (Value.Txt i:rest) = do
+      others <- extractText rest
+      pure $ i:others
+    extractText _ = Nothing
+
 listFunctionOverIntegers :: ([Integer] -> Value.Value) -> Value.Value
 listFunctionOverIntegers f =
   funcOfList $ fmap f . extractIntegers
@@ -114,6 +125,12 @@ rawDistances = funcOfDijkstra $ Just . Value.Vs . fmap (Value.I . fromIntegral) 
 distanceTo :: Value.Value
 distanceTo = funcOfText $ \edge -> Just $ funcOfDijkstra $ \(dists, _) ->
   Just $ Value.I $ fromIntegral $ M.findWithDefault maxBound (G.Keyed edge) dists
+
+topologicalOrder :: Value.Value
+topologicalOrder = funcOfGraph $ Just . Value.Vs . fmap Value.Txt . G.topologicalSort
+
+concat' :: Value.Value
+concat' = listFunctionOverText $ Value.Txt . T.concat
 
 maximum' :: Value.Value
 maximum' = listFunctionOverIntegers $ Value.I . maximum
@@ -672,6 +689,7 @@ baseIdentifiers =
   , ("count_char",         char --> (text --> num),            countChar)
   , ("base_one_char_at",   num --> (text --> char),            charAt1)
   , ("is_infix_of",        text --> (text --> bool),           isInfixOf')
+  , ("concat",             list text --> text,                 concat')
   ]
 
 core :: C.Context
@@ -707,10 +725,11 @@ graphContext :: C.Context
 graphContext =
   C.add core $
     C.fromList [
-      ("reachable_from", (text --> (graph --> list text), reachableFrom))
-    , ("dijkstra_from",  (text --> dijkstra,              dijkstraFrom))
-    , ("raw_distances",  (dijkstra --> list num,          rawDistances))
-    , ("distance_to",    (text --> (dijkstra --> num),    distanceTo))
+      ("reachable_from",    (text --> (graph --> list text), reachableFrom))
+    , ("dijkstra_from",     (text --> dijkstra,              dijkstraFrom))
+    , ("raw_distances",     (dijkstra --> list num,          rawDistances))
+    , ("distance_to",       (text --> (dijkstra --> num),    distanceTo))
+    , ("topological_order", (graph --> list text,            topologicalOrder))
     ]
 
 programContext :: C.Context

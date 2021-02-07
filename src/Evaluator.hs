@@ -128,6 +128,15 @@ eval context grid@Value.Grid{} (Ast.FloatingLambda (Ast.Body (Ast.Identifier nam
 
     _ -> Left $ TypeMismatchAtRuntime (Text.pack ("Built-in " ++ Text.unpack name ++ " specified at the top level of conway evaluation but it's not a conway function" ))
 
+eval context graph@Value.Graph{} (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
+  case identValue name context of
+    Just (Value.Func f) ->
+      case f context graph of
+        Nothing -> Left $ UnexpectedError 25
+        Just v  -> Right v
+
+    _ -> Left $ TypeMismatchAtRuntime (Text.pack ("Built-in " ++ Text.unpack name ++ " specified at the top level of graph evaluation but it's not a graph function" ))
+
 eval context dos@(Value.DijkstraOutputs _) (Ast.FloatingLambda (Ast.Body (Ast.Identifier name))) =
   case identValue name context of
     Just (Value.Func f) ->

@@ -1,0 +1,14 @@
+graph at ./y2018d7.txt
+  preprocess
+    strip "Step"
+    strip "can begin."
+  where
+    edges are denoted by "must be finished before step"
+    left node parses as {earlier:text}
+    right node parses as {later:text}
+  builds graph
+    from earlier to later 
+
+solution
+  topological_order
+    | concat
