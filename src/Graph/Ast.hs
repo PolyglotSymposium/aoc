@@ -3,6 +3,7 @@ module Graph.Ast
        , ParseTerm(..)
        , PreprocessingStep(..)
        , NodeTerms(..)
+       , terms
        ) where
 
 import qualified Ast
@@ -23,6 +24,10 @@ data NodeTerms
   = SingleNode [ParseTerm]
   | ManyNodesSepBy Text [ParseTerm]
   deriving (Show, Eq)
+
+terms :: NodeTerms -> [ParseTerm]
+terms (SingleNode ts) = ts
+terms (ManyNodesSepBy _ ts) = ts
 
 data Problem =
   GraphProblem

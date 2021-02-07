@@ -1,26 +1,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Graph.Parser
        ( list
-       , listInput
-       , parsedLine
+       , inputGraph
        ) where
 
-import           Data.Text
+import qualified Data.Graph as G
+import           Data.Text (Text)
 import qualified Data.Text as T
+import           Data.Bifunctor
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
+import           Data.List (foldl')
 import           Data.Maybe (fromMaybe, maybe, catMaybes)
+import           Data.Void (Void(..))
 import qualified Graph.Ast as Graph
 import qualified Parser as P
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import qualified Value as V
-
-listInput :: Text -> P.Parser V.Value -> P.Parser [V.Value]
-listInput sep pValue = P.ws *> sepBy pValue (P.lstr sep) <* eof
 
 list :: P.Parser Graph.Problem
 list = do
@@ -78,7 +79,7 @@ term :: P.Parser Graph.ParseTerm
 term = P.lexeme (
    between (char '{') (char '}') typedName
      <|> Graph.Literal <$> P.ident
-     <|> Graph.Literal . pack <$> some nonIdentifierExceptCurly
+     <|> Graph.Literal . T.pack <$> some nonIdentifierExceptCurly
    )
 
   where
@@ -90,15 +91,45 @@ term = P.lexeme (
     typedName = do
       ident <- P.ident
       _ <- char ':'
-      ty <- choice $ P.lstr <$> ["num", "char", "text", "word"]
+      ty <- choice $ P.lstr <$> ["num", "char", "text"]
       case ty of
         "num" -> pure $ Graph.Number ident
         "char" -> pure $ Graph.Char ident
         "text" -> pure $ Graph.Text ident
         _     -> fail ("Unexpected type in line parse spec: " ++ show ty)
 
-parsedLine :: Text -> [Graph.ParseTerm] -> P.Parser V.Value
-parsedLine sep terms = V.ParsedLine . M.fromList <$> line
+inputGraph :: Graph.Problem -> Text -> Either (ParseError Char Void) V.Value
+inputGraph  Graph.GraphProblem{..} raw =
+  V.Graph . G.listGraphToMapGraph <$> edges
+
+  where
+    preprocessed = foldl' preprocess raw preprocessing
+
+    preprocess t (Graph.Strip needle) = T.replace needle "" t
+
+    edges = fmap G.EquallyWeighted $ sequence $ do
+      (lineNumber, (lhss, rhss)) <- zip [1..] sides
+      lhs <- filter (not . T.null) lhss
+      rhs <- filter (not . T.null) rhss
+      pure $ do
+        leftMap <- runParser (parsedTerms (Graph.terms leftTerms)) ("Left-hand side:" <> show lineNumber) lhs
+        rightMap <- runParser (parsedTerms (Graph.terms rightTerms)) ("Right-hand side:" <> show lineNumber) rhs
+        toEdge lineNumber $ M.union leftMap rightMap
+
+    toEdge lineNumber mp =
+      case (M.lookup fromNode mp, M.lookup toNode mp) of
+        (Just (V.Txt from), Just (V.Txt to)) -> pure (G.Keyed from, G.Keyed to)
+        nonText -> fail $ show lineNumber <> ": for " <> show (fromNode, toNode) <> " found " <> show nonText <> show mp
+
+    sides :: [([Text], [Text])]
+    sides =
+      bimap (nodeSpan leftTerms) (nodeSpan rightTerms . T.drop (T.length edgeDesignator)) . T.breakOn edgeDesignator <$> T.splitOn "\n" preprocessed
+
+    nodeSpan (Graph.SingleNode _) = pure . T.strip
+    nodeSpan (Graph.ManyNodesSepBy sep _) = fmap T.strip . T.splitOn sep
+
+parsedTerms :: [Graph.ParseTerm] -> P.Parser (M.Map Text V.Value)
+parsedTerms terms = M.fromList <$> line
   where
     line = catMaybes <$> traverse termParser terms
 
@@ -106,10 +137,10 @@ parsedLine sep terms = V.ParsedLine . M.fromList <$> line
     termParser (Graph.Literal str) = string str *> pure Nothing
     termParser (Graph.Char name) = Just . (name,) . V.Ch <$> (P.ws *> (alphaNumChar <|> punctuationChar <|> symbolChar) <* P.ws)
     -- I'm so sorry, future me
-    termParser (Graph.Text name) = Just . (name,) . V.Txt . T.concat <$> (P.ws *> (manyTill charText $ lookAhead ((P.lstr sep >> pure ()) <|> eof)))
+    termParser (Graph.Text name) = Just . (name,) . V.Txt . T.concat <$> (P.ws *> manyTill charText eof)
     termParser (Graph.Number name) = Just . (name,) <$> P.integer
 
     charText :: P.Parser Text
     charText = do
       c <- asciiChar
-      pure $ pack [c]
+      pure $ T.pack [c]

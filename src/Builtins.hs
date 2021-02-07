@@ -8,6 +8,7 @@ module Builtins
        ( listContext
        , valueFromParsedLine
        , conwayContext
+       , graphContext
        , programContext
        , turtleContext
        ) where
@@ -16,6 +17,7 @@ import qualified Ast
 import qualified Conway.Ast as Conway
 import           Control.Monad (replicateM)
 import qualified Turtle.Ast as Turtle
+import qualified Data.Graph as G
 import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Set as S
@@ -88,11 +90,24 @@ funcOfText f = Value.Func $ \_ -> \case
                       Value.Txt c -> f c
                       _ -> Nothing
 
+funcOfGraph :: (G.EqualMapGraph Text -> Maybe Value.Value) -> Value.Value
+funcOfGraph f = Value.Func $ \_ -> \case
+                      Value.Graph c -> f c
+                      _ -> Nothing
+
+reachableFrom :: Value.Value
+reachableFrom = funcOfText $ \edge -> Just $ funcOfGraph $ \g ->
+  Just $ Value.Vs $ fmap Value.Txt $ S.toList $ (S.\\ S.singleton edge) $ S.map G.unVertex $ G.subGraph g (G.Keyed edge)
+
 maximum' :: Value.Value
 maximum' = listFunctionOverIntegers $ Value.I . maximum
 
 minimum' :: Value.Value
 minimum' = listFunctionOverIntegers $ Value.I . minimum
+
+subtract' :: Value.Value
+subtract' =
+  funcOfNumber $ \amt -> Just $ funcOfNumber $ Just . Value.I . subtract amt
 
 combos :: Value.Value
 combos = funcOfNumber $ \n -> Just $ funcOfList $ \items ->
@@ -594,6 +609,9 @@ bool = Type.Boolean
 grid :: Type.Type
 grid = Type.Grid
 
+graph :: Type.Type
+graph = Type.Graph
+
 prog :: Type.Type
 prog = Type.Program
 
@@ -628,6 +646,7 @@ baseIdentifiers =
   , ("odd",                num --> bool,                       odd')
   , ("maximum",            list num --> num,                   maximum')
   , ("minimum",            list num --> num,                   minimum')
+  , ("subtract",           num --> (num --> num),              subtract')
   , ("base_zero_index_of", a --> (list a --> num),             indexOf0)
   , ("manhattan_distance", pos --> (pos --> num),              manhattanDistance)
   , ("combinations",       num --> (list a --> list (list a)), combos)
@@ -663,6 +682,13 @@ conwayContext =
     , ("right",                     (cellState --> bool,                     right))
     , ("reading_order",             (list pos  --> list num,                 readingOrder))
     , ("count_cells",               (list cellState --> (grid --> list num), countCells))
+    ]
+
+graphContext :: C.Context
+graphContext =
+  C.add core $
+    C.fromList [
+      ("reachable_from", (text --> (graph --> list text), reachableFrom))
     ]
 
 programContext :: C.Context

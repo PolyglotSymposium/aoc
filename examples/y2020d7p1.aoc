@@ -14,4 +14,3 @@ graph at ./y2020d7.txt
 solution
   reachable_from "shiny gold"
     | count
-    @ subtract 1

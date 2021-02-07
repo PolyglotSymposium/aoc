@@ -56,6 +56,12 @@ unifySolution context (Ast.FloatingLambda lambda) Type.Grid = do
     Type.Arrow Type.Grid arrowOt -> pure arrowOt
     _ -> error "TODO non-unifying grid functions"
 
+unifySolution context (Ast.FloatingLambda lambda) Type.Graph = do
+  ot <- unifyLambda context lambda Type.Graph
+  case ot of
+    Type.Arrow Type.Graph arrowOt -> pure arrowOt
+    _ -> error "TODO non-unifying graph functions"
+
 unifySolution context (Ast.FloatingLambda lambda) Type.Turtle = do
   ot <- unifyLambda context lambda Type.Direction
   case ot of
@@ -85,6 +91,8 @@ unifySolution context (Ast.FloatingLambda lambda) (Type.List it) = do
       pure $ Type.List b
     Type.Arrow Type.Grid Type.Grid ->
       pure Type.Grid
+    Type.Arrow Type.Graph Type.Graph ->
+      pure Type.Graph
     Type.Arrow Type.Turtle Type.Turtle ->
       pure Type.Turtle
     Type.Arrow (Type.List finElem) fout ->

@@ -11,6 +11,7 @@ data Type
   | Char
   | Text
   | Grid
+  | Graph
   | CellState
   | Position
   | Program

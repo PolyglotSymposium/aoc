@@ -23,6 +23,7 @@ module Value
 
 import qualified Conway.Ast as Conway
 import qualified Turtle.Ast as Turtle
+import qualified Data.Graph as Graph
 import qualified Data.List as L
 import qualified Data.Map.Strict as M
 import           Data.Text hiding (concat, empty, foldr)
@@ -108,6 +109,7 @@ data Value
   | Direction Turtle.Direction
   | Turtle (Integer, Integer) Turtle.Direction [Turtle.Action]
   | ParsedLine (M.Map Text Value)
+  | Graph (Graph.EqualMapGraph Text)
 
 data OrdValue
   = OrdI Integer
@@ -125,6 +127,7 @@ data OrdValue
   | OrdDirection Turtle.Direction
   | OrdTurtle (Integer, Integer) Turtle.Direction
   | OrdParsedLine (M.Map Text OrdValue)
+  | OrdGraph (M.Map Text (S.Set Text))
   deriving (Ord, Eq)
 
 toOrd :: Value -> Maybe OrdValue
@@ -142,10 +145,14 @@ toOrd (Register name)  = Just $ OrdRegister name
 toOrd (Direction d)    = Just $ OrdDirection d
 toOrd (Turtle pos d _) = Just $ OrdTurtle pos d
 toOrd (ParsedLine vs)  = OrdParsedLine <$> traverse toOrd vs
+toOrd (Graph (Graph.EquallyWeighted' mp)) = Just $ OrdGraph $ unVertex mp
 toOrd Program{}        = Nothing
 toOrd (Fold _)         = Nothing
 toOrd (Func _)         = Nothing
 toOrd (StepsOfFold _)  = Nothing
+
+unVertex :: M.Map (Graph.Vertex Text) (S.Set (Graph.Vertex Text)) -> M.Map Text (S.Set Text)
+unVertex = M.map (S.map Graph.unVertex) . M.mapKeys Graph.unVertex
 
 instance Show Value where
   show (I v) = show v
@@ -177,6 +184,7 @@ instance Show Value where
      fmap (\x -> d2CellOrEmpty emptyCell (x, y) dim state) [minX..maxX] ++ "\n"
   show Program{} = "<program...>"
   show (Direction d) = show d
+  show (Graph (Graph.EquallyWeighted' mp)) = show $ unVertex mp
   show (ParsedLine vs) =
     "{" <> L.intercalate ", " ((\(k, v) -> unpack k <> "=" <> show v) <$> M.toList vs) <> "}"
 

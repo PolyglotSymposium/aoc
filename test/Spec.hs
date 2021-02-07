@@ -114,6 +114,8 @@ main = hspec $ do
 
     testPartWithBench 2020 4 1 233
 
+    testPartWithBench 2020 7 1 185
+
     testPartWithBench 2020 8 1 1766
 
     testPartWithBench 2020 11 1 2108
