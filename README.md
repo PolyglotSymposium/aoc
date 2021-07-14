@@ -6,7 +6,7 @@ puzzles.
 ## Why?
 
 At the time of writing this, Advent of Code has had [6 events][events], for a
-total of a little less than 250 problems. These problems, in my observation,
+total of a little less than 300 problems. These problems, in my observation,
 span a plethora of "domains" many of which are well known or reside in the
 sphere of classical computer science problems (e.g. cellular automaton, graphs,
 etc...).
