@@ -37,8 +37,10 @@ turtleSpec = do
 
 
 turtleActions :: Turtle.Problem -> P.Parser [Turtle.Action]
-turtleActions Turtle.TurtleProblem{..} =
-  concat <$> sepEndBy1 (action instructions) (() <$ P.lstr separator <|> eof)
+turtleActions Turtle.TurtleProblem{..} = do
+  as <- concat <$> sepEndBy1 (action instructions) (() <$ P.lstr separator)
+  eof
+  pure as
 
 action :: [Turtle.InstructionSpec] -> P.Parser [Turtle.Action]
 action = choice . fmap op
@@ -51,7 +53,7 @@ action = choice . fmap op
     numbers :: Turtle.ParseTerm -> P.Parser (M.Map Text Integer)
     numbers (Turtle.Literal literal) = M.empty <$ P.lstr literal
     numbers (Turtle.Number name) = do
-      value <- P.lexeme P.rawInteger
+      value <- P.rawInteger
       pure $ M.singleton name value
 
     resolve :: [Turtle.ActionSpec] -> M.Map Text Integer -> P.Parser [Turtle.Action]

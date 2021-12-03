@@ -187,7 +187,7 @@ unify context ast@(Ast.Identifier name) t env =
                 Right $ Just v
               _ -> Left $ UnificationFailure 4 env t' t ast
 
-unify context (Ast.Application fn arguments) t env =
+unify context (Ast.Application fn arguments) t _ =
   case identType fn context of
     Just v ->
       unifyEachArg v $ NE.toList arguments

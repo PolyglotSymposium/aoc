@@ -7,7 +7,6 @@ import           Data.Text hiding (foldr)
 import qualified Evaluator as Eval
 import qualified Graph.Ast as Ast
 import qualified Graph.Parser as Parse
-import qualified Parser as Parse
 import qualified System.FilePath as Path
 import           Text.Megaparsec
 import           Text.Megaparsec.Error (parseErrorPretty)

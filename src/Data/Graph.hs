@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TupleSections #-}
 
-module Data.Graph where
+module Data.Graph (module Data.Graph) where
 
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
@@ -114,9 +114,9 @@ dijkstra graph source =
         $ foldr (insertShorter u) (dist, prev)
         $ neighbors graph u
 
-    insertShorter u (length, v) (dist, prev) = fromMaybe (dist, prev) $ do
+    insertShorter u (len, v) (dist, prev) = fromMaybe (dist, prev) $ do
       uD <- M.lookup u dist
-      let alt = uD + length
+      let alt = uD + len
       guard $ alt < M.findWithDefault maxBound v dist
       pure (M.insert v alt dist, M.insert v u prev)
 
@@ -150,9 +150,9 @@ walk graph source end =
         Seq.EmptyL -> (Nothing, visited)
         (at, d) Seq.:< rest ->
           let
-            neighbors = equalNeighbors graph at S.\\ visited
-            visited' = S.union neighbors visited
-            moreToTry = Seq.fromList $ S.toList $ S.map (\n -> (n, step n d)) neighbors
+            neighbors' = equalNeighbors graph at S.\\ visited
+            visited' = S.union neighbors' visited
+            moreToTry = Seq.fromList $ S.toList $ S.map (\n -> (n, step n d)) neighbors'
           in
             if end at
             then (Just d, visited)

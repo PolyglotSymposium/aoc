@@ -15,8 +15,8 @@ import           Data.Bifunctor
 import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import           Data.List (foldl')
-import           Data.Maybe (fromMaybe, maybe, catMaybes, isJust)
-import           Data.Void (Void(..))
+import           Data.Void (Void)
+import           Data.Maybe (fromMaybe, catMaybes, isJust)
 import qualified Graph.Ast as Graph
 import qualified Parser as P
 import           Text.Megaparsec
@@ -110,7 +110,7 @@ inputGraph  Graph.GraphProblem{..} raw =
     preprocess t (Graph.Strip needle) = T.replace needle "" t
 
     edges = fmap G.EquallyWeighted $ sequence $ do
-      (lineNumber, (lhss, rhss)) <- zip [1..] sides
+      (lineNumber, (lhss, rhss)) <- zip [(1::Int)..] sides
       lhs <- filter (not . T.null) lhss
       rhs <- filter (not . T.null) rhss
       directionality $ do

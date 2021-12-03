@@ -27,142 +27,142 @@ import           Evaluator (evalValue, toBoolean)
 import qualified Program.Ast as Program
 import qualified Type
 import qualified Value as C
-import qualified Value
+import qualified Value as V
 
-makeFold :: Integer -> (Integer -> Integer -> Integer) -> Value.Value
-makeFold i f = Value.Fold (Value.I i, \v1 v2 ->
+makeFold :: Integer -> (Integer -> Integer -> Integer) -> V.Value
+makeFold i f = V.Fold (V.I i, \v1 v2 ->
   case (v1, v2) of
-    (Value.I v, Value.I acc) -> Just $ Value.I $ f v acc
+    (V.I v, V.I acc) -> Just $ V.I $ f v acc
     _                        -> Nothing)
 
-count :: Value.Value
-count = funcOfList $ Just . Value.I . toInteger . length
+count :: V.Value
+count = funcOfList $ Just . V.I . toInteger . length
 
-repeats :: Value.Value
-repeats = funcOfList $ fmap Value.Vs . go S.empty
+repeats :: V.Value
+repeats = funcOfList $ fmap V.Vs . go S.empty
   where
     go _ [] = Just []
     go seen (v:vs) = do
-      ord  <- Value.toOrd v
+      ord  <- V.toOrd v
       rest <- go (S.insert ord seen) vs
       pure $ [v | S.member ord seen] ++ rest
 
-unique :: Value.Value
-unique = funcOfList $ fmap Value.Vs . go S.empty
+unique :: V.Value
+unique = funcOfList $ fmap V.Vs . go S.empty
   where
     go _ [] = Just []
     go seen (v:vs) = do
-      ord  <- Value.toOrd v
+      ord  <- V.toOrd v
       rest <- go (S.insert ord seen) vs
       pure $ [v | not $ S.member ord seen] ++ rest
 
-first :: Value.Value
+first :: V.Value
 first = funcOfList listToMaybe
 
-listFunctionOverText :: ([Text] -> Value.Value) -> Value.Value
+listFunctionOverText :: ([Text] -> V.Value) -> V.Value
 listFunctionOverText f =
   funcOfList $ fmap f . extractText
 
   where
     extractText [] = Just []
-    extractText (Value.Txt i:rest) = do
+    extractText (V.Txt i:rest) = do
       others <- extractText rest
       pure $ i:others
     extractText _ = Nothing
 
-listFunctionOverIntegers :: ([Integer] -> Value.Value) -> Value.Value
+listFunctionOverIntegers :: ([Integer] -> V.Value) -> V.Value
 listFunctionOverIntegers f =
   funcOfList $ fmap f . extractIntegers
 
   where
     extractIntegers [] = Just []
-    extractIntegers (Value.I i:rest) = do
+    extractIntegers (V.I i:rest) = do
       others <- extractIntegers rest
       pure $ i:others
     extractIntegers _ = Nothing
 
-funcOfList :: ([Value.Value] -> Maybe Value.Value) -> Value.Value
-funcOfList f = Value.Func $ \_ -> \case
-                      Value.Vs vs -> f vs
+funcOfList :: ([V.Value] -> Maybe V.Value) -> V.Value
+funcOfList f = V.Func $ \_ -> \case
+                      V.Vs vs -> f vs
                       _ -> Nothing
 
-funcOfNumber :: (Integer -> Maybe Value.Value) -> Value.Value
-funcOfNumber f = Value.Func $ \_ -> \case
-                      Value.I v -> f v
+funcOfNumber :: (Integer -> Maybe V.Value) -> V.Value
+funcOfNumber f = V.Func $ \_ -> \case
+                      V.I v -> f v
                       _ -> Nothing
 
-funcOfChar :: (Char -> Maybe Value.Value) -> Value.Value
-funcOfChar f = Value.Func $ \_ -> \case
-                      Value.Ch c -> f c
+funcOfChar :: (Char -> Maybe V.Value) -> V.Value
+funcOfChar f = V.Func $ \_ -> \case
+                      V.Ch c -> f c
                       _ -> Nothing
 
-funcOfText :: (Text -> Maybe Value.Value) -> Value.Value
-funcOfText f = Value.Func $ \_ -> \case
-                      Value.Txt c -> f c
+funcOfText :: (Text -> Maybe V.Value) -> V.Value
+funcOfText f = V.Func $ \_ -> \case
+                      V.Txt c -> f c
                       _ -> Nothing
 
-funcOfGraph :: (G.EqualMapGraph Text -> Maybe Value.Value) -> Value.Value
-funcOfGraph f = Value.Func $ \_ -> \case
-                      Value.Graph c -> f c
+funcOfGraph :: (G.EqualMapGraph Text -> Maybe V.Value) -> V.Value
+funcOfGraph f = V.Func $ \_ -> \case
+                      V.Graph c -> f c
                       _ -> Nothing
 
-funcOfDijkstra :: ((G.Distances Text, G.Prevs Text) -> Maybe Value.Value) -> Value.Value
-funcOfDijkstra f = Value.Func $ \_ -> \case
-                      Value.DijkstraOutputs c -> f c
+funcOfDijkstra :: ((G.Distances Text, G.Prevs Text) -> Maybe V.Value) -> V.Value
+funcOfDijkstra f = V.Func $ \_ -> \case
+                      V.DijkstraOutputs c -> f c
                       _ -> Nothing
 
-reachableFrom :: Value.Value
+reachableFrom :: V.Value
 reachableFrom = funcOfText $ \edge -> Just $ funcOfGraph $ \g ->
-  Just $ Value.Vs $ fmap Value.Txt $ S.toList $ (S.\\ S.singleton edge) $ S.map G.unVertex $ G.subGraph g $ G.Keyed edge
+  Just $ V.Vs $ fmap V.Txt $ S.toList $ (S.\\ S.singleton edge) $ S.map G.unVertex $ G.subGraph g $ G.Keyed edge
 
-dijkstraFrom :: Value.Value
+dijkstraFrom :: V.Value
 dijkstraFrom = funcOfText $ \edge -> Just $ funcOfGraph $ \g ->
-  Just $ Value.DijkstraOutputs $ G.dijkstra g $ G.Keyed edge
+  Just $ V.DijkstraOutputs $ G.dijkstra g $ G.Keyed edge
 
-rawDistances :: Value.Value
-rawDistances = funcOfDijkstra $ Just . Value.Vs . fmap (Value.I . fromIntegral) . M.elems . fst
+rawDistances :: V.Value
+rawDistances = funcOfDijkstra $ Just . V.Vs . fmap (V.I . fromIntegral) . M.elems . fst
 
-distanceTo :: Value.Value
+distanceTo :: V.Value
 distanceTo = funcOfText $ \edge -> Just $ funcOfDijkstra $ \(dists, _) ->
-  Just $ Value.I $ fromIntegral $ M.findWithDefault maxBound (G.Keyed edge) dists
+  Just $ V.I $ fromIntegral $ M.findWithDefault maxBound (G.Keyed edge) dists
 
-topologicalOrder :: Value.Value
-topologicalOrder = funcOfGraph $ Just . Value.Vs . fmap Value.Txt . G.topologicalSort
+topologicalOrder :: V.Value
+topologicalOrder = funcOfGraph $ Just . V.Vs . fmap V.Txt . G.topologicalSort
 
-concat' :: Value.Value
-concat' = listFunctionOverText $ Value.Txt . T.concat
+concat' :: V.Value
+concat' = listFunctionOverText $ V.Txt . T.concat
 
-maximum' :: Value.Value
-maximum' = listFunctionOverIntegers $ Value.I . maximum
+maximum' :: V.Value
+maximum' = listFunctionOverIntegers $ V.I . maximum
 
-minimum' :: Value.Value
-minimum' = listFunctionOverIntegers $ Value.I . minimum
+minimum' :: V.Value
+minimum' = listFunctionOverIntegers $ V.I . minimum
 
-subtract' :: Value.Value
+subtract' :: V.Value
 subtract' =
-  funcOfNumber $ \amt -> Just $ funcOfNumber $ Just . Value.I . subtract amt
+  funcOfNumber $ \amt -> Just $ funcOfNumber $ Just . V.I . subtract amt
 
-combos :: Value.Value
+combos :: V.Value
 combos = funcOfNumber $ \n -> Just $ funcOfList $ \items ->
-  Just $ Value.Vs $ Value.Vs <$> replicateM (fromIntegral n) items
+  Just $ V.Vs $ V.Vs <$> replicateM (fromIntegral n) items
 
-countChar :: Value.Value
+countChar :: V.Value
 countChar = funcOfChar $ \c -> Just $ funcOfText $ \txt ->
-  Just $ Value.I $ fromIntegral $ T.count (T.singleton c) $ txt
+  Just $ V.I $ fromIntegral $ T.count (T.singleton c) $ txt
 
-charAt1 :: Value.Value
+charAt1 :: V.Value
 charAt1 = funcOfNumber $ \i -> Just $ funcOfText $ \txt ->
-  Just $ Value.Ch $ T.index txt $ subtract 1 $ fromIntegral i
+  Just $ V.Ch $ T.index txt $ subtract 1 $ fromIntegral i
 
-isInfixOf' :: Value.Value
+isInfixOf' :: V.Value
 isInfixOf' = funcOfText $ \ifx -> Just $ funcOfText $ Just . toBoolean . T.isInfixOf ifx
 
-indexOf0 :: Value.Value
-indexOf0 = Value.Func $ \_ v -> Just $ funcOfList $ seekIndex 0 v
+indexOf0 :: V.Value
+indexOf0 = V.Func $ \_ v -> Just $ funcOfList $ seekIndex 0 v
 
   where
     seekIndex _ _ [] = Nothing
-    seekIndex idx v (v':_) | Value.toOrd v =?= Value.toOrd v' = Just $ Value.I idx
+    seekIndex idx v (v':_) | V.toOrd v =?= V.toOrd v' = Just $ V.I idx
     seekIndex idx v (_:rest) = seekIndex (idx+1) v rest
 
 (=?=) :: Eq a => Maybe a -> Maybe a -> Bool
@@ -170,25 +170,25 @@ Nothing =?= _ = False
 _ =?= Nothing = False
 Just x =?= Just y = x == y
 
-even' :: Value.Value
+even' :: V.Value
 even' = funcOfNumber $ Just . toBoolean . even
 
-odd' :: Value.Value
+odd' :: V.Value
 odd' = funcOfNumber $ Just . toBoolean . odd
 
-dupe :: Value.Value
-dupe = funcOfList $ \vs -> Just (Value.Vs (vs ++ vs))
+dupe :: V.Value
+dupe = funcOfList $ \vs -> Just (V.Vs (vs ++ vs))
 
-valueFromParsedLine :: Text -> Value.Value
+valueFromParsedLine :: Text -> V.Value
 valueFromParsedLine name =
-  Value.Func $ \_ -> \case
-    Value.ParsedLine values -> Just $ values M.! name
+  V.Func $ \_ -> \case
+    V.ParsedLine values -> Just $ values M.! name
     _ -> Nothing
 
-evaluatesToTrue :: Value.Context -> Ast.Value -> Bool
+evaluatesToTrue :: V.Context -> Ast.Value -> Bool
 evaluatesToTrue context ast =
   case evalValue context Nothing ast of
-    Right Value.True -> True
+    Right V.True -> True
     _ -> False
 
 allAdjacent :: (Integer, Integer) -> [(Integer, Integer)]
@@ -213,103 +213,103 @@ allSurrounding (x, y) =
     (x-1, y-1)
   ]
 
-modX :: Value.Coord -> (Integer -> Integer) -> Value.Coord
-modX (Value.D1 x) f = Value.D1 (f x)
-modX (Value.D2 x y) f = Value.D2 (f x) y
-modX (Value.D3 x y z) f = Value.D3 (f x) y z
-modX (Value.D4 x y z w) f = Value.D4 (f x) y z w
+modX :: V.Coord -> (Integer -> Integer) -> V.Coord
+modX (V.D1 x) f = V.D1 (f x)
+modX (V.D2 x y) f = V.D2 (f x) y
+modX (V.D3 x y z) f = V.D3 (f x) y z
+modX (V.D4 x y z w) f = V.D4 (f x) y z w
 
-allAdjacentCoords :: Conway.SolvableConwayDimensions -> Value.Coord -> [Value.Coord]
-allAdjacentCoords Conway.OneD (Value.D1 x) = Value.D1 <$> [x-1, x+1]
-allAdjacentCoords Conway.TwoD (Value.D2 x y) = uncurry Value.D2 <$> allAdjacent (x, y)
-allAdjacentCoords Conway.ThreeD (Value.D3 x y z) = upDown ++ zAdjacent
+allAdjacentCoords :: Conway.SolvableConwayDimensions -> V.Coord -> [V.Coord]
+allAdjacentCoords Conway.OneD (V.D1 x) = V.D1 <$> [x-1, x+1]
+allAdjacentCoords Conway.TwoD (V.D2 x y) = uncurry V.D2 <$> allAdjacent (x, y)
+allAdjacentCoords Conway.ThreeD (V.D3 x y z) = upDown ++ zAdjacent
   where
-    upDown = Value.D3 x y <$> [z-1, z+1]
-    zAdjacent = (\(x', y') -> Value.D3 x' y' z) <$> allAdjacent (x, y)
+    upDown = V.D3 x y <$> [z-1, z+1]
+    zAdjacent = (\(x', y') -> V.D3 x' y' z) <$> allAdjacent (x, y)
 allAdjacentCoords  d coord = error ("adjacent: Got an out-of-dimension (" <> show d <> ") coordinate " <> show coord)
 
-allSurroundingCoords :: Conway.SolvableConwayDimensions -> Value.Coord -> [Value.Coord]
-allSurroundingCoords Conway.OneD (Value.D1 x) = Value.D1 <$> [x-1, x+1]
-allSurroundingCoords Conway.TwoD (Value.D2 x y) = uncurry Value.D2 <$> allSurrounding (x, y)
-allSurroundingCoords Conway.ThreeD p@(Value.D3 x y z) = filter (/= p) $ Value.D3 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1]
-allSurroundingCoords Conway.FourD p@(Value.D4 x y z w) = filter (/= p) $ Value.D4 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1] <*> [w-1..w+1]
+allSurroundingCoords :: Conway.SolvableConwayDimensions -> V.Coord -> [V.Coord]
+allSurroundingCoords Conway.OneD (V.D1 x) = V.D1 <$> [x-1, x+1]
+allSurroundingCoords Conway.TwoD (V.D2 x y) = uncurry V.D2 <$> allSurrounding (x, y)
+allSurroundingCoords Conway.ThreeD p@(V.D3 x y z) = filter (/= p) $ V.D3 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1]
+allSurroundingCoords Conway.FourD p@(V.D4 x y z w) = filter (/= p) $ V.D4 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1] <*> [w-1..w+1]
 allSurroundingCoords d coord = error ("surrounding: Got an out-of-dimension (" <> show d <> ") coordinate " <> show coord)
 
-pickMatching :: (Ord k, Eq a) => a -> M.Map k a -> [k] -> Maybe Value.Value
+pickMatching :: (Ord k, Eq a) => a -> M.Map k a -> [k] -> Maybe V.Value
 pickMatching c state =
   Just .
-    Value.I .
+    V.I .
     toInteger .
     M.size .
     M.filter (== c) .
     M.restrictKeys state .
     S.fromList
 
-adjacent :: Value.Value
-adjacent = Value.Func $ \context cell ->
+adjacent :: V.Value
+adjacent = V.Func $ \context cell ->
   case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
-    (Just (Value.Grid _ _ dim _ state), Just (Value.Coord coords), Value.CellState c) ->
+    (Just (V.Grid _ _ dim _ state), Just (V.Coord coords), V.CellState c) ->
       pickMatching c state $ allAdjacentCoords dim coords
     _ -> Nothing
 
-neighbors :: Value.Value
-neighbors = Value.Func $ \context cell ->
+neighbors :: V.Value
+neighbors = V.Func $ \context cell ->
   case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
-    (Just (Value.Grid _ _ dim _ state), Just (Value.Coord coords), Value.CellState c) ->
+    (Just (V.Grid _ _ dim _ state), Just (V.Coord coords), V.CellState c) ->
       pickMatching c state $ allSurroundingCoords dim coords
     _ -> Nothing
 
-left :: Value.Value
-left = Value.Func $ \context cell ->
+left :: V.Value
+left = V.Func $ \context cell ->
   case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
-    (Just (Value.Grid _ _ _ _ state), Just (Value.Coord coord), Value.CellState c) ->
+    (Just (V.Grid _ _ _ _ state), Just (V.Coord coord), V.CellState c) ->
       case (M.lookup (modX coord (\x -> x - 1)) state, C.identValue "$oob" context) of
         (Just c', _)                          -> Just $ toBoolean $ c' == c
-        (Nothing, Just (Value.CellState oob)) -> Just $ toBoolean $ oob == c
+        (Nothing, Just (V.CellState oob)) -> Just $ toBoolean $ oob == c
         _                                     -> Nothing
 
     _ -> Nothing
 
-right :: Value.Value
-right = Value.Func $ \context cell ->
+right :: V.Value
+right = V.Func $ \context cell ->
   case (C.identValue "$grid" context, C.identValue "$pos" context, cell) of
-    (Just (Value.Grid _ _ _ _ state), Just (Value.Coord coord), Value.CellState c) ->
+    (Just (V.Grid _ _ _ _ state), Just (V.Coord coord), V.CellState c) ->
       case (M.lookup (modX coord (+ 1)) state, C.identValue "$oob" context) of
         (Just c', _)                          -> Just $ toBoolean $ c' == c
-        (Nothing, Just (Value.CellState oob)) -> Just $ toBoolean $ oob == c
+        (Nothing, Just (V.CellState oob)) -> Just $ toBoolean $ oob == c
         _                                     -> Nothing
 
     _ -> Nothing
 
-at :: Value.Value
-at = Value.Func $ \ctx arg ->
+at :: V.Value
+at = V.Func $ \ctx arg ->
   case (C.identValue "$pos" ctx, arg) of
-    (Just (Value.Pos current), Value.Pos desired) ->
+    (Just (V.Pos current), V.Pos desired) ->
       Just $ toBoolean $ current == desired
-    (Just current, Value.Func f) ->
+    (Just current, V.Func f) ->
       f ctx current
     _ -> Nothing
 
-corner :: Value.Value
-corner = Value.Func $ \ctx current ->
+corner :: V.Value
+corner = V.Func $ \ctx current ->
   case (C.identValue "$grid" ctx, current) of
-    (Just (Value.Grid _ (Value.Finite size) _ _ _), Value.Coord coord) ->
+    (Just (V.Grid _ (V.Finite size) _ _ _), V.Coord coord) ->
       let
-        width = Value.width size
-        height = Value.height size
-        x = Value.getX coord
-        y = Value.getY coord
+        width = V.width size
+        height = V.height size
+        x = V.getX coord
+        y = V.getY coord
       in
         Just $
           toBoolean $
             (x == 0 && (y == 0 || y == height-1)) || (x == width-1 && (y == 0 || y == height-1))
     _ -> Nothing
 
-firstRepeatedGeneration :: Value.Value
-firstRepeatedGeneration = Value.Func $ \context v -> go S.empty context v
+firstRepeatedGeneration :: V.Value
+firstRepeatedGeneration = V.Func $ \context v -> go S.empty context v
   where
     go seen context grd = do
-      ord <- Value.toOrd grd
+      ord <- V.toOrd grd
       if S.member ord seen
       then
         pure grd
@@ -317,42 +317,42 @@ firstRepeatedGeneration = Value.Func $ \context v -> go S.empty context v
         next <- nextGeneration' context grd
         go (S.insert ord seen) context next
 
-afterTransitions :: Value.Value
-afterTransitions = Value.Func $ \ctx n -> Just $ Value.Func $ \_ grd -> go n ctx grd
+afterTransitions :: V.Value
+afterTransitions = V.Func $ \ctx n -> Just $ V.Func $ \_ grd -> go n ctx grd
   where
-    go (Value.I 0) _ grd           = Just grd
-    go (Value.I n) ctx grd | n > 0 = do
+    go (V.I 0) _ grd           = Just grd
+    go (V.I n) ctx grd | n > 0 = do
                      next <- nextGeneration' ctx grd
-                     go (Value.I (n - 1)) ctx next
+                     go (V.I (n - 1)) ctx next
     go _ _ _ = Nothing
 
-to2dWithTransitions :: Value.Value
-to2dWithTransitions = Value.Func $ \ctx n -> Just $ Value.Func $ \_ grd -> go n 0 ctx grd
+to2dWithTransitions :: V.Value
+to2dWithTransitions = V.Func $ \ctx n -> Just $ V.Func $ \_ grd -> go n 0 ctx grd
   where
-    go (Value.I n) y _ (Value.Grid ts (Value.Finite size) _ emptyCell state) | y == n =
-      Just $ setY n ts (size { Value.height = 1 }) emptyCell state
-    go (Value.I n) y ctx (Value.Grid ts (Value.Finite size) _ ec state) | y < n = do
+    go (V.I n) y _ (V.Grid ts (V.Finite size) _ emptyCell state) | y == n =
+      Just $ setY n ts (size { V.height = 1 }) emptyCell state
+    go (V.I n) y ctx (V.Grid ts (V.Finite size) _ ec state) | y < n = do
       let myState = M.mapKeys (setY' y) state
       next <- nextGeneration' ctx $ setY 0 ts size ec state
-      remainder <- go (Value.I n) (y + 1) ctx next
+      remainder <- go (V.I n) (y + 1) ctx next
       case remainder of
-        Value.Grid _ (Value.Finite remSize) _ _ remState -> Just $ Value.Grid ts (Value.Finite (remSize { Value.width=Value.width remSize + 1 })) Conway.TwoD ec $ M.union myState remState
+        V.Grid _ (V.Finite remSize) _ _ remState -> Just $ V.Grid ts (V.Finite (remSize { V.width=V.width remSize + 1 })) Conway.TwoD ec $ M.union myState remState
         _ -> Nothing
 
     go _ _ _ _ = Nothing
 
-    setY y ts size ec = Value.Grid ts (Value.Finite size) Conway.TwoD ec . M.mapKeys (setY' y)
+    setY y ts size ec = V.Grid ts (V.Finite size) Conway.TwoD ec . M.mapKeys (setY' y)
 
-    setY' y (Value.D1 x) = Value.D2 x y
-    setY' y (Value.D2 x _) = Value.D2 x y
+    setY' y (V.D1 x) = V.D2 x y
+    setY' y (V.D2 x _) = V.D2 x y
     setY' _ _ = error "Cannot convert dimensions above 2D to 2D"
 
-nextGeneration :: Value.Value
-nextGeneration = Value.Func nextGeneration'
+nextGeneration :: V.Value
+nextGeneration = V.Func nextGeneration'
 
-nextGeneration' :: Value.Context -> Value.Value -> Maybe Value.Value
-nextGeneration' context grd@(Value.Grid ts@Conway.CellTransitions{..} bounds dim emptyCell state) =
-  Just $ Value.Grid ts bounds dim emptyCell $ M.filter ((/= emptyCell) . Just) $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grd) context)) searchSpace
+nextGeneration' :: V.Context -> V.Value -> Maybe V.Value
+nextGeneration' context grd@(V.Grid ts@Conway.CellTransitions{..} bounds dim emptyCell state) =
+  Just $ V.Grid ts bounds dim emptyCell $ M.filter ((/= emptyCell) . Just) $ M.mapWithKey (transition (C.insert "$grid" (Type.Grid, grd) context)) searchSpace
     where
       searchSpace =
         case emptyCell of
@@ -364,7 +364,7 @@ nextGeneration' context grd@(Value.Grid ts@Conway.CellTransitions{..} bounds dim
       transition ctx coords c =
         fromMaybe (otherwiseCell c otherwiseCellIs) $
           matching cases coords c $
-          M.insert "$pos" (Type.Position, Value.Coord coords) ctx
+          M.insert "$pos" (Type.Position, V.Coord coords) ctx
 
       otherwiseCell _ (Conway.DefaultCell def) = Conway.ident def
       otherwiseCell c Conway.Unchanged = c
@@ -378,61 +378,61 @@ nextGeneration' context grd@(Value.Grid ts@Conway.CellTransitions{..} bounds dim
       around dimension = filter (withinBounds bounds) . justAround dimension
 
         where
-          withinBounds Value.Infinite _ = True
-          withinBounds (Value.Finite Value.WidthHeight{width}) (Value.D1 x) = 0 <= x && x < width
-          withinBounds (Value.Finite Value.WidthHeight{width, height}) (Value.D2 x y) =
+          withinBounds V.Infinite _ = True
+          withinBounds (V.Finite V.WidthHeight{width}) (V.D1 x) = 0 <= x && x < width
+          withinBounds (V.Finite V.WidthHeight{width, height}) (V.D2 x y) =
             0 <= x && x < width && 0 <= y && y < height
           withinBounds boundaries coord =
             error $ "Could not perform bounds check for position withing bounds " <> show coord <> ", " <> show boundaries
 
-          justAround Conway.OneD (Value.D1 x) = Value.D1 <$> [x-1..x+1]
-          justAround Conway.TwoD (Value.D2 x y) = Value.D2 <$> [x-1..x+1] <*> [y-1..y+1]
-          justAround Conway.ThreeD (Value.D3 x y z) = Value.D3 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1]
-          justAround Conway.FourD (Value.D4 x y z w) = Value.D4 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1] <*> [w-1..w+1]
+          justAround Conway.OneD (V.D1 x) = V.D1 <$> [x-1..x+1]
+          justAround Conway.TwoD (V.D2 x y) = V.D2 <$> [x-1..x+1] <*> [y-1..y+1]
+          justAround Conway.ThreeD (V.D3 x y z) = V.D3 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1]
+          justAround Conway.FourD (V.D4 x y z w) = V.D4 <$> [x-1..x+1] <*> [y-1..y+1] <*> [z-1..z+1] <*> [w-1..w+1]
           justAround d c = error ("next generation: Got an out-of-dimension (" <> show d <> ") coordinate " <> show c)
 
 nextGeneration' _ _ = Nothing
 
-readingOrder :: Value.Value
-readingOrder = Value.Func readingOrder'
+readingOrder :: V.Value
+readingOrder = V.Func readingOrder'
 
-readingOrder' :: C.Context -> Value.Value -> Maybe Value.Value
+readingOrder' :: C.Context -> V.Value -> Maybe V.Value
 readingOrder' context ps =
   -- TODO generation_0 is not the best thing to use here since grids _can_ change
   case (C.identValue "$generation_0" context, ps) of
-    (Just (Value.Grid _ (Value.Finite size) _ _ _), Value.Vs vs) ->
-      Value.Vs <$> mapM (fmap (readingIndex (Value.width size)) . getPos) vs
+    (Just (V.Grid _ (V.Finite size) _ _ _), V.Vs vs) ->
+      V.Vs <$> mapM (fmap (readingIndex (V.width size)) . getPos) vs
     _ -> Nothing
 
   where
-    readingIndex width (x, y) = Value.I (x + width * y)
+    readingIndex width (x, y) = V.I (x + width * y)
 
-countCells :: Value.Value
-countCells = Value.Func $ \_ vs -> Just $ Value.Func $ \_ grd -> countCells' vs grd
+countCells :: V.Value
+countCells = V.Func $ \_ vs -> Just $ V.Func $ \_ grd -> countCells' vs grd
 
-traceRegisterValue :: Text -> Integer -> Value.Traces -> Value.Traces
-traceRegisterValue r value Value.Traces{ registerValues=Just (Value.RegHistory rh), instructionPointers } =
-  Value.Traces (Just $ Value.RegHistory $ M.alter (Just . (value :) . fromMaybe []) r rh) instructionPointers
+traceRegisterValue :: Text -> Integer -> V.Traces -> V.Traces
+traceRegisterValue r value V.Traces{ registerValues=Just (V.RegHistory rh), instructionPointers } =
+  V.Traces (Just $ V.RegHistory $ M.alter (Just . (value :) . fromMaybe []) r rh) instructionPointers
 traceRegisterValue _ _ ts = ts
 
 data TerminalCondition
   = FallOffEnd
   | Cycle
 
-runUntil :: TerminalCondition -> Value.Value
-runUntil terminateWhen = Value.Func $ \context program ->
+runUntil :: TerminalCondition -> V.Value
+runUntil terminateWhen = V.Func $ \context program ->
   case program of
-    Value.Program (Program.IndexedInstructions p) (Value.Ip ip) (Value.Regs regs) traces ->
+    V.Program (Program.IndexedInstructions p) (V.Ip ip) (V.Regs regs) traces ->
       run' p ip regs context traces
     _ -> Nothing
 
   where
     run' p ip regs context traces =
       case currentInstruction of
-        Nothing -> Just $ Value.Program (Program.IndexedInstructions p) (Value.Ip ip) (Value.Regs regs) traces
+        Nothing -> Just $ V.Program (Program.IndexedInstructions p) (V.Ip ip) (V.Regs regs) traces
         Just Program.Instruction{..} ->
           let
-            currentContext = foldr (\(name, value) -> C.insert name (Type.Number, Value.I value)) context $ M.toList regs
+            currentContext = foldr (\(name, value) -> C.insert name (Type.Number, V.I value)) context $ M.toList regs
             shouldExecute =
               case when of
                 Just condition -> evaluatesToTrue currentContext condition
@@ -444,11 +444,11 @@ runUntil terminateWhen = Value.Func $ \context program ->
               case op of
                 Program.JumpAway v ->
                   case evalValue currentContext Nothing v of
-                    Right (Value.I offset) -> run' p (ip + offset) regs context traces'
+                    Right (V.I offset) -> run' p (ip + offset) regs context traces'
                     _ -> Nothing
                 Program.Set dest v ->
                   case evalValue currentContext Nothing v of
-                    Right (Value.I result) ->
+                    Right (V.I result) ->
                       run' p (ip + 1) (M.insert dest result regs) context $ traceRegisterValue dest result traces'
                     _ -> Nothing
                 Program.DoNothing ->
@@ -468,48 +468,48 @@ runUntil terminateWhen = Value.Func $ \context program ->
             FallOffEnd -> traces
             Cycle -> traces{ C.instructionPointers=S.insert ip (C.instructionPointers traces) }
 
-register :: Value.Value
-register = Value.Func $ \_ r -> Just $ Value.Func $ \ _ program ->
+register :: V.Value
+register = V.Func $ \_ r -> Just $ V.Func $ \ _ program ->
   case (r, program) of
-    (Value.Register name, Value.Program _ _ (Value.Regs regs) _) -> Just $ Value.I $ regs M.! name
+    (V.Register name, V.Program _ _ (V.Regs regs) _) -> Just $ V.I $ regs M.! name
     _ -> Nothing
 
-incrementRegister :: Value.Value
-incrementRegister = Value.Func $ \_ r -> Just $ Value.Func $ \ _ program ->
+incrementRegister :: V.Value
+incrementRegister = V.Func $ \_ r -> Just $ V.Func $ \ _ program ->
   case (r, program) of
-    (Value.Register name, Value.Program p ip (Value.Regs regs) traces) ->
+    (V.Register name, V.Program p ip (V.Regs regs) traces) ->
       let
         value = regs M.! name + 1
       in
-      Just $ Value.Program p ip (Value.Regs $ M.insert name value regs) $ traceRegisterValue name value traces
+      Just $ V.Program p ip (V.Regs $ M.insert name value regs) $ traceRegisterValue name value traces
     _ -> Nothing
 
-registerValues :: Value.Value
-registerValues = Value.Func $ \ _ program ->
+registerValues :: V.Value
+registerValues = V.Func $ \ _ program ->
   case program of
-    (Value.Program _ _ (Value.Regs regs) _) ->
-      Just $ Value.Vs $ Value.I . snd <$> M.toList regs
+    (V.Program _ _ (V.Regs regs) _) ->
+      Just $ V.Vs $ V.I . snd <$> M.toList regs
     _ -> Nothing
 
-tracedRegisterValues :: Value.Value
-tracedRegisterValues = Value.Func $ \ _ program ->
+tracedRegisterValues :: V.Value
+tracedRegisterValues = V.Func $ \ _ program ->
   case program of
-    (Value.Program _ _ _ Value.Traces{registerValues=Just (Value.RegHistory rh) }) ->
-      Just $ Value.Vs $ Value.I <$> (M.toList rh >>= snd)
+    (V.Program _ _ _ V.Traces{registerValues=Just (V.RegHistory rh) }) ->
+      Just $ V.Vs $ V.I <$> (M.toList rh >>= snd)
     _ -> Nothing
 
-getCellState :: Value.Value -> Maybe Char
-getCellState (Value.CellState c) = Just c
+getCellState :: V.Value -> Maybe Char
+getCellState (V.CellState c) = Just c
 getCellState _ = Nothing
 
-countCells' :: Value.Value -> Value.Value -> Maybe Value.Value
-countCells' (Value.Vs vs) grd =
+countCells' :: V.Value -> V.Value -> Maybe V.Value
+countCells' (V.Vs vs) grd =
   case (grd, sequence $ getCellState <$> vs) of
-    (Value.Grid _ (Value.Finite _) _ _ state, Just buckets) ->
+    (V.Grid _ (V.Finite _) _ _ state, Just buckets) ->
       let
         counts = go (M.elems state) $ M.fromList $ zip buckets (repeat 0)
       in
-        Just $ Value.Vs $ fmap (\v -> Value.I (counts M.! v)) buckets
+        Just $ V.Vs $ fmap (\v -> V.I (counts M.! v)) buckets
     _ -> Nothing
 
   where
@@ -518,64 +518,64 @@ countCells' (Value.Vs vs) grd =
 
 countCells' _ _ = Nothing
 
-getPos :: Value.Value -> Maybe (Integer, Integer)
-getPos (Value.Coord (Value.D1 x)) = Just (x, 0)
-getPos (Value.Coord (Value.D2 x y)) = Just (x, y)
+getPos :: V.Value -> Maybe (Integer, Integer)
+getPos (V.Coord (V.D1 x)) = Just (x, 0)
+getPos (V.Coord (V.D2 x y)) = Just (x, y)
 getPos _ = Nothing
 
-positions :: Value.Value
-positions = Value.Func $ \_ cs -> Just $ Value.Func $ \_ grd ->
+positions :: V.Value
+positions = V.Func $ \_ cs -> Just $ V.Func $ \_ grd ->
   case (cs, grd) of
-    (Value.CellState c, Value.Grid _ _ _ (Just emptyCell) _) | c == emptyCell -> Nothing
-    (Value.CellState c, Value.Grid _ _ _ _ state) -> filterCells Value.Coord c state
+    (V.CellState c, V.Grid _ _ _ (Just emptyCell) _) | c == emptyCell -> Nothing
+    (V.CellState c, V.Grid _ _ _ _ state) -> filterCells V.Coord c state
     _ -> Nothing
 
   where
     filterCells f c state =
       Just $
-        Value.Vs $
+        V.Vs $
         fmap f $
         M.keys $
         M.filter (== c) state
 
-face :: Value.Value
-face = Value.Func $ \_ dir -> Just $ Value.Func $ \_ trt ->
+face :: V.Value
+face = V.Func $ \_ dir -> Just $ V.Func $ \_ trt ->
   case (dir, trt) of
-    (Value.Direction d, Value.Turtle p _ actions) ->
-      Just $ Value.Turtle p d actions
+    (V.Direction d, V.Turtle p _ actions) ->
+      Just $ V.Turtle p d actions
     _ ->
       Nothing
 
-currentPosition :: Value.Value -> Maybe (Integer, Integer)
-currentPosition (Value.Turtle p _ _ ) = Just p
-currentPosition (Value.Pos p) = Just p
+currentPosition :: V.Value -> Maybe (Integer, Integer)
+currentPosition (V.Turtle p _ _ ) = Just p
+currentPosition (V.Pos p) = Just p
 currentPosition _ = Nothing
 
-manhattanDistance :: Value.Value
-manhattanDistance = Value.Func $ \_ source -> Just $ Value.Func $ \_ v ->
+manhattanDistance :: V.Value
+manhattanDistance = V.Func $ \_ source -> Just $ V.Func $ \_ v ->
   case (source, currentPosition v) of
-    (Value.Pos (x0, y0), Just (x1, y1)) ->
-      Just $ Value.I $ abs (x0 - x1) + abs (y0 - y1)
+    (V.Pos (x0, y0), Just (x1, y1)) ->
+      Just $ V.I $ abs (x0 - x1) + abs (y0 - y1)
     _ ->
       Nothing
 
-strollSplat :: Value.Value
-strollSplat = Value.Func $ \_ trt ->
+strollSplat :: V.Value
+strollSplat = V.Func $ \_ trt ->
   case trt of
-    (Value.Turtle p d actions) ->
-      Just $ Value.Vs $ stroll' p d actions
+    (V.Turtle p d actions) ->
+      Just $ V.Vs $ stroll' p d actions
     _ ->
       Nothing
 
   where
-    stroll' p _ [] = [Value.Pos p]
+    stroll' p _ [] = [V.Pos p]
     stroll' p _ (Turtle.Face d:rest) = stroll' p d rest
     stroll' p d (Turtle.Turn hs:rest) = stroll' p (turn d hs) rest
     stroll' p d (Turtle.TakeSteps 0 _:rest) = stroll' p d rest
     stroll' p d (Turtle.TakeSteps ss Nothing:rest) =
-      Value.Pos p:stroll' (step d ss p) d (Turtle.TakeSteps (approachZero ss) Nothing:rest)
+      V.Pos p:stroll' (step d ss p) d (Turtle.TakeSteps (approachZero ss) Nothing:rest)
     stroll' p d (Turtle.TakeSteps ss (Just d'):rest) =
-      Value.Pos p:stroll' (step d' ss p) d (Turtle.TakeSteps (approachZero ss) (Just d'):rest)
+      V.Pos p:stroll' (step d' ss p) d (Turtle.TakeSteps (approachZero ss) (Just d'):rest)
 
     approachZero v | v > 0 = v - 1
     approachZero v = v + 1
@@ -598,16 +598,16 @@ turn Turtle.Down Turtle.Righthand = Turtle.Left
 turn Turtle.Right Turtle.Lefthand = Turtle.Up
 turn Turtle.Right Turtle.Righthand = Turtle.Down
 
-stroll :: Value.Value
-stroll = Value.Func $ \_ trt ->
+stroll :: V.Value
+stroll = V.Func $ \_ trt ->
   case trt of
-    (Value.Turtle p d actions) ->
+    (V.Turtle p d actions) ->
       Just $ stroll' p d actions actions
     _ ->
       Nothing
 
   where
-    stroll' p d [] = Value.Turtle p d
+    stroll' p d [] = V.Turtle p d
     stroll' p _ (Turtle.Face d:rest) = stroll' p d rest
     stroll' p d (Turtle.Turn hs:rest) = stroll' p (turn d hs) rest
     stroll' p d (Turtle.TakeSteps ss Nothing:rest) = stroll' (steps d ss p) d rest
@@ -617,6 +617,11 @@ stroll = Value.Func $ \_ trt ->
     steps Turtle.Down n (x, y) = (x, y-n)
     steps Turtle.Left n (x, y) = (x-n, y)
     steps Turtle.Right n (x, y) = (x+n, y)
+
+rawComponents :: V.Value
+rawComponents = V.Func $ const $ \case
+  V.Turtle (x, y) _ _ -> Just $ V.Vs [V.I x, V.I y]
+  _ -> Nothing
 
 (-->) :: Type.Type -> Type.Type -> Type.Type
 i --> o = Type.Arrow i o
@@ -666,7 +671,7 @@ direction = Type.Direction
 turtle :: Type.Type
 turtle = Type.Turtle
 
-baseIdentifiers :: [(Text, Type.Type, Value.Value)]
+baseIdentifiers :: [(Text, Type.Type, V.Value)]
 baseIdentifiers =
   [
     ("sum",                list num --> num,                   makeFold 0 (+))
@@ -674,8 +679,8 @@ baseIdentifiers =
   , ("unique",             list a --> list a,                  unique)
   , ("product",            list num --> num,                   makeFold 1 (*))
   , ("repeats",            list a --> list a,                  repeats)
-  , ("true",               bool,                               Value.True)
-  , ("false",              bool,                               Value.False)
+  , ("true",               bool,                               V.True)
+  , ("false",              bool,                               V.False)
   , ("first",              list a --> a,                       first)
   , ("dupe",               list a --> list a,                  dupe)
   , ("even",               num --> bool,                       even')
@@ -696,7 +701,7 @@ core :: C.Context
 core = C.fromList $ do
   (name, t, v) <- baseIdentifiers
   case (t, v) of
-    (Type.Arrow iT oT, Value.Fold step) -> [(name, (t, v)), (append name "*", (iT --> list oT, Value.StepsOfFold step))]
+    (Type.Arrow iT oT, V.Fold step) -> [(name, (t, v)), (append name "*", (iT --> list oT, V.StepsOfFold step))]
     _    -> [(name, (t, v))]
 
 listContext :: C.Context
@@ -749,16 +754,17 @@ turtleContext =
   C.add core $
     C.fromList [
       ("face",                    (direction --> (turtle --> turtle), face))
-    , ("origin",                  (pos,                               Value.Pos (0, 0)))
-    , ("up",                      (direction,                         Value.Direction Turtle.Up))
-    , ("north",                   (direction,                         Value.Direction Turtle.Up))
-    , ("down",                    (direction,                         Value.Direction Turtle.Down))
-    , ("south",                   (direction,                         Value.Direction Turtle.Down))
-    , ("left",                    (direction,                         Value.Direction Turtle.Left))
-    , ("west",                    (direction,                         Value.Direction Turtle.Left))
-    , ("right",                   (direction,                         Value.Direction Turtle.Right))
-    , ("east",                    (direction,                         Value.Direction Turtle.Right))
+    , ("origin",                  (pos,                               V.Pos (0, 0)))
+    , ("up",                      (direction,                         V.Direction Turtle.Up))
+    , ("north",                   (direction,                         V.Direction Turtle.Up))
+    , ("down",                    (direction,                         V.Direction Turtle.Down))
+    , ("south",                   (direction,                         V.Direction Turtle.Down))
+    , ("left",                    (direction,                         V.Direction Turtle.Left))
+    , ("west",                    (direction,                         V.Direction Turtle.Left))
+    , ("right",                   (direction,                         V.Direction Turtle.Right))
+    , ("east",                    (direction,                         V.Direction Turtle.Right))
     , ("stroll",                  (turtle --> turtle,                 stroll))
     , ("stroll*",                 (turtle --> list pos,               strollSplat))
+    , ("raw_components",          (turtle --> list num,               rawComponents))
     , ("distance_from",           (pos --> (turtle -->  num),         manhattanDistance))
     ]

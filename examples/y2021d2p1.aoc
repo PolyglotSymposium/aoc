@@ -1,0 +1,11 @@
+turtle in 2 dimensions
+  at ./y2021d2.txt
+  separated by '\n'
+  where forward {n:num} means face right then take n steps and
+        down {n:num} means face up then take n steps and
+        up {n:num} means face down then take n steps
+
+solution
+  stroll
+    | raw_components
+    | product
