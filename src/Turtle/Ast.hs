@@ -7,6 +7,7 @@ module Turtle.Ast
        , Action(..)
        , ActionSpec(..)
        , InstructionSpec(..)
+       , AdditionalState(..)
        ) where
 
 import qualified Ast
@@ -37,14 +38,20 @@ data Side
 data Action
   = Face Direction
   | Turn Side
-  | TakeSteps Integer (Maybe Direction)
+  | TakeSteps (Either Integer Ast.Value) (Maybe Direction)
+  | SetState Text Ast.Value
   deriving (Show, Eq)
 
 data ActionSpec
   = ShouldFace Direction
   | ShouldTurn Side
   | ShouldTakeLiteralSteps Integer (Maybe Direction)
+  | ShouldTakeCalculatedSteps Ast.Value (Maybe Direction)
   | ShouldTakeStepsIn      Text (Maybe Direction)
+  | ShouldSetState Text Ast.Value
+  deriving (Show, Eq)
+
+newtype AdditionalState = AdditionalState (Maybe (Text, Integer))
   deriving (Show, Eq)
 
 data InstructionSpec
@@ -61,4 +68,5 @@ data Problem =
   , separator    :: Text
   , instructions :: [InstructionSpec]
   , solution     :: Ast.Solution
+  , additionalState :: AdditionalState
   } deriving (Show, Eq)

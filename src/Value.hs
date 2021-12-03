@@ -107,7 +107,7 @@ data Value
   | Register Text
   | Program Prog.IndexedProgram InstructionPointer Registers Traces
   | Direction Turtle.Direction
-  | Turtle (Integer, Integer) Turtle.Direction [Turtle.Action]
+  | Turtle (Integer, Integer) Turtle.Direction [Turtle.Action] Context
   | ParsedLine (M.Map Text Value)
   | Graph (Graph.EqualMapGraph Text)
   | DijkstraOutputs (Graph.Distances Text, Graph.Prevs Text)
@@ -144,7 +144,7 @@ toOrd (Coord coord)    = Just $ OrdCoord coord
 toOrd (Grid _ bs dim ec st) = Just $ OrdGrid bs dim ec st
 toOrd (Register name)  = Just $ OrdRegister name
 toOrd (Direction d)    = Just $ OrdDirection d
-toOrd (Turtle pos d _) = Just $ OrdTurtle pos d
+toOrd (Turtle pos d _ _) = Just $ OrdTurtle pos d
 toOrd (ParsedLine vs)  = OrdParsedLine <$> traverse toOrd vs
 toOrd (Graph (Graph.EquallyWeighted' mp)) = Just $ OrdGraph $ unVertex mp
 toOrd (DijkstraOutputs _) = Nothing
@@ -172,7 +172,7 @@ instance Show Value where
   show (Coord (D2 x y)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ "}"
   show (Coord (D3 x y z)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ ",z=" ++ show z ++ "}"
   show (Coord (D4 x y z w)) = "{pos:x=" ++ show x ++ ",y=" ++ show y ++ ",z=" ++ show z ++ ",w=" ++ show w ++ "}"
-  show (Turtle (x, y) d _) =
+  show (Turtle (x, y) d _ _) =
     "{turtle:x=" ++ show x ++ ",y=" ++ show y ++ ",dir=" ++ show d ++ "}"
   show (Register r) = "{" ++ show r ++ ":reg}"
   show (Grid _ _ dim cell state) = do

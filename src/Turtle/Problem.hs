@@ -14,6 +14,12 @@ import qualified Type
 import qualified TypeCheck
 import qualified Value as V
 
+turtleState :: Ast.Problem -> V.Context
+turtleState ast =
+  case Ast.additionalState ast of
+    Ast.AdditionalState Nothing -> V.empty
+    Ast.AdditionalState (Just (name, value)) -> V.insert name (Type.Number, V.I value) V.empty
+
 runTurtleProblem :: (String, String) -> IO (Maybe (Type.Type, Type.Type, V.Value, Ast.Problem))
 runTurtleProblem (source, text) =
   case runParser Parse.turtleSpec source $ pack text of
@@ -41,7 +47,7 @@ runTurtleProblem (source, text) =
                 putStrLn $ parseErrorPretty err
                 pure Nothing
               Right input ->
-                case Eval.eval turtleContext (V.Turtle (0, 0) Ast.Up input) (Ast.solution ast) of
+                case Eval.eval turtleContext (V.Turtle (0, 0) Ast.Up input $ turtleState ast) (Ast.solution ast) of
                   Right result -> do
                     print result
                     pure $ Just (Type.List inputElementType, outputType, result, ast)

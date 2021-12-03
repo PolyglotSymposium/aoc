@@ -541,13 +541,13 @@ positions = V.Func $ \_ cs -> Just $ V.Func $ \_ grd ->
 face :: V.Value
 face = V.Func $ \_ dir -> Just $ V.Func $ \_ trt ->
   case (dir, trt) of
-    (V.Direction d, V.Turtle p _ actions) ->
-      Just $ V.Turtle p d actions
+    (V.Direction d, V.Turtle p _ actions ctx) ->
+      Just $ V.Turtle p d actions ctx 
     _ ->
       Nothing
 
 currentPosition :: V.Value -> Maybe (Integer, Integer)
-currentPosition (V.Turtle p _ _ ) = Just p
+currentPosition (V.Turtle p _ _ _) = Just p
 currentPosition (V.Pos p) = Just p
 currentPosition _ = Nothing
 
@@ -560,22 +560,36 @@ manhattanDistance = V.Func $ \_ source -> Just $ V.Func $ \_ v ->
       Nothing
 
 strollSplat :: V.Value
-strollSplat = V.Func $ \_ trt ->
+strollSplat = V.Func $ \ctx trt ->
   case trt of
-    (V.Turtle p d actions) ->
-      Just $ V.Vs $ stroll' p d actions
+    (V.Turtle p d actions ctx') ->
+      Just $ V.Vs $ stroll' p d actions $ C.add ctx ctx'
     _ ->
       Nothing
 
   where
-    stroll' p _ [] = [V.Pos p]
-    stroll' p _ (Turtle.Face d:rest) = stroll' p d rest
-    stroll' p d (Turtle.Turn hs:rest) = stroll' p (turn d hs) rest
-    stroll' p d (Turtle.TakeSteps 0 _:rest) = stroll' p d rest
-    stroll' p d (Turtle.TakeSteps ss Nothing:rest) =
-      V.Pos p:stroll' (step d ss p) d (Turtle.TakeSteps (approachZero ss) Nothing:rest)
-    stroll' p d (Turtle.TakeSteps ss (Just d'):rest) =
-      V.Pos p:stroll' (step d' ss p) d (Turtle.TakeSteps (approachZero ss) (Just d'):rest)
+    stroll' p _ [] _ = [V.Pos p]
+    stroll' p _ (Turtle.Face d:rest) ctx = stroll' p d rest ctx
+    stroll' p d (Turtle.Turn hs:rest) ctx = stroll' p (turn d hs) rest ctx
+    stroll' p d (Turtle.TakeSteps (Left 0) _:rest) ctx = stroll' p d rest ctx
+    stroll' p d (Turtle.TakeSteps (Left ss) Nothing:rest) ctx =
+      V.Pos p:stroll' (step d ss p) d (Turtle.TakeSteps (Left $ approachZero ss) Nothing:rest) ctx
+    stroll' p d (Turtle.TakeSteps (Left ss) (Just d'):rest) ctx =
+      V.Pos p:stroll' (step d' ss p) d (Turtle.TakeSteps (Left $ approachZero ss) (Just d'):rest) ctx
+    stroll' p d (Turtle.TakeSteps (Right ast) d':rest) ctx =
+      case evalValue ctx Nothing ast of
+        Right (V.I n) ->
+          stroll' p d (Turtle.TakeSteps (Left n) d':rest) ctx
+        Left err ->
+          error $ "TODO: " <> show err
+        Right v ->
+          error $ "TODO: " <> show v
+    stroll' p d (Turtle.SetState name ast:rest) ctx =
+      case evalValue ctx Nothing ast of
+        Right v ->
+          stroll' p d rest $ C.insert name (Type.Number, v) ctx
+        Left err ->
+          error $ "TODO: " <> show err
 
     approachZero v | v > 0 = v - 1
     approachZero v = v + 1
@@ -599,19 +613,34 @@ turn Turtle.Right Turtle.Lefthand = Turtle.Up
 turn Turtle.Right Turtle.Righthand = Turtle.Down
 
 stroll :: V.Value
-stroll = V.Func $ \_ trt ->
+stroll = V.Func $ \ctx trt ->
   case trt of
-    (V.Turtle p d actions) ->
-      Just $ stroll' p d actions actions
+    V.Turtle p d actions ctx' ->
+      let (mkTurtle, ctx'') = stroll' p d actions $ C.add ctx ctx'
+      in Just $ mkTurtle actions ctx''
     _ ->
       Nothing
 
   where
-    stroll' p d [] = V.Turtle p d
-    stroll' p _ (Turtle.Face d:rest) = stroll' p d rest
-    stroll' p d (Turtle.Turn hs:rest) = stroll' p (turn d hs) rest
-    stroll' p d (Turtle.TakeSteps ss Nothing:rest) = stroll' (steps d ss p) d rest
-    stroll' p d (Turtle.TakeSteps ss (Just d'):rest) = stroll' (steps d' ss p) d rest
+    stroll' p d [] ctx = (V.Turtle p d, ctx)
+    stroll' p _ (Turtle.Face d:rest) ctx = stroll' p d rest ctx
+    stroll' p d (Turtle.Turn hs:rest) ctx = stroll' p (turn d hs) rest ctx
+    stroll' p d (Turtle.TakeSteps (Left ss) Nothing:rest) ctx = stroll' (steps d ss p) d rest ctx
+    stroll' p d (Turtle.TakeSteps (Left ss) (Just d'):rest) ctx = stroll' (steps d' ss p) d rest ctx
+    stroll' p d (Turtle.TakeSteps (Right ast) d':rest) ctx =
+      case evalValue ctx Nothing ast of
+        Right (V.I n) ->
+          stroll' p d (Turtle.TakeSteps (Left n) d':rest) ctx
+        Left err ->
+          error $ "TODO: " <> show err <> ", " <> show ctx
+        Right v ->
+          error $ "TODO: " <> show v
+    stroll' p d (Turtle.SetState name ast:rest) ctx =
+      case evalValue ctx Nothing ast of
+        Right v ->
+          stroll' p d rest $ C.insert name (Type.Number, v) ctx
+        Left err ->
+          error $ "TODO: " <> show err
 
     steps Turtle.Up n (x, y) = (x, y+n)
     steps Turtle.Down n (x, y) = (x, y-n)
@@ -620,7 +649,7 @@ stroll = V.Func $ \_ trt ->
 
 rawComponents :: V.Value
 rawComponents = V.Func $ const $ \case
-  V.Turtle (x, y) _ _ -> Just $ V.Vs [V.I x, V.I y]
+  V.Turtle (x, y) _ _ _ -> Just $ V.Vs [V.I x, V.I y]
   _ -> Nothing
 
 (-->) :: Type.Type -> Type.Type -> Type.Type

@@ -1,0 +1,13 @@
+turtle in 2 dimensions
+  at ./y2021d2.txt
+  separated by '\n'
+  where down {x:num} means set aim to (aim + x) and
+        up {x:num} means set aim to (aim - x) and
+        forward {x:num} means face right then take x steps then face up then take (aim * x) steps
+
+  additional state named aim starts at 0
+
+solution
+  stroll
+    | raw_components
+    | product

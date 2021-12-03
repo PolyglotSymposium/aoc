@@ -13,6 +13,7 @@ import qualified Parser as P
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import qualified Turtle.Ast as Turtle
+import Ast (substitute, Value(Inte))
 
 turtleSpec :: P.Parser Turtle.Problem
 turtleSpec = do
@@ -24,6 +25,8 @@ turtleSpec = do
   separator <- P.simpleQuoted
   _ <- P.lstr "where"
   instructions <- instructionsSpec
+  addlState <- optionalAdditionalState
+  _ <- P.lstr "solution"
   code <- P.code
   eof
   pure $
@@ -33,6 +36,7 @@ turtleSpec = do
     , Turtle.solution     = code
     , Turtle.dimensions   = dim
     , Turtle.instructions = instructions
+    , Turtle.additionalState = addlState
     }
 
 
@@ -66,35 +70,49 @@ action = choice . fmap op
       pure $ Turtle.Turn s:resolved
     resolve (Turtle.ShouldTakeLiteralSteps s d:rest) m = do
       resolved <- resolve rest m
-      pure $ Turtle.TakeSteps s d:resolved
+      pure $ Turtle.TakeSteps (Left s) d:resolved
+    resolve (Turtle.ShouldTakeCalculatedSteps ast d:rest) m = do
+      resolved <- resolve rest m
+      pure $ Turtle.TakeSteps (Right $ substitute (M.map Inte m) ast) d:resolved
     resolve (Turtle.ShouldTakeStepsIn name d:rest) m = do
       resolved <- resolve rest m
       case M.lookup name m of
-        Just s -> pure $ Turtle.TakeSteps s d:resolved
+        Just s -> pure $ Turtle.TakeSteps (Left s) d:resolved
         Nothing -> fail $ "Name " ++ unpack name ++ " was referenced on the right side of a `means` but not defined on the left side."
+    resolve (Turtle.ShouldSetState name ast:rest) m = do
+      resolved <- resolve rest m
+      pure $ Turtle.SetState name (substitute (M.map Inte m) ast):resolved
 
 instructionsSpec :: P.Parser [Turtle.InstructionSpec]
-instructionsSpec = sepEndBy1 (try instructionSpec) (P.lstr "and" <|> P.lstr "solution")
+instructionsSpec = sepEndBy1 (try instructionSpec) (P.lstr "and" <|> lookAhead (P.lstr "solution") <|> lookAhead (P.lstr "additional"))
+
+optionalAdditionalState :: P.Parser Turtle.AdditionalState
+optionalAdditionalState = fmap Turtle.AdditionalState $ optional $ do
+  name <- P.phrase ["additional", "state", "named"] *> P.ident 
+  initialValue <-  P.phrase ["starts", "at"] *> P.lexeme P.rawInteger 
+  pure (name, initialValue)
 
 instructionSpec :: P.Parser Turtle.InstructionSpec
 instructionSpec = Turtle.InstParts <$> manyTill term (P.lstr "means") <*> actionsSpec
 
 actionsSpec :: P.Parser [Turtle.ActionSpec]
-actionsSpec = sepBy1 actionSpec (P.lstr "then")
+actionsSpec = sepBy1 actionSpec $ P.lstr "then"
 
 actionSpec :: P.Parser Turtle.ActionSpec
 actionSpec =
   Turtle.ShouldFace <$> (P.lstr "face" *> direction)
     <|> Turtle.ShouldTurn <$> (P.lstr "turn" *> side)
+    <|> Turtle.ShouldSetState <$> (P.lstr "set" *> P.ident) <*> (P.lstr "to" *> P.value)
     <|> takeSteps
 
 takeSteps :: P.Parser Turtle.ActionSpec
 takeSteps = do
-  (P.lstr "take" *> (literalSteps <|> variableSteps) <* steps) <*> optional direction
+  (P.lstr "take" *> (literalSteps <|> variableSteps <|> calculatedSteps) <* steps) <*> optional direction
 
   where
     literalSteps = Turtle.ShouldTakeLiteralSteps <$> P.lexeme P.rawInteger
     variableSteps = Turtle.ShouldTakeStepsIn <$> P.ident
+    calculatedSteps = Turtle.ShouldTakeCalculatedSteps <$> P.value
 
 steps :: P.Parser ()
 steps = () <$ P.lexeme (string "step" *> optional (char 's'))
