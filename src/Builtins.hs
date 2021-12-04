@@ -15,13 +15,14 @@ module Builtins
 
 import qualified Ast
 import qualified Conway.Ast as Conway
-import           Control.Monad (replicateM)
+import           Control.Monad (replicateM, guard)
 import qualified Turtle.Ast as Turtle
 import qualified Data.Graph as G
+import  Data.List (tails)
 import qualified Data.Map.Strict as M
 import           Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Set as S
-import           Data.Text hiding (count, length, foldr, zip, maximum, concat, filter, concatMap, minimum)
+import           Data.Text hiding (count, length, foldr, zip, maximum, concat, filter, concatMap, minimum, take, tails)
 import qualified Data.Text as T
 import           Evaluator (evalValue, toBoolean)
 import qualified Program.Ast as Program
@@ -58,6 +59,11 @@ unique = funcOfList $ fmap V.Vs . go S.empty
 
 first :: V.Value
 first = funcOfList listToMaybe
+
+second :: V.Value
+second = funcOfList $ \case
+  (_:v:_) -> Just v
+  _ -> Nothing
 
 listFunctionOverText :: ([Text] -> V.Value) -> V.Value
 listFunctionOverText f =
@@ -145,6 +151,14 @@ subtract' =
 combos :: V.Value
 combos = funcOfNumber $ \n -> Just $ funcOfList $ \items ->
   Just $ V.Vs $ V.Vs <$> replicateM (fromIntegral n) items
+
+nwise :: V.Value
+nwise = funcOfNumber $ \n -> Just $ funcOfList $ \items ->
+  Just $ V.Vs $ do
+    t <- tails items
+    let nt = take (fromIntegral n) t
+    guard $ length nt == fromIntegral n
+    pure $ V.Vs nt
 
 countChar :: V.Value
 countChar = funcOfChar $ \c -> Just $ funcOfText $ \txt ->
@@ -711,6 +725,7 @@ baseIdentifiers =
   , ("true",               bool,                               V.True)
   , ("false",              bool,                               V.False)
   , ("first",              list a --> a,                       first)
+  , ("second",             list a --> a,                       second)
   , ("dupe",               list a --> list a,                  dupe)
   , ("even",               num --> bool,                       even')
   , ("odd",                num --> bool,                       odd')
@@ -720,6 +735,7 @@ baseIdentifiers =
   , ("base_zero_index_of", a --> (list a --> num),             indexOf0)
   , ("manhattan_distance", pos --> (pos --> num),              manhattanDistance)
   , ("combinations",       num --> (list a --> list (list a)), combos)
+  , ("nwise",              num --> (list a --> list (list a)), nwise)
   , ("count_char",         char --> (text --> num),            countChar)
   , ("base_one_char_at",   num --> (text --> char),            charAt1)
   , ("is_infix_of",        text --> (text --> bool),           isInfixOf')

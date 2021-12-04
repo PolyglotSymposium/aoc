@@ -1,0 +1,10 @@
+list
+  at ./y2021d1.txt
+  separated by '\n'
+
+solution
+  nwise 3
+    | sum v
+    | nwise 2
+    | (first x) < (second x)
+    | count

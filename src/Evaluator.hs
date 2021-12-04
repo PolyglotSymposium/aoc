@@ -82,6 +82,17 @@ eval context freeArg (Ast.FloatingLambda (Ast.Body (Ast.Application fn args))) =
             Nothing -> Left $ UnexpectedError 9
             Just v' -> Right v'
         v' -> pure v'
+    Value.Fold (initial, step) ->
+      case args of
+        onlyArg NE.:| [] -> do
+          argValue <- evalValue context (Just freeArg) onlyArg
+          case argValue of
+            Value.Vs vs ->
+              Value.Vs <$> traverse (applyFold initial step) vs
+            _ -> Left $ UnexpectedError 89233289
+        _ ->
+          Left $ UnexpectedError 8932382
+
     _ -> Left $ UnexpectedError 7
 
     where
@@ -90,9 +101,14 @@ eval context freeArg (Ast.FloatingLambda (Ast.Body (Ast.Application fn args))) =
         case f context argValue of
           Just f' -> applyAll f' unappliedArgs
           _ -> error (Text.unpack fn)
-
       applyAll v [] = pure v
       applyAll _ _ = Left $ UnexpectedError 5423
+
+      applyFold initial step (Value.Vs vs) =
+        case foldr (\v acc -> acc >>= step v) (Just initial) vs of
+          Nothing -> Left $ UnexpectedError 1
+          Just v  -> Right v
+      applyFold _ _ _ = Left $ UnexpectedError 323432
 
 eval context val (Ast.FloatingLambda (Ast.Body fc@(Ast.FlipCompose _ _))) =
   evalValue context (Just val) fc
