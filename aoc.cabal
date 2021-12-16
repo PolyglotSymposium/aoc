@@ -46,6 +46,7 @@ library
                      , text
                      , filepath
                      , ansi-terminal
+                     , heap
                      
 
   ghc-options:         -Wall
