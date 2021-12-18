@@ -33,73 +33,74 @@
 
 * 2016
   
-| Day | Part(s) | Potential Problem Domain(s) | Solved Domain(s) |
-|-----+---------+-----------------------------+------------------|
-|   1 | 1&2     |                             | turtle           |
-|   2 | 1&2     |                             |                  |
-|   3 | 1       |                             | list             |
-|   3 | 2       |                             |                  |
-|   4 | 1&2     |                             |                  |
-|   5 | 1&2     |                             |                  |
-|   6 | 1&2     |                             |                  |
-|   7 | 1&2     |                             |                  |
-|   8 | 1&2     |                             |                  |
-|   9 | 1&2     |                             |                  |
-|  10 | 1&2     |                             |                  |
-|  11 | 1&2     |                             |                  |
-|  12 | 1&2     |                             | program          |
-|  13 | 1&2     |                             |                  |
-|  14 | 1&2     |                             |                  |
-|  15 | 1&2     |                             |                  |
-|  16 | 1&2     |                             |                  |
-|  17 | 1&2     |                             |                  |
-|  18 | 1       |                             | conway           |
-|  18 | 2       |                             |                  |
-|  19 | 1&2     |                             |                  |
-|  20 | 1&2     |                             |                  |
-|  21 | 1&2     |                             |                  |
-|  22 | 1&2     |                             |                  |
-|  23 | 1&2     |                             |                  |
-|  24 | 1&2     |                             |                  |
-|  25 | 1       |                             |                  |
+| Day | Part(s) | Potential Problem Domain(s)               | Solved Domain(s) |
+|-----+---------+-------------------------------------------+------------------|
+|   1 | 1&2     |                                           | turtle           |
+|   2 | 1&2     | turtle, grid manipulation                 |                  |
+|   3 | 1       |                                           | list             |
+|   3 | 2       |                                           |                  |
+|   4 | 1       | text validation                           |                  |
+|   4 | 2       | text validation, rot13, decryption, list  |                  |
+|   5 | 1&2     | unfold with md5                           |                  |
+|   6 | 1&2     | most frequent, groupings, list, transpose |                  |
+|   7 | 1&2     | text validation                           |                  |
+|   8 | 1&2     | grid manipulation                         |                  |
+|   9 | 1&2     | text manipulation                         |                  |
+|  10 | 1&2     |                                           |                  |
+|  11 | 1&2     |                                           |                  |
+|  12 | 1&2     |                                           | program          |
+|  13 | 1&2     | graph (generated)                         |                  |
+|  14 | 1&2     |                                           |                  |
+|  15 | 1&2     | timing                                    |                  |
+|  16 | 1&2     | unfold                                    |                  |
+|  17 | 1&2     |                                           |                  |
+|  18 | 1       |                                           | conway           |
+|  18 | 2       | conway (cyclic)                           |                  |
+|  19 | 1&2     | turn based                                |                  |
+|  20 | 1&2     |                                           |                  |
+|  21 | 1&2     | grid manipulation (2d)                    |                  |
+|  22 | 1&2     | graph                                     |                  |
+|  23 | 1&2     | program                                   |                  |
+|  24 | 1&2     | graph                                     |                  |
+|  25 | 1       | program                                   |                  |
 
 * 2017
   
-| Day | Part(s) | Potential Problem Domain(s) | Solved Domain(s) |
-|-----+---------+-----------------------------+------------------|
-|   1 | 1&2     |                             |                  |
-|   2 | 1&2     |                             |                  |
-|   3 | 1&2     |                             |                  |
-|   4 | 1&2     |                             |                  |
-|   5 | 1&2     |                             |                  |
-|   6 | 1&2     |                             |                  |
-|   7 | 1&2     |                             |                  |
-|   8 | 1&2     |                             | program          |
-|   9 | 1&2     |                             |                  |
-|  10 | 1&2     |                             |                  |
-|  11 | 1&2     |                             |                  |
-|  12 | 1&2     |                             |                  |
-|  13 | 1&2     |                             |                  |
-|  14 | 1&2     |                             |                  |
-|  15 | 1&2     |                             |                  |
-|  16 | 1&2     |                             |                  |
-|  17 | 1&2     |                             |                  |
-|  18 | 1&2     |                             |                  |
-|  19 | 1&2     |                             |                  |
-|  20 | 1&2     |                             |                  |
-|  21 | 1&2     |                             |                  |
-|  22 | 1&2     |                             |                  |
-|  23 | 1&2     |                             |                  |
-|  24 | 1&2     |                             |                  |
-|  25 | 1       |                             |                  |
+| Day | Part(s) | Potential Problem Domain(s)               | Solved Domain(s) |
+|-----+---------+-------------------------------------------+------------------|
+|   1 | 1&2     | circular buff, list, grouping             |                  |
+|   2 | 1&2     | list, list of lists                       |                  |
+|   3 | 1&2     | unfold                                    |                  |
+|   4 | 1&2     | text validation                           |                  |
+|   5 | 1&2     |                                           |                  |
+|   6 | 1&2     |                                           |                  |
+|   7 | 1&2     | graph                                     |                  |
+|   8 | 1&2     |                                           | program          |
+|   9 | 1&2     | context parsing, parens, recursive decode |                  |
+|  10 | 1&2     |                                           |                  |
+|  11 | 1&2     | hex turtle                                |                  |
+|  12 | 1&2     | graph, forests                            |                  |
+|  13 | 1&2     | timing, simulation                        |                  |
+|  14 | 1&2     | grid manipulation                         |                  |
+|  15 | 1&2     |                                           |                  |
+|  16 | 1&2     | text manipulation, grid manip 2d          |                  |
+|  17 | 1&2     |                                           |                  |
+|  18 | 1&2     | program                                   |                  |
+|  19 | 1&2     | turtle, lines                             |                  |
+|  20 | 1&2     | simulation                                |                  |
+|  21 | 1&2     | grid manipulation                         |                  |
+|  22 | 1&2     |                                           |                  |
+|  23 | 1&2     | program                                   |                  |
+|  24 | 1&2     | combinations, optimize                    |                  |
+|  25 | 1       | turing machine                            |                  |
 
 * 2018
   
 | Day | Part(s) | Potential Problem Domain(s) | Solved Domain(s) |
 |-----+---------+-----------------------------+------------------|
 |   1 | 1&2     |                             | list             |
-|   2 | 1&2     |                             |                  |
-|   3 | 1&2     |                             |                  |
+|   2 | 1&2     | text validation             |                  |
+|   3 | 1&2     | grid manipulation           |                  |
 |   4 | 1&2     |                             |                  |
 |   5 | 1&2     |                             |                  |
 |   6 | 1&2     |                             |                  |
@@ -107,53 +108,53 @@
 |   7 | 2       |                             |                  |
 |   8 | 1&2     | recursive decode            |                  |
 |   9 | 1&2     |                             |                  |
-|  10 | 1&2     |                             |                  |
+|  10 | 1&2     | simulation                  |                  |
 |  11 | 1&2     |                             |                  |
-|  12 | 1&2     |                             |                  |
-|  13 | 1&2     |                             |                  |
+|  12 | 1&2     | conway                      |                  |
+|  13 | 1&2     | simulation                  |                  |
 |  14 | 1&2     |                             |                  |
-|  15 | 1&2     |                             |                  |
-|  16 | 1&2     |                             |                  |
-|  17 | 1&2     |                             |                  |
+|  15 | 1&2     | simulation, turn based      |                  |
+|  16 | 1&2     | mastermind, program         |                  |
+|  17 | 1&2     | simulation                  |                  |
 |  18 | 1       |                             | conway           |
-|  18 | 2       |                             |                  |
-|  19 | 1&2     |                             |                  |
-|  20 | 1&2     |                             |                  |
-|  21 | 1&2     |                             |                  |
-|  22 | 1&2     |                             |                  |
+|  18 | 2       | conway                      |                  |
+|  19 | 1&2     | program                     |                  |
+|  20 | 1&2     | graph                       |                  |
+|  21 | 1&2     | program                     |                  |
+|  22 | 1&2     | graph                       |                  |
 |  23 | 1&2     |                             |                  |
-|  24 | 1&2     |                             |                  |
-|  25 | 1       |                             |                  |
+|  24 | 1&2     | turn based                  |                  |
+|  25 | 1       | graph forests               |                  |
 
 * 2019
   
 | Day | Part(s) | Potential Problem Domain(s) | Solved Domain(s) |
 |-----+---------+-----------------------------+------------------|
 |   1 | 1&2     |                             | list             |
-|   2 | 1&2     |                             |                  |
-|   3 | 1&2     |                             |                  |
-|   4 | 1&2     |                             |                  |
-|   5 | 1&2     |                             |                  |
+|   2 | 1&2     | program                     |                  |
+|   3 | 1&2     | turtle, multiple walkers    |                  |
+|   4 | 1&2     | text validation             |                  |
+|   5 | 1&2     | program                     |                  |
 |   6 | 1&2     |                             | graph            |
-|   7 | 1&2     |                             |                  |
-|   8 | 1&2     |                             |                  |
-|   9 | 1&2     |                             |                  |
+|   7 | 1&2     | program                     |                  |
+|   8 | 1&2     | grid manipulation           |                  |
+|   9 | 1&2     | program                     |                  |
 |  10 | 1&2     |                             |                  |
-|  11 | 1&2     |                             |                  |
-|  12 | 1&2     |                             |                  |
-|  13 | 1&2     |                             |                  |
-|  14 | 1&2     |                             |                  |
+|  11 | 1&2     | turtle, program             |                  |
+|  12 | 1&2     | simulation                  |                  |
+|  13 | 1&2     | program                     |                  |
+|  14 | 1&2     | reactions                   |                  |
 |  15 | 1&2     |                             |                  |
 |  16 | 1&2     |                             |                  |
 |  17 | 1&2     |                             |                  |
-|  18 | 1&2     |                             |                  |
+|  18 | 1&2     | doom maze                   |                  |
 |  19 | 1&2     |                             |                  |
 |  20 | 1&2     |                             |                  |
 |  21 | 1&2     |                             |                  |
-|  22 | 1&2     |                             |                  |
+|  22 | 1&2     | modular arith               |                  |
 |  23 | 1&2     |                             |                  |
 |  24 | 1       |                             | conway           |
-|  24 | 2       |                             |                  |
+|  24 | 2       | conway                      |                  |
 |  25 | 1       |                             |                  |
 
 * 2020
@@ -162,33 +163,33 @@
 |-----+---------+-----------------------------+------------------|
 |   1 | 1&2     |                             | list             |
 |   2 | 1&2     |                             | list             |
-|   3 | 1&2     |                             |                  |
+|   3 | 1&2     | simulation                  |                  |
 |   4 | 1       |                             | list             |
-|   4 | 2       |                             |                  |
-|   5 | 1&2     |                             |                  |
-|   6 | 1&2     |                             |                  |
+|   4 | 2       | parsing and validation      |                  |
+|   5 | 1&2     | decode                      |                  |
+|   6 | 1&2     | list, sets                  |                  |
 |   7 | 1       |                             | graph            |
-|   7 | 2       |                             |                  |
+|   7 | 2       | graph                       |                  |
 |   8 | 1       |                             | program          |
-|   8 | 2       |                             |                  |
-|   9 | 1&2     |                             |                  |
+|   8 | 2       | program                     |                  |
+|   9 | 1&2     | list, windowing             |                  |
 |  10 | 1&2     |                             |                  |
 |  11 | 1       |                             | conway           |
-|  11 | 2       |                             |                  |
+|  11 | 2       | conway                      |                  |
 |  12 | 1       |                             | turtle           |
-|  12 | 2       |                             |                  |
-|  13 | 1&2     |                             |                  |
+|  12 | 2       | turtle                      |                  |
+|  13 | 1&2     | modular arith               |                  |
 |  14 | 1&2     |                             |                  |
-|  15 | 1&2     |                             |                  |
-|  16 | 1&2     |                             |                  |
+|  15 | 1&2     | unfold                      |                  |
+|  16 | 1&2     | solver, mastermind          |                  |
 |  17 | 1&2     |                             | conway           |
 |  18 | 1&2     |                             |                  |
 |  19 | 1&2     |                             |                  |
 |  20 | 1&2     |                             |                  |
 |  21 | 1&2     |                             |                  |
-|  22 | 1&2     |                             |                  |
+|  22 | 1&2     | simulation, turn based      |                  |
 |  23 | 1&2     |                             |                  |
-|  24 | 1&2     |                             |                  |
+|  24 | 1&2     | conway hex                  |                  |
 |  25 | 1       |                             |                  |
 
 * 2021
@@ -197,21 +198,21 @@
 |-----+---------+----------------------------------------+------------------|
 |   1 | 1&2     |                                        | list             |
 |   2 | 1&2     |                                        | turtle           |
-|   3 | 1&2     |                                        |                  |
-|   4 | 1&2     |                                        |                  |
-|   5 | 1&2     |                                        |                  |
-|   6 | 1&2     |                                        |                  |
-|   7 | 1&2     |                                        |                  |
-|   8 | 1&2     |                                        |                  |
-|   9 | 1&2     |                                        |                  |
-|  10 | 1&2     |                                        |                  |
-|  11 | 1&2     |                                        |                  |
-|  12 | 1&2     |                                        |                  |
-|  13 | 1&2     |                                        |                  |
+|   3 | 1&2     | list, unfold                           |                  |
+|   4 | 1&2     | simulation                             |                  |
+|   5 | 1&2     | lines, turtles                         |                  |
+|   6 | 1&2     | conway, state machine                  |                  |
+|   7 | 1&2     | list                                   |                  |
+|   8 | 1&2     | solver, mastermind                     |                  |
+|   9 | 1&2     | graph, forests                         |                  |
+|  10 | 1&2     | parens                                 |                  |
+|  11 | 1&2     | conway                                 |                  |
+|  12 | 1&2     | graph                                  |                  |
+|  13 | 1&2     | grid manipulation                      |                  |
 |  14 | 1&2     |                                        |                  |
-|  15 | 1&2     |                                        |                  |
+|  15 | 1&2     | graph, grid manipulation -> graph      |                  |
 |  16 | 1&2     | recursive decode, expression evaluator |                  |
-|  17 | 1&2     |                                        |                  |
+|  17 | 1&2     | simulation                             |                  |
 |  18 | 1&2     |                                        |                  |
 |  19 | 1&2     |                                        |                  |
 |  20 | 1&2     |                                        |                  |
