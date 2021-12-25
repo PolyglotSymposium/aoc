@@ -14,8 +14,6 @@ module Builtins
        , passwordsContext
        ) where
 
-import Debug.Trace
-
 import qualified Ast
 import qualified Conway.Ast as Conway
 import           Control.Monad (replicateM, guard)
@@ -599,16 +597,31 @@ validPasswords  = V.Func $ \ctx arg ->
        fromIntegral $ T.length $ T.filter (\pc -> isJust $ T.find (== pc) t) password
       Passwords.AnySubstringOf s ->
         fromIntegral $ length $ filter (`isInfixOf` password) s
+
       Passwords.SubstringMatching s | T.length password < T.length s -> 0
-      Passwords.SubstringMatching s | headMatchesPattern password s -> 1 + matches (T.drop 1 password) (Passwords.SubstringMatching s)
+      Passwords.SubstringMatching s | isJust (takeMatch password s) -> 1 + matches (T.drop 1 password) (Passwords.SubstringMatching s)
       Passwords.SubstringMatching s -> matches (T.drop 1 password) (Passwords.SubstringMatching s)
 
-    headMatchesPattern password s =
+      Passwords.SubstringGreedilyMatching s -> maximum $ greedyMatch s <$> T.tails password
+
+    greedyMatch s password | T.length password < T.length s = 0
+    greedyMatch s password =
+      case takeMatch password s of
+        Nothing -> 0
+        Just (matched, rest) -> 1 + greedyExact matched rest
+
+    greedyExact matched rest | T.length matched > T.length rest = 0
+    greedyExact matched rest | matched `T.isPrefixOf` rest = 1 + greedyExact matched (T.drop (T.length matched) rest)
+    greedyExact matched rest = greedyExact matched (T.drop 1 rest)
+
+    takeMatch password s =
       let
         pairs = nub $ T.zip s password
         pairKeys = nub $ fst <$> pairs
       in
-        length pairs == length pairKeys
+        if length pairs == length pairKeys
+        then Just $ T.splitAt (T.length s) password
+        else Nothing
 
   -- SubstringMatching Text
   -- SubstringGreedilyMatching Text
