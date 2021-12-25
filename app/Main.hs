@@ -27,5 +27,8 @@ main = do
         Just (it, ot, answer, Aoc.Graph ast) -> do
           putStrLn "Graph domain:"
           putStrLn $ "(inputType, outputType, answer, ast) = " ++ show (it, ot, answer, ast)
+        Just (it, ot, answer, Aoc.Passwords ast) -> do
+          putStrLn "Passwords domain:"
+          putStrLn $ "(inputType, outputType, answer, ast) = " ++ show (it, ot, answer, ast)
         Nothing -> pure ()
     _       -> print "One argument (file name) expected"

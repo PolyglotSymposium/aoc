@@ -30,6 +30,9 @@ library
                      , List.Parser 
                      , List.Problem 
                      , Parser
+                     , Passwords.Ast
+                     , Passwords.Parser
+                     , Passwords.Problem
                      , Program.Ast
                      , Program.Parser
                      , Program.Problem

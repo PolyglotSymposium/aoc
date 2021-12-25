@@ -1,0 +1,9 @@
+passwords at ./y2015d5.txt
+  are valid if they
+    contain at least 3 of 'aeiou'
+    contain at least 1 substring that matches 'xx'
+    do not contain substrings 'ab', 'cd', 'pq', 'xy'
+
+solution
+  valid_passwords
+    | count

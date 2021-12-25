@@ -20,5 +20,6 @@ data Type
   | Turtle
   | Direction
   | ParsedLine
+  | Hidden
   deriving (Show, Eq)
 

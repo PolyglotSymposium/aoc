@@ -1,0 +1,8 @@
+passwords at ./y2015d5.txt
+  are valid if they
+    contain at least 2 substrings that greedily match 'xy'
+    contain at least 1 substring that matches 'xyx'
+
+solution
+  valid_passwords
+    | count

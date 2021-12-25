@@ -19,6 +19,8 @@ import qualified Program.Problem as ProgramProblem
 import           Text.Megaparsec
 import qualified Turtle.Ast as TurtleProblem
 import qualified Turtle.Problem as TurtleProblem
+import qualified Passwords.Ast as PasswordsProblem
+import qualified Passwords.Problem as PasswordsProblem
 import qualified Type
 import qualified Value as V
 
@@ -28,6 +30,7 @@ data SupportedDomainAst
   | Program ProgramProblem.Problem
   | Turtle TurtleProblem.Problem
   | Graph GraphProblem.Problem
+  | Passwords PasswordsProblem.Problem
 
 type Solver a = (String, String) -> IO (Maybe (Type.Type, Type.Type, V.Value, a))
 
@@ -42,6 +45,7 @@ solver :: P.Parser (Solver SupportedDomainAst)
 solver =
   P.lstr "conway" $> toDomain Conway ConwayProblem.runConwayProblem
     <|> P.lstr "list" $> toDomain List ListProblem.runListProblem
+    <|> try (P.lstr "passwords") $> toDomain Passwords PasswordsProblem.runPasswordsProblem
     <|> P.lstr "program" $> toDomain Program ProgramProblem.runProgramProblem
     <|> P.lstr "turtle" $> toDomain Turtle TurtleProblem.runTurtleProblem
     <|> P.lstr "graph" $> toDomain Graph GraphProblem.runGraphProblem

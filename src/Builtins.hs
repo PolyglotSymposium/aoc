@@ -11,18 +11,22 @@ module Builtins
        , graphContext
        , programContext
        , turtleContext
+       , passwordsContext
        ) where
+
+import Debug.Trace
 
 import qualified Ast
 import qualified Conway.Ast as Conway
 import           Control.Monad (replicateM, guard)
 import qualified Turtle.Ast as Turtle
+import qualified Passwords.Ast as Passwords
 import qualified Data.Graph as G
-import  Data.List (tails)
+import  Data.List (tails, nub)
 import qualified Data.Map.Strict as M
-import           Data.Maybe (fromMaybe, listToMaybe)
+import           Data.Maybe (fromMaybe, listToMaybe, isJust)
 import qualified Data.Set as S
-import           Data.Text hiding (count, length, foldr, zip, maximum, concat, filter, concatMap, minimum, take, tails)
+import           Data.Text hiding (count, length, foldr, zip, maximum, concat, filter, concatMap, minimum, take, tails, all)
 import qualified Data.Text as T
 import           Evaluator (evalValue, toBoolean)
 import qualified Program.Ast as Program
@@ -573,6 +577,46 @@ manhattanDistance = V.Func $ \_ source -> Just $ V.Func $ \_ v ->
     _ ->
       Nothing
 
+validPasswords :: V.Value
+validPasswords  = V.Func $ \ctx arg ->
+  case (C.identValue "$validityRules" ctx, arg) of
+    (Just (V.ValidityRules rules), V.Vs passwords) -> Just $ V.Vs $ filter (allMatch rules) passwords
+    _ -> Nothing
+
+  where
+    allMatch rules (V.Txt password) =
+      all (match password) rules
+    allMatch _ _ = False
+
+    match password = \case
+      Passwords.Contain a s -> satisfies password a s
+      Passwords.DoNotContain a s -> not $ satisfies password a s
+
+    satisfies password amount substRule = matches password substRule `satisfiesAmount` amount
+
+    matches password = \case
+      Passwords.AnyCharOf t ->
+       fromIntegral $ T.length $ T.filter (\pc -> isJust $ T.find (== pc) t) password
+      Passwords.AnySubstringOf s ->
+        fromIntegral $ length $ filter (`isInfixOf` password) s
+      Passwords.SubstringMatching s | T.length password < T.length s -> 0
+      Passwords.SubstringMatching s | headMatchesPattern password s -> 1 + matches (T.drop 1 password) (Passwords.SubstringMatching s)
+      Passwords.SubstringMatching s -> matches (T.drop 1 password) (Passwords.SubstringMatching s)
+
+    headMatchesPattern password s =
+      let
+        pairs = nub $ T.zip s password
+        pairKeys = nub $ fst <$> pairs
+      in
+        length pairs == length pairKeys
+
+  -- SubstringMatching Text
+  -- SubstringGreedilyMatching Text
+
+    satisfiesAmount found = \case
+      Passwords.Any -> found > 0
+      Passwords.AtLeast n -> found >= n
+
 strollSplat :: V.Value
 strollSplat = V.Func $ \ctx trt ->
   case trt of
@@ -812,4 +856,11 @@ turtleContext =
     , ("stroll*",                 (turtle --> list pos,               strollSplat))
     , ("raw_components",          (turtle --> list num,               rawComponents))
     , ("distance_from",           (pos --> (turtle -->  num),         manhattanDistance))
+    ]
+
+passwordsContext :: C.Context
+passwordsContext =
+  C.add core $
+    C.fromList [
+      ("valid_passwords",       (list text --> list text,  validPasswords))
     ]

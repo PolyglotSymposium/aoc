@@ -24,6 +24,7 @@ module Value
 import qualified Conway.Ast as Conway
 import qualified Turtle.Ast as Turtle
 import qualified Data.Graph as Graph
+import qualified Passwords.Ast as Passwords
 import qualified Data.List as L
 import qualified Data.Map.Strict as M
 import           Data.Text hiding (concat, empty, foldr)
@@ -111,6 +112,7 @@ data Value
   | ParsedLine (M.Map Text Value)
   | Graph (Graph.EqualMapGraph Text)
   | DijkstraOutputs (Graph.Distances Text, Graph.Prevs Text)
+  | ValidityRules [Passwords.ValidityRule]
 
 data OrdValue
   = OrdI Integer
@@ -152,6 +154,7 @@ toOrd Program{}        = Nothing
 toOrd (Fold _)         = Nothing
 toOrd (Func _)         = Nothing
 toOrd (StepsOfFold _)  = Nothing
+toOrd (ValidityRules _)  = Nothing
 
 unVertex :: M.Map (Graph.Vertex Text) (S.Set (Graph.Vertex Text)) -> M.Map Text (S.Set Text)
 unVertex = M.map (S.map Graph.unVertex) . M.mapKeys Graph.unVertex
@@ -191,6 +194,7 @@ instance Show Value where
     "distances=" <> show dists <> "\nprevs=" <> show prevs
   show (ParsedLine vs) =
     "{" <> L.intercalate ", " ((\(k, v) -> unpack k <> "=" <> show v) <$> M.toList vs) <> "}"
+  show (ValidityRules _) = "<rules...>"
 
 type Context = M.Map Text (Type.Type, Value.Value)
 

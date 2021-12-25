@@ -9,7 +9,7 @@
 |   3 | 1       |                                        | turtle           |
 |   3 | 2       | turtle (need multiple, alternating)    |                  |
 |   4 | 1&2     | unfold with md5                        |                  |
-|   5 | 1&2     | text validation                        |                  |
+|   5 | 1&2     | text validation                        | passwords        |
 |   6 | 1&2     | grid manipulation                      |                  |
 |   7 | 1&2     | expression evaluator                   |                  |
 |   8 | 1&2     |                                        |                  |
@@ -61,8 +61,8 @@
 |  21 | 1&2     | grid manipulation (2d)                    |                  |
 |  22 | 1&2     | graph                                     |                  |
 |  23 | 1&2     | program                                   |                  |
-|  24 | 1&2     | graph                                     |                  |
-|  25 | 1       | program                                   |                  |
+|  24 | 1&2     | graph, modifying (toggling) instructions  |                  |
+|  25 | 1       | program, depends on 23                    |                  |
 
 * 2017
   
